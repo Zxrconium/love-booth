@@ -320,6 +320,14 @@ const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
 
+function applyLiveFilter(){
+  const f = filterSelect.value;
+  localVideo.style.filter = f;
+  remoteVideo.style.filter = f;
+}
+filterSelect.addEventListener('change', applyLiveFilter);
+applyLiveFilter();
+
 const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 46, BOTTOM = 70;
 
 /* ---------------- Strip themes ----------------
