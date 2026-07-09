@@ -163,6 +163,7 @@
   @keyframes flashpop{0%{opacity:0.9;} 100%{opacity:0;}}
 
   .status-line{text-align:center; font-family:'Caveat',cursive; font-size:1.2rem; color:var(--blush); margin-top:10px; min-height:24px;}
+  .sync-note{text-align:center; font-size:0.72rem; color:var(--gold); background:rgba(215,162,74,0.1); border:1px solid rgba(215,162,74,0.3); border-radius:10px; padding:6px 10px; margin:8px 4px 0; line-height:1.4;}
   .controls{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center;}
   .countdown-choice{margin-top:14px; text-align:center; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .choice-label{font-family:'Caveat',cursive; font-size:1.1rem; color:var(--blush); margin:0 0 10px;}
@@ -269,6 +270,7 @@
         <div id="flash" class="flash"></div>
       </div>
       <div class="status-line" id="statusLine" aria-live="polite">say cheese whenever you're ready</div>
+      <p class="sync-note" id="syncNote" role="status" style="display:none;">live sync lost — filter, theme, and countdown changes won't update for both of you until it's back</p>
       <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled>📸 start strip</button>
         <select id="filterSelect">
@@ -393,6 +395,7 @@ const waitingLabel = document.getElementById('waitingLabel');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const statusLine = document.getElementById('statusLine');
+const syncNote = document.getElementById('syncNote');
 const countdownEl = document.getElementById('countdown');
 const flashEl = document.getElementById('flash');
 const startBtn = document.getElementById('startBtn');
@@ -565,17 +568,35 @@ function handleRemoteMessage(msg){
   }
 }
 
+let dataConnTimeout = null;
+
+function markSyncLost(){
+  dataConn = null;
+  clearTimeout(dataConnTimeout);
+  syncNote.style.display = 'block';
+}
+
+function markSyncRestored(){
+  clearTimeout(dataConnTimeout);
+  syncNote.style.display = 'none';
+}
+
 function wireDataChannel(conn){
   dataConn = conn;
+  clearTimeout(dataConnTimeout);
+  dataConnTimeout = setTimeout(()=>{
+    if(!conn.open && dataConn === conn) markSyncLost();
+  }, 8000);
   conn.on('open', ()=>{
+    markSyncRestored();
     if(isHost){
       broadcastData({ type:'filter', value: filterSelect.value });
       broadcastData({ type:'theme', value: currentThemeId });
     }
   });
   conn.on('data', handleRemoteMessage);
-  conn.on('close', ()=>{ if(dataConn === conn) dataConn = null; });
-  conn.on('error', ()=>{ if(dataConn === conn) dataConn = null; });
+  conn.on('close', ()=>{ if(dataConn === conn) markSyncLost(); });
+  conn.on('error', ()=>{ if(dataConn === conn) markSyncLost(); });
 }
 
 function wireCall(call){
@@ -671,6 +692,8 @@ async function attemptReconnect(){
   try{
     if(activeCall){ try{ activeCall.close(); }catch(e){} activeCall = null; }
     if(peer){ try{ peer.destroy(); }catch(e){} peer = null; }
+    clearTimeout(dataConnTimeout);
+    dataConn = null;
     connected = false;
     await wait(400);
     if(isHost) await startAsHost(currentRoomCode);
@@ -689,6 +712,9 @@ function teardownAndReturnToGate(){
   if(activeCall){ try{ activeCall.close(); }catch(e){} activeCall = null; }
   if(peer){ try{ peer.destroy(); }catch(e){} peer = null; }
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+  clearTimeout(dataConnTimeout);
+  dataConn = null;
+  syncNote.style.display = 'none';
   connected = false;
   shots = [];
   currentRoomCode = null;
