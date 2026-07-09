@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#1c1420">
-<meta name="description" content="Love Booth — a realtime online photo booth for two people, anywhere.">
-<title>love booth · live</title>
+<meta name="description" content="Luv Booth — a realtime online photo booth for two people, anywhere.">
+<title>luv booth · live</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💌</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,22 +49,40 @@
   .gate{
     background:linear-gradient(180deg, rgba(42,28,48,0.85), rgba(21,16,26,0.9));
     backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    border-radius:22px; padding:30px 26px; width:100%; max-width:340px; text-align:center;
+    border-radius:22px; padding:30px 26px; width:100%; max-width:480px; text-align:center;
     box-shadow:0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(215,162,74,0.2);
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
   }
-  .gate p{font-size:0.85rem; color:rgba(251,243,231,0.7); line-height:1.55;}
-  .path-hint{font-size:0.68rem; color:rgba(251,243,231,0.4); margin:8px 2px 0; line-height:1.4;}
-  .or-divider{display:flex; align-items:center; gap:12px; margin:22px 0; color:rgba(251,243,231,0.35); font-size:0.72rem; letter-spacing:1px; text-transform:uppercase;}
-  .or-divider::before, .or-divider::after{content:''; flex:1; height:1px; background:rgba(251,243,231,0.15);}
+  .gate-cards{display:flex; gap:16px; width:100%;}
+  .gate-card{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:12px;
+    background:rgba(251,243,231,0.03); border:1.5px solid rgba(251,243,231,0.18);
+    border-radius:18px; padding:28px 16px; cursor:pointer; text-align:center;
+    font-family:'Poppins',sans-serif; color:var(--paper);
+    transition:border-color .2s ease, background-color .2s ease, transform .15s ease;
+  }
+  .gate-card:hover{ border-color:rgba(215,162,74,0.55); background:rgba(251,243,231,0.06); transform:translateY(-2px); }
+  .gate-card:active{ transform:scale(0.98) translateY(0); }
+  .gate-icon{width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none;}
+  .gate-icon.blush{ background:rgba(232,147,168,0.22); }
+  .gate-icon.gold{ background:rgba(215,162,74,0.22); }
+  .gate-icon svg{ width:22px; height:22px; }
+  .gate-card-title{ font-weight:700; font-size:1.2rem; }
+  .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.78rem; color:rgba(251,243,231,0.6); }
+  .gate-card-sub svg{ width:12px; height:12px; }
+  @media (max-width: 480px){
+    .gate-cards{ flex-direction:column; }
+  }
+  .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
+  .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
   .gate input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
     font-family:'Poppins',sans-serif; font-weight:600; font-size:1.1rem;
     padding:12px; border-radius:12px; border:1.5px solid rgba(215,162,74,0.4);
-    background:rgba(251,243,231,0.05); color:var(--paper); margin:0 0 6px;
+    background:rgba(251,243,231,0.05); color:var(--paper); margin:0;
     transition:border-color .2s ease, background-color .2s ease;
   }
-  .gate input:focus, .caption-input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
+  .gate input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
   .gate input.invalid{ border-color:var(--err); animation:shake 0.4s ease; }
   @keyframes shake{
     0%,100%{ transform:translateX(0); }
@@ -159,8 +177,6 @@
     45%{ transform:scale(1.06); box-shadow:0 22px 50px rgba(215,162,74,0.35); }
     100%{ transform:scale(1); }
   }
-  .caption-input{width:100%; max-width:230px; text-align:center; font-family:'Caveat',cursive; font-size:1.15rem; padding:8px 10px; border-radius:12px; border:1.5px solid rgba(215,162,74,0.4); background:rgba(251,243,231,0.05); color:var(--paper); transition:border-color .2s ease, background-color .2s ease;}
-  .caption-input::placeholder{color:rgba(251,243,231,0.4);}
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
   .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
   .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(251,243,231,0.45);}
@@ -182,16 +198,37 @@
 </head>
 <body>
 <div class="scene">
-  <div class="marquee">✦ love booth · live ✦</div>
+  <div class="marquee">✦ luv booth · live ✦</div>
 
   <div class="gate" id="gate">
-    <p>One of you starts a room and shares the code. The other joins with it. That's it — no accounts, nothing saved.</p>
-    <button class="btn-primary" id="createBtn">start a room</button>
-    <p class="path-hint">You'll get a short code to send them — then your cameras connect.</p>
-    <div class="or-divider">or</div>
-    <input id="roomInput" placeholder="ENTER THEIR CODE" maxlength="8" autocomplete="off" autocapitalize="characters">
-    <button class="btn-ghost" id="joinBtn">join with a code</button>
-    <p class="path-hint">Ask them for the code first — then you'll drop straight into their room.</p>
+    <div class="gate-cards" id="gateCards">
+      <button class="gate-card" id="createCard" type="button">
+        <span class="gate-icon blush" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7a4456" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>
+        </span>
+        <span class="gate-card-title">Create</span>
+        <span class="gate-card-sub">a new room
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+      <button class="gate-card" id="joinCard" type="button">
+        <span class="gate-icon gold" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5c4111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 5l3 3M18 3l3 3"/></svg>
+        </span>
+        <span class="gate-card-title">Join</span>
+        <span class="gate-card-sub">with her code
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+    </div>
+
+    <div class="join-step" id="joinStep" style="display:none;">
+      <input id="roomInput" placeholder="ENTER THEIR CODE" maxlength="8" autocomplete="off" autocapitalize="characters">
+      <button class="btn-primary" id="joinConfirmBtn">join room</button>
+      <button class="leave-link" id="joinBackBtn" type="button">back</button>
+    </div>
+
+    <p class="gate-footnote">no accounts, nothing saved — just the two of you</p>
     <div class="error-msg" id="gateError" role="alert"></div>
   </div>
 
@@ -228,7 +265,6 @@
     </div>
 
     <div class="strip-wrap">
-      <input id="captionInput" class="caption-input" placeholder="add a little caption..." maxlength="40">
       <div class="theme-picker">
         <label for="themeSelect" class="theme-label">strip style</label>
         <select id="themeSelect" class="theme-select"></select>
@@ -242,9 +278,13 @@
 <script>
 /* ---------------- Room gate ---------------- */
 const gate = document.getElementById('gate');
+const gateCards = document.getElementById('gateCards');
+const joinStep = document.getElementById('joinStep');
 const roomInput = document.getElementById('roomInput');
-const createBtn = document.getElementById('createBtn');
-const joinBtn = document.getElementById('joinBtn');
+const createCard = document.getElementById('createCard');
+const joinCard = document.getElementById('joinCard');
+const joinConfirmBtn = document.getElementById('joinConfirmBtn');
+const joinBackBtn = document.getElementById('joinBackBtn');
 const gateError = document.getElementById('gateError');
 const boothLayout = document.getElementById('boothLayout');
 const codeRow = document.getElementById('codeRow');
@@ -265,7 +305,14 @@ function showGateError(msg){
   gateError.textContent = msg;
 }
 
-createBtn.addEventListener('click', ()=>{
+function showJoinStep(show){
+  gateCards.style.display = show ? 'none' : 'flex';
+  joinStep.style.display = show ? 'flex' : 'none';
+  showGateError('');
+  if(show) roomInput.focus();
+}
+
+createCard.addEventListener('click', ()=>{
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     showGateError('This browser can\'t access the camera here — try HTTPS or a modern browser, then reload.');
     return;
@@ -279,7 +326,10 @@ createBtn.addEventListener('click', ()=>{
   startAsHost(code);
 });
 
-joinBtn.addEventListener('click', ()=>{
+joinCard.addEventListener('click', ()=> showJoinStep(true));
+joinBackBtn.addEventListener('click', ()=> showJoinStep(false));
+
+joinConfirmBtn.addEventListener('click', ()=>{
   const code = roomInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!code){
     showGateError('Type in the code they shared with you.');
@@ -299,7 +349,7 @@ joinBtn.addEventListener('click', ()=>{
 });
 roomInput.addEventListener('animationend', ()=> roomInput.classList.remove('invalid'));
 
-roomInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') joinBtn.click(); });
+roomInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') joinConfirmBtn.click(); });
 
 /* ---------------- Elements ---------------- */
 const localVideo = document.getElementById('localVideo');
@@ -315,7 +365,6 @@ const resetBtn = document.getElementById('resetBtn');
 const reconnectBtn = document.getElementById('reconnectBtn');
 const filterSelect = document.getElementById('filterSelect');
 const downloadBtn = document.getElementById('downloadBtn');
-const captionInput = document.getElementById('captionInput');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
@@ -328,189 +377,57 @@ function applyLiveFilter(){
 filterSelect.addEventListener('change', applyLiveFilter);
 applyLiveFilter();
 
-const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 46, BOTTOM = 70;
+const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 56, BOTTOM = 56;
 
 /* ---------------- Strip themes ----------------
-   Each theme is pure data: colors, fonts, which optional chrome (sprocket
-   holes / outer hairline border / star field / photo-frame border style)
-   to draw, and optional drawHeaderDecor/drawFooterDecor hook functions for
-   bespoke illustrated motifs. Draw functions below read from the active
-   theme rather than branching on its id, so adding another style later is
-   just adding another object here plus (if it needs a unique motif) a
-   small drawing function to reference from that object. */
+   Only 3 themes now, each a plain data object: colors, an optional bold
+   header line (+ rule), an optional thick outer border, an optional
+   "receipt" perforation between photos, and a photo-frame border. Draw
+   functions below read from the active theme rather than branching on its
+   id. Each theme's 3 slots either show a captured photo or, until then, a
+   shared illustrated sky/cloud/hill placeholder. */
 const THEMES = [
   {
     id: 'classic',
-    label: 'Classic film',
-    background: '#15101a',
-    paper: '#fbf3e7',
-    ink: '#2b1b2e',
-    dateColor: '#8a7a63',
-    accent: '#d7a24a',
-    sprockets: true,
-    border: false,
-    stars: false,
-    cornerRadius: 14,
-    photoRadius: 6,
-    photoBorder: { style: 'none' },
-    footerGlyph: '♥',
-    headerText: 'LOVE BOOTH',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "italic 500 16px 'Poppins', sans-serif"
-  },
-  {
-    id: 'mono',
-    label: 'Clean mono',
+    label: 'Classic',
     background: '#ffffff',
-    paper: '#ffffff',
+    ink: '#1a1a1a',
+    accent: '#1a1a1a',
+    headerText: '',
+    headerFont: "800 22px 'Poppins', sans-serif",
+    headerRule: false,
+    borderWidth: 0,
+    perforation: false,
+    photoBorder: { color: '#1a1a1a', width: 3 },
+    captionFont: "800 22px 'Poppins', sans-serif"
+  },
+  {
+    id: 'receipt',
+    label: 'Receipt',
+    background: '#ffffff',
     ink: '#000000',
-    dateColor: '#555555',
     accent: '#000000',
-    sprockets: false,
-    border: true,
-    stars: false,
-    cornerRadius: 4,
-    photoRadius: 0,
-    photoBorder: { style: 'solid', color: '#000000', width: 1 },
-    footerGlyph: null,
-    headerText: 'LOVE BOOTH',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "italic 500 16px 'Poppins', sans-serif"
+    headerText: 'RECEIPT',
+    headerFont: "900 26px 'Poppins', sans-serif",
+    headerRule: true,
+    borderWidth: 6,
+    perforation: true,
+    photoBorder: null,
+    captionFont: "800 20px 'Poppins', sans-serif"
   },
   {
-    id: 'blush',
-    label: 'Blush pastel',
-    background: '#f3c9d6',
-    paper: '#fff7ec',
-    ink: '#6b3547',
-    dateColor: '#a97c8e',
-    accent: '#e8a0b4',
-    sprockets: false,
-    border: false,
-    stars: false,
-    cornerRadius: 20,
-    photoRadius: 10,
-    photoBorder: { style: 'none' },
-    footerGlyph: '♥',
-    headerText: 'love booth',
-    headerFont: "700 22px 'Caveat', cursive",
-    captionFont: "600 20px 'Caveat', cursive"
-  },
-  {
-    id: 'midnight',
-    label: 'Midnight gold',
-    background: '#0b1330',
-    paper: '#fbf3e7',
-    ink: '#20163a',
-    dateColor: '#7d7a9c',
-    accent: '#d7a24a',
-    sprockets: true,
-    border: false,
-    stars: true,
-    cornerRadius: 14,
-    photoRadius: 6,
-    photoBorder: { style: 'none' },
-    footerGlyph: '✦',
-    headerText: 'LOVE BOOTH',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "italic 500 16px 'Poppins', sans-serif"
-  },
-  {
-    id: 'ribbon',
-    label: 'Ribbon and bow',
-    background: '#f7dbe3',
-    paper: '#fff7f4',
-    ink: '#7a4456',
-    dateColor: '#a97c8e',
-    accent: '#e2849c',
-    sprockets: false,
-    border: false,
-    stars: false,
-    cornerRadius: 22,
-    photoRadius: 14,
-    photoBorder: { style: 'solid', color: '#e2849c', width: 2 },
-    footerGlyph: null,
+    id: 'noir',
+    label: 'Noir',
+    background: '#000000',
+    ink: '#ffffff',
+    accent: '#ffffff',
     headerText: '',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "600 19px 'Caveat', cursive",
-    drawHeaderDecor: drawBowDecor
-  },
-  {
-    id: 'postmark',
-    label: 'Postmark',
-    background: '#e9dcc0',
-    paper: '#fbf6ea',
-    ink: '#5b4636',
-    dateColor: '#8a7461',
-    accent: '#a4453b',
-    sprockets: false,
-    border: false,
-    stars: false,
-    cornerRadius: 10,
-    photoRadius: 4,
-    photoBorder: { style: 'dashed', color: '#5b4636', width: 2, dash: [1, 7], cap: 'round' },
-    footerGlyph: null,
-    headerText: 'LOVE BOOTH',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "600 19px 'Caveat', cursive",
-    drawHeaderDecor: drawPostmarkDecor
-  },
-  {
-    id: 'gingham',
-    label: 'Gingham picnic',
-    background: '#faf3e3',
-    paper: '#fffdf6',
-    ink: '#4a3527',
-    dateColor: '#8a7461',
-    accent: '#c0453f',
-    sprockets: false,
-    border: false,
-    stars: false,
-    cornerRadius: 16,
-    photoRadius: 8,
-    photoBorder: { style: 'none' },
-    footerGlyph: null,
-    headerText: '',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "600 19px 'Caveat', cursive",
-    drawHeaderDecor: drawGinghamDecor,
-    drawFooterDecor: drawCherryDecor
-  },
-  {
-    id: 'heartstitch',
-    label: 'Heart stitch',
-    background: '#e3d9f0',
-    paper: '#fbf8fe',
-    ink: '#4a3b63',
-    dateColor: '#8f81ab',
-    accent: '#9b7fc7',
-    sprockets: false,
-    border: false,
-    stars: false,
-    cornerRadius: 20,
-    photoRadius: 12,
-    photoBorder: { style: 'dashed', color: '#9b7fc7', width: 1.5, dash: [6, 5], cap: 'butt' },
-    footerGlyph: null,
-    headerText: 'LOVE BOOTH',
-    headerFont: "600 15px Poppins, sans-serif",
-    captionFont: "600 19px 'Caveat', cursive",
-    drawFooterDecor: drawHeartBadgeDecor
-  },
-  {
-    id: 'custom',
-    label: 'Custom (your frame)',
-    isCustomFrame: true,
-    accent: '#5c6a86',
-    frameWidth: 591,
-    frameHeight: 1772,
-    /* Measured directly from assets/frame.png: the 3 sky/hill "photo window"
-       rectangles (this frame has 3 windows, not 4 — the 4th captured shot
-       simply isn't used by this theme). */
-    windows: [
-      { x: 68, y: 78, w: 455, h: 392 },
-      { x: 68, y: 561, w: 455, h: 392 },
-      { x: 68, y: 1044, w: 455, h: 392 }
-    ]
+    headerFont: "800 22px 'Poppins', sans-serif",
+    headerRule: false,
+    borderWidth: 0,
+    perforation: false,
+    photoBorder: { color: '#ffffff', width: 6 },
+    captionFont: "800 22px 'Poppins', sans-serif"
   }
 ];
 let currentThemeId = THEMES[0].id;
@@ -693,6 +610,7 @@ function teardownAndReturnToGate(){
   boothLayout.style.display = 'none';
   gate.style.display = 'block';
   roomInput.value = '';
+  showJoinStep(false);
   codeRow.style.display = 'none';
   waitingLabel.style.display = 'flex';
   waitingLabel.innerHTML = 'waiting for them<br>to join…';
@@ -710,311 +628,125 @@ window.addEventListener('beforeunload', ()=>{
 });
 
 /* ---------------- Strip building ---------------- */
-function sizeStripCanvas(theme){
-  if(theme && theme.isCustomFrame){
-    stripCanvas.width = theme.frameWidth;
-    stripCanvas.height = theme.frameHeight;
-  }else{
-    stripCanvas.width = SIDE + PHOTO_W + SIDE;
-    stripCanvas.height = TOP + 4 * PHOTO_H + 3 * GAP + BOTTOM;
-  }
+function sizeStripCanvas(){
+  stripCanvas.width = SIDE + PHOTO_W + SIDE;
+  stripCanvas.height = TOP + 3 * PHOTO_H + 2 * GAP + BOTTOM;
 }
 sizeStripCanvas();
 
-const frameImage = new Image();
-frameImage.src = 'assets/frame.png';
-frameImage.onload = ()=>{ if(getTheme().isCustomFrame) redrawStrip(); };
-
-function drawCanvasCover(ctx, srcCanvas, x, y, w, h){
-  const sw = srcCanvas.width, sh = srcCanvas.height;
-  const targetRatio = w / h, srcRatio = sw / sh;
-  let sx, sy, ssw, ssh;
-  if(srcRatio > targetRatio){ ssh = sh; ssw = sh * targetRatio; sx = (sw - ssw) / 2; sy = 0; }
-  else{ ssw = sw; ssh = sw / targetRatio; sx = 0; sy = (sh - ssh) / 2; }
-  ctx.drawImage(srcCanvas, sx, sy, ssw, ssh, x, y, w, h);
-}
-
-function drawPlaceholderRect(x, y, w, h, number, accentColor){
-  stripCtx.save();
-  stripCtx.globalAlpha = 0.85;
-  stripCtx.fillStyle = '#ffffff';
-  stripCtx.fillRect(x, y, w, h);
-  stripCtx.restore();
-  stripCtx.save();
-  stripCtx.globalAlpha = 0.3;
-  stripCtx.strokeStyle = accentColor;
-  stripCtx.lineWidth = 1.5;
-  stripCtx.setLineDash([6, 4]);
-  stripCtx.strokeRect(x + 2, y + 2, w - 4, h - 4);
-  stripCtx.restore();
-  stripCtx.save();
-  stripCtx.globalAlpha = 0.4;
-  stripCtx.fillStyle = accentColor;
-  stripCtx.font = "600 34px Poppins, sans-serif";
-  stripCtx.textAlign = 'center';
-  stripCtx.textBaseline = 'middle';
-  stripCtx.fillText(String(number), x + w / 2, y + h / 2);
-  stripCtx.textBaseline = 'alphabetic';
-  stripCtx.restore();
-}
-
-function drawCustomFrameStrip(theme){
-  stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
-  theme.windows.forEach((win, i)=>{
-    if(i < shots.length){
-      drawCanvasCover(stripCtx, shots[i], win.x, win.y, win.w, win.h);
-    }else{
-      drawPlaceholderRect(win.x, win.y, win.w, win.h, i + 1, theme.accent);
-    }
-  });
-  if(frameImage.complete && frameImage.naturalWidth > 0){
-    stripCtx.drawImage(frameImage, 0, 0, stripCanvas.width, stripCanvas.height);
-  }
-}
-
-function roundedRectPath(ctx, x, y, w, h, r){
-  const rr = Math.max(0, Math.min(r, w/2, h/2));
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
-
-function drawSprocketHoles(theme){
-  const holeR = 5, spacing = 26;
-  stripCtx.fillStyle = theme.accent;
-  [SIDE/2, SIDE + PHOTO_W + SIDE/2].forEach(cx=>{
-    for(let y = 18; y < stripCanvas.height - 10; y += spacing){
-      stripCtx.beginPath();
-      stripCtx.arc(cx, y, holeR, 0, Math.PI*2);
-      stripCtx.fill();
-    }
-  });
-}
-
-function getStarField(theme){
-  if(!theme.starField){
-    const stars = [];
-    for(let i=0;i<90;i++){
-      stars.push({
-        x: Math.random() * stripCanvas.width,
-        y: Math.random() * stripCanvas.height,
-        r: Math.random() * 1.1 + 0.3,
-        o: Math.random() * 0.6 + 0.25
-      });
-    }
-    theme.starField = stars;
-  }
-  return theme.starField;
-}
-
-function drawStarField(theme){
-  const stars = getStarField(theme);
-  stripCtx.save();
-  stripCtx.fillStyle = '#ffffff';
-  stars.forEach(s=>{
-    stripCtx.globalAlpha = s.o;
-    stripCtx.beginPath();
-    stripCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    stripCtx.fill();
-  });
-  stripCtx.restore();
-}
-
-/* ---------------- Bespoke theme decorations ----------------
-   Each of these is a small, self-contained canvas-path drawing referenced
-   by exactly one theme's drawHeaderDecor/drawFooterDecor hook — no theme.id
-   branching happens in the shared draw functions above/below. */
-function drawBowDecor(ctx, theme){
-  const cx = (SIDE + PHOTO_W + SIDE) / 2, cy = 20;
+function drawSkyPlaceholder(ctx, x, y, w, h){
   ctx.save();
-  ctx.fillStyle = theme.accent;
   ctx.beginPath();
-  ctx.ellipse(cx - 10, cy, 9, 6, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(cx + 10, cy, 9, 6, 0.3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = theme.ink;
-  ctx.fillRect(cx - 3, cy - 4, 6, 8);
-  ctx.restore();
-}
-
-function drawPostmarkDecor(ctx, theme){
-  const cx = SIDE + PHOTO_W - 22, cy = 22, r = 9;
-  ctx.save();
-  ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 1.3;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.stroke();
-  const lineCount = 7;
-  for(let i = 0; i < lineCount; i++){
-    const angle = (Math.PI * 2 / lineCount) * i;
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  const grad = ctx.createLinearGradient(0, y, 0, y + h);
+  grad.addColorStop(0, '#bfe3fb');
+  grad.addColorStop(1, '#eaf6fd');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, w, h);
+  const cx = x + w * 0.5, cy = y + h * 0.22;
+  ctx.fillStyle = '#ffffff';
+  [[-0.14,0,0.16],[0,-0.05,0.20],[0.15,0.02,0.15],[0.05,0.05,0.13],[-0.05,0.05,0.12]].forEach(([dx,dy,r])=>{
     ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(angle) * (r + 2), cy + Math.sin(angle) * (r + 2));
-    ctx.lineTo(cx + Math.cos(angle) * (r + 6), cy + Math.sin(angle) * (r + 6));
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawGinghamDecor(ctx, theme){
-  const bandY = 6, bandH = 16, squares = 10;
-  const sq = PHOTO_W / squares;
-  ctx.save();
-  for(let i = 0; i < squares; i++){
-    ctx.fillStyle = (i % 2 === 0) ? theme.accent : theme.paper;
-    ctx.fillRect(SIDE + i * sq, bandY, sq, bandH);
-  }
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(SIDE, bandY, PHOTO_W, bandH);
-  ctx.restore();
-}
-
-function drawCherryDecor(ctx, theme, W, H){
-  const baseY = H - 62, leftX = W/2 - 8, rightX = W/2 + 8;
-  ctx.save();
-  ctx.strokeStyle = '#5b7d4a';
-  ctx.lineWidth = 1.5;
+    ctx.arc(cx + dx*w, cy + dy*h, r*w, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.fillStyle = '#c3dd8d';
   ctx.beginPath();
-  ctx.moveTo(leftX, baseY - 10);
-  ctx.quadraticCurveTo(W/2, baseY - 20, rightX, baseY - 10);
-  ctx.stroke();
-  ctx.fillStyle = '#5b7d4a';
-  ctx.beginPath();
-  ctx.moveTo(W/2, baseY - 18);
-  ctx.quadraticCurveTo(W/2 + 8, baseY - 24, W/2 + 2, baseY - 14);
-  ctx.quadraticCurveTo(W/2 - 2, baseY - 16, W/2, baseY - 18);
+  ctx.moveTo(x, y + h*0.78);
+  ctx.quadraticCurveTo(x + w*0.25, y + h*0.68, x + w*0.5, y + h*0.75);
+  ctx.quadraticCurveTo(x + w*0.75, y + h*0.82, x + w, y + h*0.72);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = theme.accent;
-  ctx.beginPath(); ctx.arc(leftX, baseY, 5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(rightX, baseY, 5, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-}
-
-function drawHeartBadgeDecor(ctx, theme, W, H){
-  const cx = W/2, cy = H - 58, s = 8;
-  ctx.save();
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = '#8bab1e';
   ctx.beginPath();
-  ctx.moveTo(cx, cy + s * 0.9);
-  ctx.bezierCurveTo(cx - s*1.6, cy - s*0.6, cx - s*0.6, cy - s*1.6, cx, cy - s*0.4);
-  ctx.bezierCurveTo(cx + s*0.6, cy - s*1.6, cx + s*1.6, cy - s*0.6, cx, cy + s*0.9);
+  ctx.moveTo(x, y + h*0.88);
+  ctx.quadraticCurveTo(x + w*0.3, y + h*0.78, x + w*0.55, y + h*0.85);
+  ctx.quadraticCurveTo(x + w*0.8, y + h*0.92, x + w, y + h*0.82);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
   ctx.closePath();
   ctx.fill();
   ctx.restore();
 }
 
-function drawDoubleRuleBorder(theme){
+function drawPerforation(theme){
   stripCtx.save();
-  stripCtx.strokeStyle = theme.accent;
-  stripCtx.lineWidth = 1;
-  roundedRectPath(stripCtx, 5, 5, stripCanvas.width - 10, stripCanvas.height - 10, Math.max(theme.cornerRadius - 5, 0));
-  stripCtx.stroke();
-  roundedRectPath(stripCtx, 9, 9, stripCanvas.width - 18, stripCanvas.height - 18, Math.max(theme.cornerRadius - 9, 0));
-  stripCtx.stroke();
-  stripCtx.restore();
-}
-
-function drawSlotSeparators(theme){
-  stripCtx.save();
-  stripCtx.strokeStyle = theme.accent;
-  stripCtx.fillStyle = theme.accent;
-  stripCtx.globalAlpha = 0.4;
-  stripCtx.lineWidth = 1;
-  for(let i = 0; i < 3; i++){
-    const y = TOP + i * (PHOTO_H + GAP) + PHOTO_H + GAP / 2;
-    stripCtx.beginPath();
-    stripCtx.moveTo(SIDE + 14, y);
-    stripCtx.lineTo(SIDE + PHOTO_W - 14, y);
-    stripCtx.stroke();
-    stripCtx.beginPath();
-    stripCtx.arc(stripCanvas.width / 2, y, 2, 0, Math.PI * 2);
-    stripCtx.fill();
-  }
-  stripCtx.restore();
-}
-
-function drawPlaceholderSlot(theme, index){
-  const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
-  stripCtx.save();
-  roundedRectPath(stripCtx, x, y, PHOTO_W, PHOTO_H, theme.photoRadius);
-  stripCtx.globalAlpha = 0.15;
-  stripCtx.strokeStyle = theme.accent;
+  stripCtx.strokeStyle = theme.ink;
+  stripCtx.globalAlpha = 0.5;
+  stripCtx.setLineDash([4, 3]);
   stripCtx.lineWidth = 1.5;
-  stripCtx.setLineDash([6, 4]);
-  stripCtx.stroke();
-  stripCtx.restore();
-  stripCtx.save();
-  stripCtx.globalAlpha = 0.35;
-  stripCtx.fillStyle = theme.accent;
-  stripCtx.font = "600 28px Poppins, sans-serif";
-  stripCtx.textAlign = 'center';
-  stripCtx.textBaseline = 'middle';
-  stripCtx.fillText(String(index + 1), x + PHOTO_W / 2, y + PHOTO_H / 2);
-  stripCtx.textBaseline = 'alphabetic';
-  stripCtx.restore();
-}
-
-function drawFooterPlaceholder(theme){
-  const captionY = theme.footerGlyph ? stripCanvas.height - 48 : stripCanvas.height - 40;
-  stripCtx.save();
-  stripCtx.globalAlpha = 0.35;
-  stripCtx.fillStyle = theme.ink;
-  stripCtx.textAlign = 'center';
-  stripCtx.font = theme.captionFont;
-  stripCtx.fillText('your caption here...', stripCanvas.width / 2, captionY);
+  for(let i = 0; i < 2; i++){
+    const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
+    stripCtx.beginPath();
+    stripCtx.moveTo(SIDE + 10, y);
+    stripCtx.lineTo(SIDE + PHOTO_W - 10, y);
+    stripCtx.stroke();
+  }
   stripCtx.restore();
 }
 
 function drawStripBase(){
   const theme = getTheme();
-  stripCtx.clearRect(0,0,stripCanvas.width, stripCanvas.height);
-  stripCtx.save();
-  roundedRectPath(stripCtx, 0, 0, stripCanvas.width, stripCanvas.height, theme.cornerRadius);
-  stripCtx.clip();
+  stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
   stripCtx.fillStyle = theme.background;
-  stripCtx.fillRect(0,0,stripCanvas.width, stripCanvas.height);
-  if(theme.stars) drawStarField(theme);
-  stripCtx.fillStyle = theme.paper;
-  stripCtx.fillRect(SIDE, 0, PHOTO_W, stripCanvas.height);
-  if(theme.sprockets) drawSprocketHoles(theme);
-  stripCtx.fillStyle = theme.ink;
-  stripCtx.font = theme.headerFont;
-  stripCtx.textAlign = 'center';
-  stripCtx.fillText(theme.headerText, stripCanvas.width/2, 28);
-  if(theme.drawHeaderDecor) theme.drawHeaderDecor(stripCtx, theme, stripCanvas.width, stripCanvas.height);
-  if(theme.drawFooterDecor) theme.drawFooterDecor(stripCtx, theme, stripCanvas.width, stripCanvas.height);
-  drawSlotSeparators(theme);
-  drawDoubleRuleBorder(theme);
-  stripCtx.restore();
-  if(theme.border){
-    roundedRectPath(stripCtx, 1, 1, stripCanvas.width - 2, stripCanvas.height - 2, Math.max(theme.cornerRadius - 1, 0));
-    stripCtx.strokeStyle = '#000000';
-    stripCtx.lineWidth = 2;
-    stripCtx.stroke();
+  stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
+  if(theme.headerText){
+    stripCtx.fillStyle = theme.ink;
+    stripCtx.font = theme.headerFont;
+    stripCtx.textAlign = 'center';
+    stripCtx.fillText(theme.headerText, stripCanvas.width / 2, 34);
+    if(theme.headerRule){
+      stripCtx.strokeStyle = theme.ink;
+      stripCtx.lineWidth = 3;
+      stripCtx.beginPath();
+      stripCtx.moveTo(14, 46);
+      stripCtx.lineTo(stripCanvas.width - 14, 46);
+      stripCtx.stroke();
+    }
+  }
+  if(theme.perforation) drawPerforation(theme);
+  if(theme.borderWidth){
+    stripCtx.strokeStyle = theme.ink;
+    stripCtx.lineWidth = theme.borderWidth;
+    stripCtx.strokeRect(theme.borderWidth / 2, theme.borderWidth / 2, stripCanvas.width - theme.borderWidth, stripCanvas.height - theme.borderWidth);
   }
 }
 
-function redrawStrip(){
+function drawSlot(index, imgCanvas){
   const theme = getTheme();
-  sizeStripCanvas(theme);
-  if(theme.isCustomFrame){
-    drawCustomFrameStrip(theme);
-    return;
+  const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
+  if(imgCanvas){
+    stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
+    stripCtx.fillStyle = theme.accent;
+    stripCtx.fillRect(x + PHOTO_W / 2 - 1, y, 2, PHOTO_H);
+  }else{
+    drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
   }
+  if(theme.photoBorder){
+    const pb = theme.photoBorder;
+    stripCtx.strokeStyle = pb.color;
+    stripCtx.lineWidth = pb.width;
+    stripCtx.strokeRect(x + pb.width / 2, y + pb.width / 2, PHOTO_W - pb.width, PHOTO_H - pb.width);
+  }
+}
+
+function drawFooter(){
+  const theme = getTheme();
+  stripCtx.fillStyle = theme.ink;
+  stripCtx.textAlign = 'center';
+  stripCtx.font = theme.captionFont;
+  stripCtx.fillText('luv booth.', stripCanvas.width / 2, stripCanvas.height - 22);
+}
+
+function redrawStrip(){
   drawStripBase();
-  for(let i = 0; i < 4; i++){
-    if(i < shots.length) drawPhotoSlot(i, shots[i]);
-    else drawPlaceholderSlot(theme, i);
+  for(let i = 0; i < 3; i++){
+    drawSlot(i, i < shots.length ? shots[i] : null);
   }
-  if(shots.length === 4) drawFooter();
-  else drawFooterPlaceholder(theme);
+  drawFooter();
 }
 
 function drawVideoCover(ctx, video, x, y, w, h, mirror){
@@ -1047,53 +779,6 @@ function capturePhoto(filterValue){
   return c;
 }
 
-function drawPhotoSlot(index, imgCanvas){
-  const theme = getTheme();
-  const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
-  stripCtx.save();
-  roundedRectPath(stripCtx, x, y, PHOTO_W, PHOTO_H, theme.photoRadius);
-  stripCtx.clip();
-  stripCtx.fillStyle = '#ffffff';
-  stripCtx.fillRect(x, y, PHOTO_W, PHOTO_H);
-  stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
-  stripCtx.fillStyle = theme.accent;
-  stripCtx.fillRect(x + PHOTO_W/2 - 1, y, 2, PHOTO_H);
-  stripCtx.restore();
-  const pb = theme.photoBorder;
-  if(pb && pb.style !== 'none'){
-    stripCtx.save();
-    const inset = pb.width / 2;
-    roundedRectPath(stripCtx, x + inset, y + inset, PHOTO_W - pb.width, PHOTO_H - pb.width, theme.photoRadius);
-    stripCtx.strokeStyle = pb.color;
-    stripCtx.lineWidth = pb.width;
-    if(pb.style === 'dashed'){
-      stripCtx.setLineDash(pb.dash || [4, 4]);
-      stripCtx.lineCap = pb.cap || 'butt';
-    }
-    stripCtx.stroke();
-    stripCtx.restore();
-  }
-}
-
-function drawFooter(){
-  const theme = getTheme();
-  const caption = captionInput.value.trim() || 'made with love, from far away';
-  const dateStr = new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
-  const captionY = theme.footerGlyph ? stripCanvas.height - 48 : stripCanvas.height - 40;
-  const dateY = theme.footerGlyph ? stripCanvas.height - 12 : stripCanvas.height - 20;
-  stripCtx.fillStyle = theme.ink;
-  stripCtx.textAlign = 'center';
-  stripCtx.font = theme.captionFont;
-  stripCtx.fillText(caption, stripCanvas.width/2, captionY);
-  if(theme.footerGlyph){
-    stripCtx.font = "14px 'Poppins', sans-serif";
-    stripCtx.fillStyle = theme.accent;
-    stripCtx.fillText(theme.footerGlyph, stripCanvas.width/2, stripCanvas.height - 28);
-  }
-  stripCtx.font = "400 11px 'Poppins', sans-serif";
-  stripCtx.fillStyle = theme.dateColor;
-  stripCtx.fillText(dateStr, stripCanvas.width/2, dateY);
-}
 
 let audioCtx = null;
 function playShutterSound(){
@@ -1150,7 +835,7 @@ async function startSession(){
     statusLine.textContent = `photo ${i+1} captured 🤍`;
     await wait(500);
   }
-  statusLine.textContent = "all done! adjust the caption above and download";
+  statusLine.textContent = "all done! download your strip below";
   downloadBtn.disabled = false;
   startBtn.disabled = false;
   busy = false;
@@ -1167,14 +852,10 @@ resetBtn.addEventListener('click', ()=>{
   statusLine.textContent = connected ? "you're both in the frame — say cheese!" : "waiting to connect…";
 });
 downloadBtn.addEventListener('click', ()=>{
-  if(!getTheme().isCustomFrame) drawFooter();
   const link = document.createElement('a');
-  link.download = 'love-booth-live-strip.png';
+  link.download = 'luv-booth-live-strip.png';
   link.href = stripCanvas.toDataURL('image/png');
   link.click();
-});
-captionInput.addEventListener('input', ()=>{
-  if(shots.length === 4) redrawStrip();
 });
 
 redrawStrip();

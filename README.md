@@ -1,4 +1,4 @@
-# love booth
+# luv booth
 
 A realtime online photo booth for two people, no matter the distance. One
 person starts a room and shares a short code; the other joins with it. Once
@@ -56,9 +56,9 @@ incognito window):
 3. Both video feeds should appear side by side within a few seconds. If it
    sits on "waiting for them to join…", double-check the code and that both
    devices allowed camera permissions.
-4. Click **start strip** — a 3-2-1 countdown runs before each of 4 shots.
-   Both people appear in every frame.
-5. Add a caption, then **download strip** to save the finished PNG.
+4. Click **start strip** — a 3-2-1 countdown runs before each shot. Both
+   people appear in every frame.
+5. Click **download strip** to save the finished PNG.
 
 Notes:
 - Camera permission prompts must be accepted on both devices — if either is
