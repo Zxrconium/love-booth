@@ -164,6 +164,26 @@
 
   .status-line{text-align:center; font-family:'Caveat',cursive; font-size:1.2rem; color:var(--blush); margin-top:10px; min-height:24px;}
   .controls{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center;}
+  .countdown-choice{margin-top:14px; text-align:center; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
+  .choice-label{font-family:'Caveat',cursive; font-size:1.1rem; color:var(--blush); margin:0 0 10px;}
+  .choice-options{display:flex; gap:10px; justify-content:center;}
+  .choice-card{
+    position:relative; flex:1; max-width:110px; display:flex; flex-direction:column; align-items:center;
+    gap:2px; padding:16px 8px; border-radius:16px; cursor:pointer;
+    background:rgba(251,243,231,0.04); border:1.5px solid rgba(251,243,231,0.2); color:var(--paper);
+    transition:border-color .2s ease, background-color .2s ease, transform .15s ease;
+  }
+  .choice-card:hover{ border-color:rgba(215,162,74,0.6); background:rgba(251,243,231,0.07); transform:translateY(-2px); }
+  .choice-card:active{ transform:scale(0.96) translateY(0); }
+  .choice-card.is-default{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(215,162,74,0.25); }
+  .choice-num{font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; line-height:1;}
+  .choice-unit{font-family:'Poppins',sans-serif; font-size:0.7rem; color:rgba(251,243,231,0.55);}
+  .choice-tag{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--gold); color:var(--film-black); font-size:0.6rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:2px 8px; border-radius:999px;}
+  @media (max-width:380px){
+    .choice-options{ gap:8px; }
+    .choice-card{ padding:12px 6px; }
+    .choice-num{ font-size:1.5rem; }
+  }
   .hint{text-align:center; font-size:0.72rem; color:rgba(251,243,231,0.45); margin:14px 4px 0; line-height:1.5;}
   .leave-row{text-align:center; margin-top:10px;}
   .leave-link{background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.7rem; text-decoration:underline; padding:4px; width:auto;}
@@ -249,7 +269,7 @@
         <div id="flash" class="flash"></div>
       </div>
       <div class="status-line" id="statusLine" aria-live="polite">say cheese whenever you're ready</div>
-      <div class="controls">
+      <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled>📸 start strip</button>
         <select id="filterSelect">
           <option value="none">no filter</option>
@@ -259,6 +279,21 @@
         </select>
         <button class="btn-ghost" id="resetBtn">reset</button>
         <button class="btn-reconnect" id="reconnectBtn" type="button">reconnect</button>
+      </div>
+      <div class="countdown-choice" id="countdownChoice" style="display:none;">
+        <p class="choice-label">how long should the countdown be?</p>
+        <div class="choice-options">
+          <button class="choice-card is-default" data-seconds="3" type="button">
+            <span class="choice-num">3</span><span class="choice-unit">sec</span>
+            <span class="choice-tag">default</span>
+          </button>
+          <button class="choice-card" data-seconds="5" type="button">
+            <span class="choice-num">5</span><span class="choice-unit">sec</span>
+          </button>
+          <button class="choice-card" data-seconds="10" type="button">
+            <span class="choice-num">10</span><span class="choice-unit">sec</span>
+          </button>
+        </div>
       </div>
       <p class="hint">Photos capture both of you at once. Leaving or refreshing ends the room — you'd start a fresh one.</p>
       <div class="leave-row"><button class="leave-link" id="leaveBtn" type="button">leave room</button></div>
@@ -364,6 +399,8 @@ const startBtn = document.getElementById('startBtn');
 const resetBtn = document.getElementById('resetBtn');
 const reconnectBtn = document.getElementById('reconnectBtn');
 const filterSelect = document.getElementById('filterSelect');
+const mainControls = document.getElementById('mainControls');
+const countdownChoice = document.getElementById('countdownChoice');
 const downloadBtn = document.getElementById('downloadBtn');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
@@ -619,6 +656,8 @@ function teardownAndReturnToGate(){
   statusLine.textContent = "say cheese whenever you're ready";
   showReconnect(false);
   statusDot.classList.remove('live', 'waiting');
+  countdownChoice.style.display = 'none';
+  mainControls.style.display = 'flex';
   redrawStrip();
 }
 
@@ -817,7 +856,8 @@ async function runCountdown(seconds){
   }
 }
 
-async function startSession(){
+async function startSession(countdownSeconds){
+  const seconds = countdownSeconds || 3;
   if(busy || !connected) return;
   busy = true;
   startBtn.disabled = true;
@@ -825,9 +865,9 @@ async function startSession(){
   shots = [];
   redrawStrip();
 
-  for(let i=0;i<4;i++){
-    statusLine.textContent = `photo ${i+1} of 4 — get ready!`;
-    await runCountdown(3);
+  for(let i=0;i<3;i++){
+    statusLine.textContent = `photo ${i+1} of 3 — get ready!`;
+    await runCountdown(seconds);
     flash();
     const shot = capturePhoto(filterSelect.value);
     shots.push(shot);
@@ -844,7 +884,21 @@ async function startSession(){
   stripCanvas.classList.add('celebrate');
 }
 
-startBtn.addEventListener('click', startSession);
+function showCountdownChoice(){
+  if(busy || !connected) return;
+  mainControls.style.display = 'none';
+  countdownChoice.style.display = 'block';
+}
+
+document.querySelectorAll('.choice-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    countdownChoice.style.display = 'none';
+    mainControls.style.display = 'flex';
+    startSession(Number(card.dataset.seconds));
+  });
+});
+
+startBtn.addEventListener('click', showCountdownChoice);
 resetBtn.addEventListener('click', ()=>{
   shots = [];
   redrawStrip();
