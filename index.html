@@ -87,6 +87,9 @@
   .caption-input{width:100%; max-width:230px; text-align:center; font-family:'Caveat',cursive; font-size:1.15rem; padding:8px 10px; border-radius:10px; border:1.5px solid rgba(215,162,74,0.5); background:rgba(251,243,231,0.06); color:var(--paper);}
   .caption-input::placeholder{color:rgba(251,243,231,0.4);}
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
+  .theme-picker{display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; max-width:230px;}
+  .theme-label{font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.5);}
+  .theme-select{width:100%;}
 
   @media (max-width: 480px){
     .controls{ flex-direction:column; }
@@ -140,6 +143,10 @@
 
     <div class="strip-wrap">
       <input id="captionInput" class="caption-input" placeholder="add a little caption..." maxlength="40">
+      <div class="theme-picker">
+        <label for="themeSelect" class="theme-label">strip style</label>
+        <select id="themeSelect" class="theme-select"></select>
+      </div>
       <canvas id="stripCanvas" width="330" height="1000"></canvas>
       <button class="btn-gold" id="downloadBtn" disabled>⬇ download strip</button>
     </div>
@@ -210,10 +217,93 @@ const resetBtn = document.getElementById('resetBtn');
 const filterSelect = document.getElementById('filterSelect');
 const downloadBtn = document.getElementById('downloadBtn');
 const captionInput = document.getElementById('captionInput');
+const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
 
 const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 46, BOTTOM = 70;
+
+/* ---------------- Strip themes ----------------
+   Each theme is pure data: colors, fonts, and which optional chrome
+   (sprocket holes / hairline border / star field) to draw. Draw functions
+   below read from the active theme rather than branching on its id, so
+   adding a 5th style later just means adding another object here. */
+const THEMES = [
+  {
+    id: 'classic',
+    label: 'Classic film',
+    background: '#15101a',
+    paper: '#fbf3e7',
+    ink: '#2b1b2e',
+    dateColor: '#8a7a63',
+    accent: '#d7a24a',
+    sprockets: true,
+    border: false,
+    stars: false,
+    headerText: 'LOVE BOOTH',
+    headerFont: "600 15px Poppins, sans-serif",
+    captionFont: "italic 500 16px 'Poppins', sans-serif"
+  },
+  {
+    id: 'mono',
+    label: 'Clean mono',
+    background: '#ffffff',
+    paper: '#ffffff',
+    ink: '#000000',
+    dateColor: '#555555',
+    accent: '#000000',
+    sprockets: false,
+    border: true,
+    stars: false,
+    headerText: 'LOVE BOOTH',
+    headerFont: "600 15px Poppins, sans-serif",
+    captionFont: "italic 500 16px 'Poppins', sans-serif"
+  },
+  {
+    id: 'blush',
+    label: 'Blush pastel',
+    background: '#f3c9d6',
+    paper: '#fff7ec',
+    ink: '#6b3547',
+    dateColor: '#a97c8e',
+    accent: '#e8a0b4',
+    sprockets: false,
+    border: false,
+    stars: false,
+    headerText: 'love booth',
+    headerFont: "700 22px 'Caveat', cursive",
+    captionFont: "600 20px 'Caveat', cursive"
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight gold',
+    background: '#0b1330',
+    paper: '#fbf3e7',
+    ink: '#20163a',
+    dateColor: '#7d7a9c',
+    accent: '#d7a24a',
+    sprockets: true,
+    border: false,
+    stars: true,
+    headerText: 'LOVE BOOTH',
+    headerFont: "600 15px Poppins, sans-serif",
+    captionFont: "italic 500 16px 'Poppins', sans-serif"
+  }
+];
+let currentThemeId = THEMES[0].id;
+function getTheme(){ return THEMES.find(t=>t.id===currentThemeId) || THEMES[0]; }
+
+THEMES.forEach(t=>{
+  const opt = document.createElement('option');
+  opt.value = t.id;
+  opt.textContent = t.label;
+  themeSelect.appendChild(opt);
+});
+themeSelect.value = currentThemeId;
+themeSelect.addEventListener('change', ()=>{
+  currentThemeId = themeSelect.value;
+  redrawStrip();
+});
 let shots = [];
 let busy = false;
 let connected = false;
@@ -362,29 +452,71 @@ function sizeStripCanvas(){
 }
 sizeStripCanvas();
 
-function drawSprocketHoles(){
+function drawSprocketHoles(theme){
   const holeR = 5, spacing = 26;
+  stripCtx.fillStyle = theme.accent;
   [SIDE/2, SIDE + PHOTO_W + SIDE/2].forEach(cx=>{
     for(let y = 18; y < stripCanvas.height - 10; y += spacing){
       stripCtx.beginPath();
       stripCtx.arc(cx, y, holeR, 0, Math.PI*2);
-      stripCtx.fillStyle = '#1c1420';
       stripCtx.fill();
     }
   });
 }
 
+function getStarField(theme){
+  if(!theme.starField){
+    const stars = [];
+    for(let i=0;i<90;i++){
+      stars.push({
+        x: Math.random() * stripCanvas.width,
+        y: Math.random() * stripCanvas.height,
+        r: Math.random() * 1.1 + 0.3,
+        o: Math.random() * 0.6 + 0.25
+      });
+    }
+    theme.starField = stars;
+  }
+  return theme.starField;
+}
+
+function drawStarField(theme){
+  const stars = getStarField(theme);
+  stripCtx.save();
+  stripCtx.fillStyle = '#ffffff';
+  stars.forEach(s=>{
+    stripCtx.globalAlpha = s.o;
+    stripCtx.beginPath();
+    stripCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    stripCtx.fill();
+  });
+  stripCtx.restore();
+}
+
 function drawStripBase(){
+  const theme = getTheme();
   stripCtx.clearRect(0,0,stripCanvas.width, stripCanvas.height);
-  stripCtx.fillStyle = '#15101a';
+  stripCtx.fillStyle = theme.background;
   stripCtx.fillRect(0,0,stripCanvas.width, stripCanvas.height);
-  stripCtx.fillStyle = '#fbf3e7';
+  if(theme.stars) drawStarField(theme);
+  stripCtx.fillStyle = theme.paper;
   stripCtx.fillRect(SIDE, 0, PHOTO_W, stripCanvas.height);
-  drawSprocketHoles();
-  stripCtx.fillStyle = '#2b1b2e';
-  stripCtx.font = "600 15px Poppins, sans-serif";
+  if(theme.sprockets) drawSprocketHoles(theme);
+  if(theme.border){
+    stripCtx.strokeStyle = '#000000';
+    stripCtx.lineWidth = 2;
+    stripCtx.strokeRect(1, 1, stripCanvas.width - 2, stripCanvas.height - 2);
+  }
+  stripCtx.fillStyle = theme.ink;
+  stripCtx.font = theme.headerFont;
   stripCtx.textAlign = 'center';
-  stripCtx.fillText('LOVE BOOTH', stripCanvas.width/2, 28);
+  stripCtx.fillText(theme.headerText, stripCanvas.width/2, 28);
+}
+
+function redrawStrip(){
+  drawStripBase();
+  shots.forEach((s,i)=>drawPhotoSlot(i,s));
+  if(shots.length === 4) drawFooter();
 }
 
 function drawVideoCover(ctx, video, x, y, w, h, mirror){
@@ -414,27 +546,34 @@ function capturePhoto(filterValue){
   drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
   drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
   ctx.filter = 'none';
-  ctx.fillStyle = '#d7a24a';
-  ctx.fillRect(halfW - 1, 0, 2, PHOTO_H);
   return c;
 }
 
 function drawPhotoSlot(index, imgCanvas){
+  const theme = getTheme();
   const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
   stripCtx.fillStyle = '#ffffff';
   stripCtx.fillRect(x, y, PHOTO_W, PHOTO_H);
   stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
+  stripCtx.fillStyle = theme.accent;
+  stripCtx.fillRect(x + PHOTO_W/2 - 1, y, 2, PHOTO_H);
+  if(theme.border){
+    stripCtx.strokeStyle = '#000000';
+    stripCtx.lineWidth = 1;
+    stripCtx.strokeRect(x + 0.5, y + 0.5, PHOTO_W - 1, PHOTO_H - 1);
+  }
 }
 
 function drawFooter(){
+  const theme = getTheme();
   const caption = captionInput.value.trim() || 'made with love, from far away';
   const dateStr = new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
-  stripCtx.fillStyle = '#2b1b2e';
+  stripCtx.fillStyle = theme.ink;
   stripCtx.textAlign = 'center';
-  stripCtx.font = "italic 500 16px 'Poppins', sans-serif";
+  stripCtx.font = theme.captionFont;
   stripCtx.fillText(caption, stripCanvas.width/2, stripCanvas.height - 40);
   stripCtx.font = "400 11px 'Poppins', sans-serif";
-  stripCtx.fillStyle = '#8a7a63';
+  stripCtx.fillStyle = theme.dateColor;
   stripCtx.fillText(dateStr, stripCanvas.width/2, stripCanvas.height - 20);
 }
 
@@ -495,11 +634,7 @@ downloadBtn.addEventListener('click', ()=>{
   link.click();
 });
 captionInput.addEventListener('input', ()=>{
-  if(shots.length === 4){
-    drawStripBase();
-    shots.forEach((s,i)=>drawPhotoSlot(i,s));
-    drawFooter();
-  }
+  if(shots.length === 4) redrawStrip();
 });
 
 drawStripBase();
