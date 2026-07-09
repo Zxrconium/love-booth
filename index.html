@@ -411,7 +411,10 @@ function applyLiveFilter(){
   localVideo.style.filter = f;
   remoteVideo.style.filter = f;
 }
-filterSelect.addEventListener('change', applyLiveFilter);
+filterSelect.addEventListener('change', ()=>{
+  applyLiveFilter();
+  broadcastData({ type:'filter', value: filterSelect.value });
+});
 applyLiveFilter();
 
 const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 56, BOTTOM = 56;
@@ -480,6 +483,7 @@ themeSelect.value = currentThemeId;
 themeSelect.addEventListener('change', ()=>{
   currentThemeId = themeSelect.value;
   redrawStrip();
+  broadcastData({ type:'theme', value: currentThemeId });
 });
 let shots = [];
 let busy = false;
@@ -487,6 +491,7 @@ let connected = false;
 let localStream = null;
 let peer = null;
 let activeCall = null;
+let dataConn = null;
 
 function setStatus(text, live, waiting){
   statusText.textContent = text;
@@ -533,6 +538,46 @@ async function getCamera(){
   }
 }
 
+function broadcastData(msg){
+  if(dataConn && dataConn.open){ try{ dataConn.send(msg); }catch(e){} }
+}
+
+function applyRemoteFilter(value){
+  filterSelect.value = value;
+  applyLiveFilter();
+}
+
+function applyRemoteTheme(id){
+  if(!THEMES.some(t=>t.id === id)) return;
+  currentThemeId = id;
+  themeSelect.value = id;
+  redrawStrip();
+}
+
+function handleRemoteMessage(msg){
+  if(!msg || typeof msg !== 'object') return;
+  if(msg.type === 'filter'){
+    applyRemoteFilter(msg.value);
+  }else if(msg.type === 'theme'){
+    applyRemoteTheme(msg.value);
+  }else if(msg.type === 'sessionStart'){
+    beginSyncedSession(msg.seconds, true);
+  }
+}
+
+function wireDataChannel(conn){
+  dataConn = conn;
+  conn.on('open', ()=>{
+    if(isHost){
+      broadcastData({ type:'filter', value: filterSelect.value });
+      broadcastData({ type:'theme', value: currentThemeId });
+    }
+  });
+  conn.on('data', handleRemoteMessage);
+  conn.on('close', ()=>{ if(dataConn === conn) dataConn = null; });
+  conn.on('error', ()=>{ if(dataConn === conn) dataConn = null; });
+}
+
 function wireCall(call){
   activeCall = call;
   call.on('stream', (remoteStream)=>{
@@ -574,6 +619,9 @@ async function startAsHost(code){
     call.answer(localStream);
     wireCall(call);
   });
+  peer.on('connection', (conn)=>{
+    wireDataChannel(conn);
+  });
   peer.on('disconnected', ()=>{
     setStatus('reconnecting…', false, true);
     if(peer && !peer.destroyed) peer.reconnect();
@@ -604,6 +652,7 @@ async function startAsGuest(code){
       return;
     }
     wireCall(call);
+    wireDataChannel(peer.connect('booth-' + code + '-host'));
   });
   peer.on('disconnected', ()=>{
     setStatus('reconnecting…', false, true);
@@ -856,8 +905,7 @@ async function runCountdown(seconds){
   }
 }
 
-async function startSession(countdownSeconds){
-  const seconds = countdownSeconds || 3;
+async function runCaptureSequence(seconds){
   if(busy || !connected) return;
   busy = true;
   startBtn.disabled = true;
@@ -884,6 +932,11 @@ async function startSession(countdownSeconds){
   stripCanvas.classList.add('celebrate');
 }
 
+function beginSyncedSession(seconds, isRemoteTriggered){
+  statusLine.textContent = isRemoteTriggered ? 'they started the countdown!' : 'starting the countdown…';
+  runCaptureSequence(seconds || 3);
+}
+
 function showCountdownChoice(){
   if(busy || !connected) return;
   mainControls.style.display = 'none';
@@ -894,7 +947,9 @@ document.querySelectorAll('.choice-card').forEach(card=>{
   card.addEventListener('click', ()=>{
     countdownChoice.style.display = 'none';
     mainControls.style.display = 'flex';
-    startSession(Number(card.dataset.seconds));
+    const seconds = Number(card.dataset.seconds);
+    broadcastData({ type:'sessionStart', seconds });
+    beginSyncedSession(seconds, false);
   });
 });
 
