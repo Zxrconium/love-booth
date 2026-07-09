@@ -487,6 +487,22 @@ const THEMES = [
     headerFont: "600 15px Poppins, sans-serif",
     captionFont: "600 19px 'Caveat', cursive",
     drawFooterDecor: drawHeartBadgeDecor
+  },
+  {
+    id: 'custom',
+    label: 'Custom (your frame)',
+    isCustomFrame: true,
+    accent: '#5c6a86',
+    frameWidth: 591,
+    frameHeight: 1772,
+    /* Measured directly from assets/frame.png: the 3 sky/hill "photo window"
+       rectangles (this frame has 3 windows, not 4 — the 4th captured shot
+       simply isn't used by this theme). */
+    windows: [
+      { x: 68, y: 78, w: 455, h: 392 },
+      { x: 68, y: 561, w: 455, h: 392 },
+      { x: 68, y: 1044, w: 455, h: 392 }
+    ]
   }
 ];
 let currentThemeId = THEMES[0].id;
@@ -686,11 +702,67 @@ window.addEventListener('beforeunload', ()=>{
 });
 
 /* ---------------- Strip building ---------------- */
-function sizeStripCanvas(){
-  stripCanvas.width = SIDE + PHOTO_W + SIDE;
-  stripCanvas.height = TOP + 4 * PHOTO_H + 3 * GAP + BOTTOM;
+function sizeStripCanvas(theme){
+  if(theme && theme.isCustomFrame){
+    stripCanvas.width = theme.frameWidth;
+    stripCanvas.height = theme.frameHeight;
+  }else{
+    stripCanvas.width = SIDE + PHOTO_W + SIDE;
+    stripCanvas.height = TOP + 4 * PHOTO_H + 3 * GAP + BOTTOM;
+  }
 }
 sizeStripCanvas();
+
+const frameImage = new Image();
+frameImage.src = 'assets/frame.png';
+frameImage.onload = ()=>{ if(getTheme().isCustomFrame) redrawStrip(); };
+
+function drawCanvasCover(ctx, srcCanvas, x, y, w, h){
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const targetRatio = w / h, srcRatio = sw / sh;
+  let sx, sy, ssw, ssh;
+  if(srcRatio > targetRatio){ ssh = sh; ssw = sh * targetRatio; sx = (sw - ssw) / 2; sy = 0; }
+  else{ ssw = sw; ssh = sw / targetRatio; sx = 0; sy = (sh - ssh) / 2; }
+  ctx.drawImage(srcCanvas, sx, sy, ssw, ssh, x, y, w, h);
+}
+
+function drawPlaceholderRect(x, y, w, h, number, accentColor){
+  stripCtx.save();
+  stripCtx.globalAlpha = 0.85;
+  stripCtx.fillStyle = '#ffffff';
+  stripCtx.fillRect(x, y, w, h);
+  stripCtx.restore();
+  stripCtx.save();
+  stripCtx.globalAlpha = 0.3;
+  stripCtx.strokeStyle = accentColor;
+  stripCtx.lineWidth = 1.5;
+  stripCtx.setLineDash([6, 4]);
+  stripCtx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+  stripCtx.restore();
+  stripCtx.save();
+  stripCtx.globalAlpha = 0.4;
+  stripCtx.fillStyle = accentColor;
+  stripCtx.font = "600 34px Poppins, sans-serif";
+  stripCtx.textAlign = 'center';
+  stripCtx.textBaseline = 'middle';
+  stripCtx.fillText(String(number), x + w / 2, y + h / 2);
+  stripCtx.textBaseline = 'alphabetic';
+  stripCtx.restore();
+}
+
+function drawCustomFrameStrip(theme){
+  stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
+  theme.windows.forEach((win, i)=>{
+    if(i < shots.length){
+      drawCanvasCover(stripCtx, shots[i], win.x, win.y, win.w, win.h);
+    }else{
+      drawPlaceholderRect(win.x, win.y, win.w, win.h, i + 1, theme.accent);
+    }
+  });
+  if(frameImage.complete && frameImage.naturalWidth > 0){
+    stripCtx.drawImage(frameImage, 0, 0, stripCanvas.width, stripCanvas.height);
+  }
+}
 
 function roundedRectPath(ctx, x, y, w, h, r){
   const rr = Math.max(0, Math.min(r, w/2, h/2));
@@ -923,6 +995,11 @@ function drawStripBase(){
 
 function redrawStrip(){
   const theme = getTheme();
+  sizeStripCanvas(theme);
+  if(theme.isCustomFrame){
+    drawCustomFrameStrip(theme);
+    return;
+  }
   drawStripBase();
   for(let i = 0; i < 4; i++){
     if(i < shots.length) drawPhotoSlot(i, shots[i]);
@@ -1082,7 +1159,7 @@ resetBtn.addEventListener('click', ()=>{
   statusLine.textContent = connected ? "you're both in the frame — say cheese!" : "waiting to connect…";
 });
 downloadBtn.addEventListener('click', ()=>{
-  drawFooter();
+  if(!getTheme().isCustomFrame) drawFooter();
   const link = document.createElement('a');
   link.download = 'love-booth-live-strip.png';
   link.href = stripCanvas.toDataURL('image/png');
