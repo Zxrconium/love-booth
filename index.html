@@ -677,7 +677,7 @@ function teardownAndReturnToGate(){
   statusLine.textContent = "say cheese whenever you're ready";
   showReconnect(false);
   statusDot.classList.remove('live', 'waiting');
-  drawStripBase();
+  redrawStrip();
 }
 
 leaveBtn.addEventListener('click', teardownAndReturnToGate);
@@ -830,6 +830,68 @@ function drawHeartBadgeDecor(ctx, theme, W, H){
   ctx.restore();
 }
 
+function drawDoubleRuleBorder(theme){
+  stripCtx.save();
+  stripCtx.strokeStyle = theme.accent;
+  stripCtx.lineWidth = 1;
+  roundedRectPath(stripCtx, 5, 5, stripCanvas.width - 10, stripCanvas.height - 10, Math.max(theme.cornerRadius - 5, 0));
+  stripCtx.stroke();
+  roundedRectPath(stripCtx, 9, 9, stripCanvas.width - 18, stripCanvas.height - 18, Math.max(theme.cornerRadius - 9, 0));
+  stripCtx.stroke();
+  stripCtx.restore();
+}
+
+function drawSlotSeparators(theme){
+  stripCtx.save();
+  stripCtx.strokeStyle = theme.accent;
+  stripCtx.fillStyle = theme.accent;
+  stripCtx.globalAlpha = 0.4;
+  stripCtx.lineWidth = 1;
+  for(let i = 0; i < 3; i++){
+    const y = TOP + i * (PHOTO_H + GAP) + PHOTO_H + GAP / 2;
+    stripCtx.beginPath();
+    stripCtx.moveTo(SIDE + 14, y);
+    stripCtx.lineTo(SIDE + PHOTO_W - 14, y);
+    stripCtx.stroke();
+    stripCtx.beginPath();
+    stripCtx.arc(stripCanvas.width / 2, y, 2, 0, Math.PI * 2);
+    stripCtx.fill();
+  }
+  stripCtx.restore();
+}
+
+function drawPlaceholderSlot(theme, index){
+  const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
+  stripCtx.save();
+  roundedRectPath(stripCtx, x, y, PHOTO_W, PHOTO_H, theme.photoRadius);
+  stripCtx.globalAlpha = 0.15;
+  stripCtx.strokeStyle = theme.accent;
+  stripCtx.lineWidth = 1.5;
+  stripCtx.setLineDash([6, 4]);
+  stripCtx.stroke();
+  stripCtx.restore();
+  stripCtx.save();
+  stripCtx.globalAlpha = 0.35;
+  stripCtx.fillStyle = theme.accent;
+  stripCtx.font = "600 28px Poppins, sans-serif";
+  stripCtx.textAlign = 'center';
+  stripCtx.textBaseline = 'middle';
+  stripCtx.fillText(String(index + 1), x + PHOTO_W / 2, y + PHOTO_H / 2);
+  stripCtx.textBaseline = 'alphabetic';
+  stripCtx.restore();
+}
+
+function drawFooterPlaceholder(theme){
+  const captionY = theme.footerGlyph ? stripCanvas.height - 48 : stripCanvas.height - 40;
+  stripCtx.save();
+  stripCtx.globalAlpha = 0.35;
+  stripCtx.fillStyle = theme.ink;
+  stripCtx.textAlign = 'center';
+  stripCtx.font = theme.captionFont;
+  stripCtx.fillText('your caption here...', stripCanvas.width / 2, captionY);
+  stripCtx.restore();
+}
+
 function drawStripBase(){
   const theme = getTheme();
   stripCtx.clearRect(0,0,stripCanvas.width, stripCanvas.height);
@@ -848,6 +910,8 @@ function drawStripBase(){
   stripCtx.fillText(theme.headerText, stripCanvas.width/2, 28);
   if(theme.drawHeaderDecor) theme.drawHeaderDecor(stripCtx, theme, stripCanvas.width, stripCanvas.height);
   if(theme.drawFooterDecor) theme.drawFooterDecor(stripCtx, theme, stripCanvas.width, stripCanvas.height);
+  drawSlotSeparators(theme);
+  drawDoubleRuleBorder(theme);
   stripCtx.restore();
   if(theme.border){
     roundedRectPath(stripCtx, 1, 1, stripCanvas.width - 2, stripCanvas.height - 2, Math.max(theme.cornerRadius - 1, 0));
@@ -858,9 +922,14 @@ function drawStripBase(){
 }
 
 function redrawStrip(){
+  const theme = getTheme();
   drawStripBase();
-  shots.forEach((s,i)=>drawPhotoSlot(i,s));
+  for(let i = 0; i < 4; i++){
+    if(i < shots.length) drawPhotoSlot(i, shots[i]);
+    else drawPlaceholderSlot(theme, i);
+  }
   if(shots.length === 4) drawFooter();
+  else drawFooterPlaceholder(theme);
 }
 
 function drawVideoCover(ctx, video, x, y, w, h, mirror){
@@ -984,7 +1053,7 @@ async function startSession(){
   startBtn.disabled = true;
   downloadBtn.disabled = true;
   shots = [];
-  drawStripBase();
+  redrawStrip();
 
   for(let i=0;i<4;i++){
     statusLine.textContent = `photo ${i+1} of 4 — get ready!`;
@@ -992,11 +1061,10 @@ async function startSession(){
     flash();
     const shot = capturePhoto(filterSelect.value);
     shots.push(shot);
-    drawPhotoSlot(i, shot);
+    redrawStrip();
     statusLine.textContent = `photo ${i+1} captured 🤍`;
     await wait(500);
   }
-  drawFooter();
   statusLine.textContent = "all done! adjust the caption above and download";
   downloadBtn.disabled = false;
   startBtn.disabled = false;
@@ -1009,7 +1077,7 @@ async function startSession(){
 startBtn.addEventListener('click', startSession);
 resetBtn.addEventListener('click', ()=>{
   shots = [];
-  drawStripBase();
+  redrawStrip();
   downloadBtn.disabled = true;
   statusLine.textContent = connected ? "you're both in the frame — say cheese!" : "waiting to connect…";
 });
@@ -1024,7 +1092,7 @@ captionInput.addEventListener('input', ()=>{
   if(shots.length === 4) redrawStrip();
 });
 
-drawStripBase();
+redrawStrip();
 </script>
 </body>
 </html>
