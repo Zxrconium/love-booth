@@ -618,16 +618,78 @@ let stickers = [];
 let selectedStickerId = null;
 let stickersHidden = false;
 let stickerIdSeq = 1;
+let stickersActive = false;
 const STICKER_HANDLE_R = 13;
+
+function myColor(){ return isHost ? '#d7a24a' : '#e893a8'; }
+function remoteColor(){ return isHost ? '#e893a8' : '#d7a24a'; }
 
 function findSticker(id){ return stickers.find(s => s.id === id); }
 
 function addSticker(type){
-  const id = stickerIdSeq++;
-  stickers.push({ id, type, x: stripCanvas.width / 2, y: stripCanvas.height / 2, size: 64 });
+  const id = (isHost ? 'H' : 'G') + (stickerIdSeq++);
+  const sticker = { id, type, x: stripCanvas.width / 2, y: stripCanvas.height / 2, size: 64, remoteLocked: false };
+  stickers.push(sticker);
   selectedStickerId = id;
   stickersHidden = false;
+  broadcastData({ type:'stickerAdd', sticker: { id: sticker.id, type: sticker.type, x: sticker.x, y: sticker.y, size: sticker.size } });
   redrawStrip();
+}
+
+function roundRectPath(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+let remoteCursor = null;
+let remoteCursorHideTimer = null;
+const CURSOR_HIDE_MS = 2500;
+
+function applyRemoteCursor(x, y){
+  remoteCursor = { x, y };
+  clearTimeout(remoteCursorHideTimer);
+  remoteCursorHideTimer = setTimeout(()=>{ remoteCursor = null; redrawStrip(); }, CURSOR_HIDE_MS);
+  redrawStrip();
+}
+
+function hideRemoteCursor(){
+  remoteCursor = null;
+  clearTimeout(remoteCursorHideTimer);
+  redrawStrip();
+}
+
+function drawRemoteCursor(){
+  if(!remoteCursor) return;
+  const x = remoteCursor.x * stripCanvas.width;
+  const y = remoteCursor.y * stripCanvas.height;
+  const color = remoteColor();
+  stripCtx.save();
+  stripCtx.beginPath();
+  stripCtx.arc(x, y, 6, 0, Math.PI*2);
+  stripCtx.fillStyle = color;
+  stripCtx.fill();
+  stripCtx.strokeStyle = '#ffffff';
+  stripCtx.lineWidth = 1.5;
+  stripCtx.stroke();
+
+  const label = 'them';
+  stripCtx.font = "700 11px 'Poppins', sans-serif";
+  const textW = stripCtx.measureText(label).width;
+  const padX = 6, pillH = 16;
+  const pillX = x + 10, pillY = y - pillH/2 - 6;
+  roundRectPath(stripCtx, pillX, pillY, textW + padX*2, pillH, 8);
+  stripCtx.fillStyle = color;
+  stripCtx.fill();
+  stripCtx.fillStyle = '#ffffff';
+  stripCtx.textAlign = 'left';
+  stripCtx.textBaseline = 'middle';
+  stripCtx.fillText(label, pillX + padX, pillY + pillH/2 + 0.5);
+  stripCtx.restore();
 }
 
 function drawStickerLayer(){
@@ -638,6 +700,16 @@ function drawStickerLayer(){
     stripCtx.save();
     def.draw(stripCtx, st.x, st.y, st.size, def.fill, def.stroke);
     stripCtx.restore();
+
+    if(st.remoteLocked){
+      const half = st.size * 0.62;
+      stripCtx.save();
+      stripCtx.strokeStyle = remoteColor();
+      stripCtx.lineWidth = 2.2;
+      stripCtx.strokeRect(st.x - half, st.y - half, half*2, half*2);
+      stripCtx.restore();
+      return;
+    }
     if(st.id !== selectedStickerId) return;
 
     const half = st.size * 0.62;
@@ -675,6 +747,7 @@ function drawStickerLayer(){
     stripCtx.stroke();
     stripCtx.restore();
   });
+  drawRemoteCursor();
 }
 
 function hitTestHandle(st, x, y){
@@ -703,31 +776,48 @@ function canvasPointFromEvent(evt){
 }
 
 let stickerDrag = null;
+let lastCursorBroadcastAt = 0;
+let lastStickerBroadcastAt = 0;
+const CURSOR_BROADCAST_THROTTLE_MS = 50;
+const STICKER_BROADCAST_THROTTLE_MS = 50;
+
+function maybeBroadcastCursor(pt){
+  const now = Date.now();
+  if(now - lastCursorBroadcastAt < CURSOR_BROADCAST_THROTTLE_MS) return;
+  lastCursorBroadcastAt = now;
+  broadcastData({ type:'cursor', x: pt.x / stripCanvas.width, y: pt.y / stripCanvas.height });
+}
 
 stripCanvas.addEventListener('pointerdown', (e)=>{
   if(stickers.length === 0 || stickersHidden) return;
   const pt = canvasPointFromEvent(e);
   const selSt = selectedStickerId != null ? findSticker(selectedStickerId) : null;
-  if(selSt){
+  if(selSt && !selSt.remoteLocked){
     const handle = hitTestHandle(selSt, pt.x, pt.y);
     if(handle === 'delete'){
       stickers = stickers.filter(s => s.id !== selSt.id);
       selectedStickerId = null;
+      broadcastData({ type:'stickerDelete', id: selSt.id });
       redrawStrip();
       return;
     }
     if(handle === 'resize'){
       try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
       stickerDrag = { id: selSt.id, mode:'resize', startSize: selSt.size, startDist: Math.hypot(pt.x - selSt.x, pt.y - selSt.y) || 1 };
+      broadcastData({ type:'stickerLock', id: selSt.id });
       e.preventDefault();
       return;
     }
   }
   const hit = hitTestSticker(pt.x, pt.y);
+  if(hit && hit.remoteLocked){
+    return; // someone else is actively dragging/resizing this one right now
+  }
   if(hit){
     selectedStickerId = hit.id;
     try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
     stickerDrag = { id: hit.id, mode:'move', offsetX: pt.x - hit.x, offsetY: pt.y - hit.y };
+    broadcastData({ type:'stickerLock', id: hit.id });
     redrawStrip();
     e.preventDefault();
   }else if(selectedStickerId != null){
@@ -737,10 +827,12 @@ stripCanvas.addEventListener('pointerdown', (e)=>{
 });
 
 stripCanvas.addEventListener('pointermove', (e)=>{
+  if(!stickersActive) return;
+  const pt = canvasPointFromEvent(e);
+  maybeBroadcastCursor(pt);
   if(!stickerDrag) return;
   const st = findSticker(stickerDrag.id);
   if(!st) return;
-  const pt = canvasPointFromEvent(e);
   if(stickerDrag.mode === 'move'){
     st.x = Math.min(Math.max(pt.x - stickerDrag.offsetX, 0), stripCanvas.width);
     st.y = Math.min(Math.max(pt.y - stickerDrag.offsetY, 0), stripCanvas.height);
@@ -749,12 +841,27 @@ stripCanvas.addEventListener('pointermove', (e)=>{
     st.size = Math.min(Math.max(stickerDrag.startSize * (dist / stickerDrag.startDist), 24), 200);
   }
   redrawStrip();
+  const now = Date.now();
+  if(now - lastStickerBroadcastAt >= STICKER_BROADCAST_THROTTLE_MS){
+    lastStickerBroadcastAt = now;
+    broadcastData({ type:'stickerMove', id: st.id, x: st.x, y: st.y, size: st.size, final:false });
+  }
   e.preventDefault();
+});
+
+stripCanvas.addEventListener('pointerleave', ()=>{
+  if(!stickersActive) return;
+  broadcastData({ type:'cursorHide' });
 });
 
 function endStickerDrag(e){
   if(stickerDrag){
     try{ stripCanvas.releasePointerCapture(e.pointerId); }catch(err){}
+    const st = findSticker(stickerDrag.id);
+    if(st){
+      broadcastData({ type:'stickerMove', id: st.id, x: st.x, y: st.y, size: st.size, final:true });
+    }
+    broadcastData({ type:'stickerUnlock', id: stickerDrag.id });
   }
   stickerDrag = null;
 }
@@ -765,6 +872,7 @@ function resetStickers(){
   stickers = [];
   selectedStickerId = null;
   stickersHidden = false;
+  stickersActive = false;
   stickerHideBtn.textContent = 'hide stickers';
   stickerToolbar.style.display = 'none';
 }
@@ -779,11 +887,13 @@ stickerUndoBtn.addEventListener('click', ()=>{
   if(stickers.length === 0) return;
   const removed = stickers.pop();
   if(selectedStickerId === removed.id) selectedStickerId = null;
+  broadcastData({ type:'stickerDelete', id: removed.id });
   redrawStrip();
 });
 stickerClearBtn.addEventListener('click', ()=>{
   stickers = [];
   selectedStickerId = null;
+  broadcastData({ type:'stickersClear' });
   redrawStrip();
 });
 stickerHideBtn.addEventListener('click', ()=>{
@@ -872,6 +982,52 @@ function applyRemoteSelection(indices){
   updateSelectionCounter();
 }
 
+function applyRemoteStickerAdd(sticker){
+  if(!sticker || !sticker.id || findSticker(sticker.id)) return;
+  stickers.push({ id: sticker.id, type: sticker.type, x: sticker.x, y: sticker.y, size: sticker.size, remoteLocked: false });
+  redrawStrip();
+}
+
+function applyRemoteStickerDelete(id){
+  stickers = stickers.filter(s => s.id !== id);
+  if(selectedStickerId === id) selectedStickerId = null;
+  redrawStrip();
+}
+
+function applyRemoteStickersClear(){
+  stickers = [];
+  selectedStickerId = null;
+  redrawStrip();
+}
+
+function applyRemoteStickerLock(id){
+  const st = findSticker(id);
+  if(!st) return;
+  if(stickerDrag && stickerDrag.id === id){
+    if(isHost) return; // host wins simultaneous-start conflicts — keep our own drag
+    stickerDrag = null; // guest yields to the host's claim
+    if(selectedStickerId === id) selectedStickerId = null;
+  }
+  st.remoteLocked = true;
+  redrawStrip();
+}
+
+function applyRemoteStickerUnlock(id){
+  const st = findSticker(id);
+  if(!st) return;
+  st.remoteLocked = false;
+  redrawStrip();
+}
+
+function applyRemoteStickerMove(msg){
+  const st = findSticker(msg.id);
+  if(!st) return;
+  st.x = msg.x;
+  st.y = msg.y;
+  st.size = msg.size;
+  redrawStrip();
+}
+
 function handleRemoteMessage(msg){
   if(!msg || typeof msg !== 'object') return;
   if(msg.type === 'filter'){
@@ -884,6 +1040,22 @@ function handleRemoteMessage(msg){
     applyRemoteSelection(msg.indices);
   }else if(msg.type === 'buildStrip'){
     buildStripFrom(msg.indices);
+  }else if(msg.type === 'cursor'){
+    applyRemoteCursor(msg.x, msg.y);
+  }else if(msg.type === 'cursorHide'){
+    hideRemoteCursor();
+  }else if(msg.type === 'stickerAdd'){
+    applyRemoteStickerAdd(msg.sticker);
+  }else if(msg.type === 'stickerDelete'){
+    applyRemoteStickerDelete(msg.id);
+  }else if(msg.type === 'stickersClear'){
+    applyRemoteStickersClear();
+  }else if(msg.type === 'stickerLock'){
+    applyRemoteStickerLock(msg.id);
+  }else if(msg.type === 'stickerUnlock'){
+    applyRemoteStickerUnlock(msg.id);
+  }else if(msg.type === 'stickerMove'){
+    applyRemoteStickerMove(msg);
   }
 }
 
@@ -1411,6 +1583,7 @@ function buildStripFrom(indices){
   downloadBtn.disabled = false;
   startBtn.disabled = false;
   stickerToolbar.style.display = 'flex';
+  stickersActive = true;
   statusLine.textContent = "all done! download your strip below";
   stripCanvas.classList.remove('celebrate');
   void stripCanvas.offsetWidth;
