@@ -188,7 +188,9 @@
   .selection-panel{margin-top:14px; width:100%; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .thumb-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-height:420px; overflow-y:auto; padding:4px; margin:10px 0;}
   .thumb{position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:2.5px solid rgba(251,243,231,0.15); transition:border-color .15s ease, transform .15s ease; aspect-ratio:260/146; background:#000;}
-  .thumb img{width:100%; height:100%; display:block; object-fit:cover;}
+  .thumb img, .thumb canvas{width:100%; height:100%; display:block; object-fit:cover;}
+  .thumb.pending{cursor:default;}
+  .thumb-pending-num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.3rem; color:rgba(43,27,46,0.4); text-shadow:0 1px 2px rgba(255,255,255,0.5);}
   .thumb:hover{ transform:translateY(-1px); }
   .thumb.selected{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(215,162,74,0.35); }
   .thumb-badge{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); color:var(--film-black); font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.35); font-family:'Poppins',sans-serif;}
@@ -1259,28 +1261,27 @@ async function runCaptureSequence(seconds){
   if(busy || !connected) return;
   lastCountdownSeconds = seconds;
   busy = true;
-  selecting = false;
+  selecting = true;
   startBtn.disabled = true;
   downloadBtn.disabled = true;
   shots = [];
   tenShots = [];
   selectedIndices = [];
   resetStickers();
-  hideSelectionPanel();
   redrawStrip();
+  showSelectionPanel();
 
   for(let i=0;i<SHOOT_COUNT;i++){
     statusLine.textContent = `photo ${i+1} of ${SHOOT_COUNT} — get ready!`;
     await runCountdown(seconds);
     flash();
     tenShots.push(capturePhoto(filterSelect.value));
+    fillThumbSlot(i);
     statusLine.textContent = `photo ${i+1} captured 🤍`;
     await wait(500);
   }
   busy = false;
-  selecting = true;
   statusLine.textContent = `nice! pick your favorite ${STRIP_SLOTS} below`;
-  showSelectionPanel();
 }
 
 function beginSyncedSession(seconds, isRemoteTriggered){
@@ -1341,6 +1342,7 @@ function applySelectionToGrid(){
 }
 
 function toggleSelect(i){
+  if(busy) return;
   const pos = selectedIndices.indexOf(i);
   if(pos > -1){
     selectedIndices.splice(pos, 1);
@@ -1353,21 +1355,50 @@ function toggleSelect(i){
   broadcastData({ type:'selection', indices: selectedIndices.slice() });
 }
 
+function makeThumbImage(i){
+  const img = document.createElement('img');
+  img.src = tenShots[i].toDataURL('image/png');
+  img.alt = `photo ${i+1} of ${SHOOT_COUNT}`;
+  return img;
+}
+
+function makePendingThumbCanvas(){
+  const c = document.createElement('canvas');
+  c.width = 130; c.height = 73;
+  drawSkyPlaceholder(c.getContext('2d'), 0, 0, c.width, c.height);
+  return c;
+}
+
 function renderThumbGrid(){
   thumbGrid.innerHTML = '';
-  tenShots.forEach((canvas, i)=>{
+  for(let i=0;i<SHOOT_COUNT;i++){
     const thumb = document.createElement('div');
     thumb.className = 'thumb';
     thumb.dataset.index = i;
-    const img = document.createElement('img');
-    img.src = canvas.toDataURL('image/png');
-    img.alt = `photo ${i+1} of ${SHOOT_COUNT}`;
-    thumb.appendChild(img);
-    thumb.addEventListener('click', ()=> toggleSelect(i));
+    if(tenShots[i]){
+      thumb.appendChild(makeThumbImage(i));
+      thumb.addEventListener('click', ()=> toggleSelect(i));
+    }else{
+      thumb.classList.add('pending');
+      thumb.appendChild(makePendingThumbCanvas());
+      const num = document.createElement('span');
+      num.className = 'thumb-pending-num';
+      num.textContent = i + 1;
+      thumb.appendChild(num);
+    }
     thumbGrid.appendChild(thumb);
-  });
+  }
   applySelectionToGrid();
   updateSelectionCounter();
+}
+
+function fillThumbSlot(i){
+  const thumb = thumbGrid.children[i];
+  if(!thumb) return;
+  thumb.classList.remove('pending');
+  thumb.innerHTML = '';
+  thumb.appendChild(makeThumbImage(i));
+  thumb.addEventListener('click', ()=> toggleSelect(i));
 }
 
 function buildStripFrom(indices){
