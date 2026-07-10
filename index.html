@@ -210,6 +210,16 @@
   .sticker-btn canvas{ width:26px; height:26px; pointer-events:none; }
   .sticker-actions{display:flex; gap:6px;}
   .sticker-actions button{flex:1; min-height:40px; padding:6px 4px; font-size:0.68rem;}
+
+  #stripCanvas.swappable{ cursor:pointer; }
+  .swap-modal-backdrop{position:fixed; inset:0; background:rgba(21,16,26,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .swap-modal-backdrop.show{display:flex;}
+  .swap-modal{background:linear-gradient(180deg, rgba(42,28,48,0.96), rgba(21,16,26,0.98)); border-radius:20px; padding:18px; width:100%; max-width:340px; max-height:85vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(215,162,74,0.25); animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;}
+  .swap-modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px;}
+  .swap-modal-header span{font-family:'Caveat',cursive; font-size:1.2rem; color:var(--blush);}
+  .swap-modal-close{background:rgba(251,243,231,0.1); color:var(--paper); width:34px; height:34px; min-width:34px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;}
+  .swap-modal-close:hover{ background:rgba(251,243,231,0.18); }
+  .swap-modal .thumb-grid{max-height:none; margin:0;}
   @keyframes celebrate{
     0%{ transform:scale(1); }
     45%{ transform:scale(1.06); box-shadow:0 22px 50px rgba(215,162,74,0.35); }
@@ -348,6 +358,16 @@
       <button class="btn-gold" id="downloadBtn" disabled>⬇ download strip</button>
     </div>
   </div>
+
+  <div class="swap-modal-backdrop" id="swapModalBackdrop">
+    <div class="swap-modal">
+      <div class="swap-modal-header">
+        <span id="swapModalTitle">choose a photo</span>
+        <button class="swap-modal-close" id="swapModalClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="thumb-grid" id="swapThumbGrid"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -456,6 +476,10 @@ const stickerUndoBtn = document.getElementById('stickerUndoBtn');
 const stickerClearBtn = document.getElementById('stickerClearBtn');
 const stickerHideBtn = document.getElementById('stickerHideBtn');
 const stickerButtons = document.querySelectorAll('.sticker-btn');
+const swapModalBackdrop = document.getElementById('swapModalBackdrop');
+const swapModalTitle = document.getElementById('swapModalTitle');
+const swapModalClose = document.getElementById('swapModalClose');
+const swapThumbGrid = document.getElementById('swapThumbGrid');
 
 function applyLiveFilter(){
   const f = filterSelect.value;
@@ -1056,6 +1080,8 @@ function handleRemoteMessage(msg){
     applyRemoteStickerUnlock(msg.id);
   }else if(msg.type === 'stickerMove'){
     applyRemoteStickerMove(msg);
+  }else if(msg.type === 'photoSwap'){
+    applyPhotoSwap(msg.slot, msg.photoIndex);
   }
 }
 
@@ -1213,6 +1239,8 @@ function teardownAndReturnToGate(){
   busy = false;
   selecting = false;
   resetStickers();
+  closeSwapModal();
+  stripCanvas.classList.remove('swappable');
   currentRoomCode = null;
   isHost = null;
   boothLayout.style.display = 'none';
@@ -1361,6 +1389,87 @@ function redrawStrip(){
   drawStickerLayer();
 }
 
+/* ---------------- Per-slot photo swap ---------------- */
+let swapModalSlot = null;
+
+function hitTestSlot(x, y){
+  for(let i = 0; i < STRIP_SLOTS; i++){
+    const sx = SIDE, sy = TOP + i * (PHOTO_H + GAP);
+    if(x >= sx && x <= sx + PHOTO_W && y >= sy && y <= sy + PHOTO_H) return i;
+  }
+  return null;
+}
+
+function renderSwapThumbGrid(){
+  swapThumbGrid.innerHTML = '';
+  tenShots.forEach((canvas, i)=>{
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    const img = document.createElement('img');
+    img.src = canvas.toDataURL('image/png');
+    img.alt = `photo ${i+1} of ${SHOOT_COUNT}`;
+    thumb.appendChild(img);
+
+    const usedSlot = selectedIndices.indexOf(i);
+    if(usedSlot === swapModalSlot){
+      thumb.classList.add('selected');
+    }else if(usedSlot > -1){
+      const badge = document.createElement('span');
+      badge.className = 'thumb-badge';
+      badge.textContent = usedSlot + 1;
+      thumb.appendChild(badge);
+    }
+
+    thumb.addEventListener('click', ()=> handleSwapPick(i));
+    swapThumbGrid.appendChild(thumb);
+  });
+}
+
+function openSwapModal(slotIndex){
+  swapModalSlot = slotIndex;
+  swapModalTitle.textContent = `choose a photo for slot ${slotIndex + 1}`;
+  renderSwapThumbGrid();
+  swapModalBackdrop.classList.add('show');
+}
+
+function closeSwapModal(){
+  swapModalBackdrop.classList.remove('show');
+  swapModalSlot = null;
+}
+
+function applyPhotoSwap(slot, photoIndex){
+  if(slot < 0 || slot >= STRIP_SLOTS) return;
+  if(photoIndex < 0 || photoIndex >= tenShots.length) return;
+  selectedIndices[slot] = photoIndex;
+  shots[slot] = tenShots[photoIndex];
+  redrawStrip();
+}
+
+function handleSwapPick(photoIndex){
+  const slot = swapModalSlot;
+  if(slot === null) return;
+  if(selectedIndices[slot] === photoIndex){
+    closeSwapModal();
+    return;
+  }
+  applyPhotoSwap(slot, photoIndex);
+  broadcastData({ type:'photoSwap', slot, photoIndex });
+  closeSwapModal();
+}
+
+swapModalClose.addEventListener('click', closeSwapModal);
+swapModalBackdrop.addEventListener('click', (e)=>{
+  if(e.target === swapModalBackdrop) closeSwapModal();
+});
+
+stripCanvas.addEventListener('click', (e)=>{
+  if(shots.length !== STRIP_SLOTS || tenShots.length !== SHOOT_COUNT) return;
+  const pt = canvasPointFromEvent(e);
+  const slotIndex = hitTestSlot(pt.x, pt.y);
+  if(slotIndex === null) return;
+  openSwapModal(slotIndex);
+});
+
 function drawVideoCover(ctx, video, x, y, w, h, mirror){
   const vw = video.videoWidth, vh = video.videoHeight;
   if(!vw || !vh) return;
@@ -1440,6 +1549,8 @@ async function runCaptureSequence(seconds){
   tenShots = [];
   selectedIndices = [];
   resetStickers();
+  closeSwapModal();
+  stripCanvas.classList.remove('swappable');
   redrawStrip();
   showSelectionPanel();
 
@@ -1584,6 +1695,7 @@ function buildStripFrom(indices){
   startBtn.disabled = false;
   stickerToolbar.style.display = 'flex';
   stickersActive = true;
+  stripCanvas.classList.add('swappable');
   statusLine.textContent = "all done! download your strip below";
   stripCanvas.classList.remove('celebrate');
   void stripCanvas.offsetWidth;
@@ -1610,6 +1722,8 @@ resetBtn.addEventListener('click', ()=>{
   busy = false;
   selecting = false;
   resetStickers();
+  closeSwapModal();
+  stripCanvas.classList.remove('swappable');
   hideSelectionPanel();
   redrawStrip();
   downloadBtn.disabled = true;
