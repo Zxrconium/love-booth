@@ -140,7 +140,7 @@
   .copy-btn{background:rgba(251,243,231,0.1); color:var(--paper); padding:4px 10px; font-size:0.68rem; border-radius:999px;}
   .copy-btn:hover:not(:disabled){ background:rgba(251,243,231,0.18); }
 
-  .viewfinder{position:relative; width:100%; aspect-ratio:4/3; border-radius:16px; overflow:hidden; background:#000; border:3px solid var(--gold); display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4);}
+  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; border:3px solid var(--gold); display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4);}
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
   .half video{width:100%; height:100%; object-fit:cover; display:block;}
   .half.mirror video{transform:scaleX(-1);}
@@ -420,7 +420,7 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 56, BOTTOM = 56;
+const PHOTO_W = 260, PHOTO_H = 146, SIDE = 20, GAP = 14, TOP = 56, BOTTOM = 56;
 
 /* ---------------- Strip themes ----------------
    Only 3 themes now, each a plain data object: colors, an optional bold
