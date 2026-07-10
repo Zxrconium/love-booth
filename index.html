@@ -199,8 +199,15 @@
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
 
   .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:260px;}
-  #stripCanvas{border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease;}
+  #stripCanvas{border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
+  .sticker-toolbar{display:none; flex-direction:column; gap:8px; width:100%; max-width:230px; background:rgba(251,243,231,0.04); border:1px solid rgba(251,243,231,0.15); border-radius:14px; padding:10px; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
+  .sticker-picker{display:flex; gap:8px; justify-content:center;}
+  .sticker-btn{flex:1; min-height:44px; min-width:44px; padding:4px; display:flex; align-items:center; justify-content:center; background:rgba(251,243,231,0.06); border:1.5px solid rgba(251,243,231,0.2);}
+  .sticker-btn:hover:not(:disabled){ border-color:rgba(215,162,74,0.55); background:rgba(251,243,231,0.1); }
+  .sticker-btn canvas{ width:26px; height:26px; pointer-events:none; }
+  .sticker-actions{display:flex; gap:6px;}
+  .sticker-actions button{flex:1; min-height:40px; padding:6px 4px; font-size:0.68rem;}
   @keyframes celebrate{
     0%{ transform:scale(1); }
     45%{ transform:scale(1.06); box-shadow:0 22px 50px rgba(215,162,74,0.35); }
@@ -322,6 +329,19 @@
         <label for="themeSelect" class="theme-label">strip style</label>
         <select id="themeSelect" class="theme-select"></select>
       </div>
+      <div class="sticker-toolbar" id="stickerToolbar">
+        <div class="sticker-picker">
+          <button class="sticker-btn" data-sticker="heart" type="button" aria-label="Add heart sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
+          <button class="sticker-btn" data-sticker="star" type="button" aria-label="Add star sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
+          <button class="sticker-btn" data-sticker="sparkle" type="button" aria-label="Add sparkle sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
+          <button class="sticker-btn" data-sticker="bow" type="button" aria-label="Add bow sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
+        </div>
+        <div class="sticker-actions">
+          <button class="btn-ghost" id="stickerUndoBtn" type="button">undo</button>
+          <button class="btn-ghost" id="stickerClearBtn" type="button">clear</button>
+          <button class="btn-ghost" id="stickerHideBtn" type="button">hide stickers</button>
+        </div>
+      </div>
       <canvas id="stripCanvas" width="330" height="1000"></canvas>
       <button class="btn-gold" id="downloadBtn" disabled>⬇ download strip</button>
     </div>
@@ -429,6 +449,11 @@ const downloadBtn = document.getElementById('downloadBtn');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
+const stickerToolbar = document.getElementById('stickerToolbar');
+const stickerUndoBtn = document.getElementById('stickerUndoBtn');
+const stickerClearBtn = document.getElementById('stickerClearBtn');
+const stickerHideBtn = document.getElementById('stickerHideBtn');
+const stickerButtons = document.querySelectorAll('.sticker-btn');
 
 function applyLiveFilter(){
   const f = filterSelect.value;
@@ -511,6 +536,260 @@ themeSelect.addEventListener('change', ()=>{
   redrawStrip();
   broadcastData({ type:'theme', value: currentThemeId });
 });
+
+/* ---------------- Stickers ----------------
+   A separate layer of draggable/resizable vector stickers composited on
+   top of the base strip render. redrawStrip() always draws the base
+   (theme + photos + footer) first, then this layer on top, so switching
+   themes never touches sticker data. */
+function drawHeart(ctx, cx, cy, size, fill, stroke){
+  const s = size, topY = cy - s*0.32;
+  ctx.beginPath();
+  ctx.moveTo(cx, topY + s*0.55);
+  ctx.bezierCurveTo(cx, topY, cx - s*0.55, topY, cx - s*0.55, topY + s*0.32);
+  ctx.bezierCurveTo(cx - s*0.55, topY + s*0.65, cx - s*0.22, topY + s*0.85, cx, topY + s*1.1);
+  ctx.bezierCurveTo(cx + s*0.22, topY + s*0.85, cx + s*0.55, topY + s*0.65, cx + s*0.55, topY + s*0.32);
+  ctx.bezierCurveTo(cx + s*0.55, topY, cx, topY, cx, topY + s*0.55);
+  ctx.closePath();
+  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
+  if(stroke){ ctx.lineWidth = Math.max(1.4, s*0.06); ctx.strokeStyle = stroke; ctx.stroke(); }
+}
+
+function drawStar(ctx, cx, cy, size, fill, stroke){
+  const spikes = 5, outerR = size*0.55, innerR = outerR*0.42;
+  let rot = -Math.PI/2;
+  const step = Math.PI/spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx + Math.cos(rot)*outerR, cy + Math.sin(rot)*outerR);
+  for(let i=0;i<spikes;i++){
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot)*innerR, cy + Math.sin(rot)*innerR);
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot)*outerR, cy + Math.sin(rot)*outerR);
+  }
+  ctx.closePath();
+  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
+  if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
+}
+
+function drawSparkle(ctx, cx, cy, size, fill, stroke){
+  const outerR = size*0.55, innerR = outerR*0.24;
+  ctx.beginPath();
+  for(let i=0;i<4;i++){
+    const angle = (Math.PI/2)*i - Math.PI/2;
+    const midAngle = angle + Math.PI/4;
+    const ox = cx + Math.cos(angle)*outerR, oy = cy + Math.sin(angle)*outerR;
+    const mx = cx + Math.cos(midAngle)*innerR, my = cy + Math.sin(midAngle)*innerR;
+    if(i===0) ctx.moveTo(ox,oy); else ctx.lineTo(ox,oy);
+    ctx.lineTo(mx,my);
+  }
+  ctx.closePath();
+  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
+  if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
+}
+
+function drawBow(ctx, cx, cy, size, fill, stroke){
+  const w = size*0.32, h = size*0.24;
+  [-1, 1].forEach(dir=>{
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.quadraticCurveTo(cx + dir*w*2.2, cy - h*2.2, cx + dir*w*2.8, cy);
+    ctx.quadraticCurveTo(cx + dir*w*2.2, cy + h*2.2, cx, cy);
+    ctx.closePath();
+    if(fill){ ctx.fillStyle = fill; ctx.fill(); }
+    if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
+  });
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, size*0.12, size*0.16, 0, 0, Math.PI*2);
+  ctx.fillStyle = stroke || fill;
+  ctx.fill();
+}
+
+const STICKER_TYPES = {
+  heart:   { draw: drawHeart,   fill: '#e893a8', stroke: '#ffffff' },
+  star:    { draw: drawStar,    fill: '#d7a24a', stroke: '#5c4111' },
+  sparkle: { draw: drawSparkle, fill: '#fff8ea', stroke: '#d7a24a' },
+  bow:     { draw: drawBow,     fill: '#e893a8', stroke: '#ffffff' },
+};
+
+let stickers = [];
+let selectedStickerId = null;
+let stickersHidden = false;
+let stickerIdSeq = 1;
+const STICKER_HANDLE_R = 13;
+
+function findSticker(id){ return stickers.find(s => s.id === id); }
+
+function addSticker(type){
+  const id = stickerIdSeq++;
+  stickers.push({ id, type, x: stripCanvas.width / 2, y: stripCanvas.height / 2, size: 64 });
+  selectedStickerId = id;
+  stickersHidden = false;
+  redrawStrip();
+}
+
+function drawStickerLayer(){
+  if(stickersHidden) return;
+  stickers.forEach(st=>{
+    const def = STICKER_TYPES[st.type];
+    if(!def) return;
+    stripCtx.save();
+    def.draw(stripCtx, st.x, st.y, st.size, def.fill, def.stroke);
+    stripCtx.restore();
+    if(st.id !== selectedStickerId) return;
+
+    const half = st.size * 0.62;
+    stripCtx.save();
+    stripCtx.setLineDash([4, 3]);
+    stripCtx.strokeStyle = 'rgba(43,27,46,0.85)';
+    stripCtx.lineWidth = 1.4;
+    stripCtx.strokeRect(st.x - half, st.y - half, half*2, half*2);
+    stripCtx.restore();
+
+    stripCtx.save();
+    stripCtx.beginPath();
+    stripCtx.arc(st.x + half, st.y - half, STICKER_HANDLE_R, 0, Math.PI*2);
+    stripCtx.fillStyle = '#e0697e';
+    stripCtx.fill();
+    stripCtx.strokeStyle = '#ffffff';
+    stripCtx.lineWidth = 1.5;
+    stripCtx.stroke();
+    stripCtx.lineWidth = 1.8;
+    stripCtx.beginPath();
+    stripCtx.moveTo(st.x + half - 4, st.y - half - 4);
+    stripCtx.lineTo(st.x + half + 4, st.y - half + 4);
+    stripCtx.moveTo(st.x + half + 4, st.y - half - 4);
+    stripCtx.lineTo(st.x + half - 4, st.y - half + 4);
+    stripCtx.stroke();
+    stripCtx.restore();
+
+    stripCtx.save();
+    stripCtx.beginPath();
+    stripCtx.arc(st.x + half, st.y + half, STICKER_HANDLE_R, 0, Math.PI*2);
+    stripCtx.fillStyle = '#d7a24a';
+    stripCtx.fill();
+    stripCtx.strokeStyle = '#ffffff';
+    stripCtx.lineWidth = 1.5;
+    stripCtx.stroke();
+    stripCtx.restore();
+  });
+}
+
+function hitTestHandle(st, x, y){
+  if(st.id !== selectedStickerId) return null;
+  const half = st.size * 0.62;
+  if(Math.hypot(x - (st.x + half), y - (st.y - half)) <= STICKER_HANDLE_R + 4) return 'delete';
+  if(Math.hypot(x - (st.x + half), y - (st.y + half)) <= STICKER_HANDLE_R + 4) return 'resize';
+  return null;
+}
+
+function hitTestSticker(x, y){
+  for(let i = stickers.length - 1; i >= 0; i--){
+    const st = stickers[i];
+    const half = st.size * 0.62;
+    if(x >= st.x - half && x <= st.x + half && y >= st.y - half && y <= st.y + half) return st;
+  }
+  return null;
+}
+
+function canvasPointFromEvent(evt){
+  const rect = stripCanvas.getBoundingClientRect();
+  return {
+    x: (evt.clientX - rect.left) * (stripCanvas.width / rect.width),
+    y: (evt.clientY - rect.top) * (stripCanvas.height / rect.height),
+  };
+}
+
+let stickerDrag = null;
+
+stripCanvas.addEventListener('pointerdown', (e)=>{
+  if(stickers.length === 0 || stickersHidden) return;
+  const pt = canvasPointFromEvent(e);
+  const selSt = selectedStickerId != null ? findSticker(selectedStickerId) : null;
+  if(selSt){
+    const handle = hitTestHandle(selSt, pt.x, pt.y);
+    if(handle === 'delete'){
+      stickers = stickers.filter(s => s.id !== selSt.id);
+      selectedStickerId = null;
+      redrawStrip();
+      return;
+    }
+    if(handle === 'resize'){
+      try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
+      stickerDrag = { id: selSt.id, mode:'resize', startSize: selSt.size, startDist: Math.hypot(pt.x - selSt.x, pt.y - selSt.y) || 1 };
+      e.preventDefault();
+      return;
+    }
+  }
+  const hit = hitTestSticker(pt.x, pt.y);
+  if(hit){
+    selectedStickerId = hit.id;
+    try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
+    stickerDrag = { id: hit.id, mode:'move', offsetX: pt.x - hit.x, offsetY: pt.y - hit.y };
+    redrawStrip();
+    e.preventDefault();
+  }else if(selectedStickerId != null){
+    selectedStickerId = null;
+    redrawStrip();
+  }
+});
+
+stripCanvas.addEventListener('pointermove', (e)=>{
+  if(!stickerDrag) return;
+  const st = findSticker(stickerDrag.id);
+  if(!st) return;
+  const pt = canvasPointFromEvent(e);
+  if(stickerDrag.mode === 'move'){
+    st.x = Math.min(Math.max(pt.x - stickerDrag.offsetX, 0), stripCanvas.width);
+    st.y = Math.min(Math.max(pt.y - stickerDrag.offsetY, 0), stripCanvas.height);
+  }else if(stickerDrag.mode === 'resize'){
+    const dist = Math.hypot(pt.x - st.x, pt.y - st.y) || 1;
+    st.size = Math.min(Math.max(stickerDrag.startSize * (dist / stickerDrag.startDist), 24), 200);
+  }
+  redrawStrip();
+  e.preventDefault();
+});
+
+function endStickerDrag(e){
+  if(stickerDrag){
+    try{ stripCanvas.releasePointerCapture(e.pointerId); }catch(err){}
+  }
+  stickerDrag = null;
+}
+stripCanvas.addEventListener('pointerup', endStickerDrag);
+stripCanvas.addEventListener('pointercancel', endStickerDrag);
+
+function resetStickers(){
+  stickers = [];
+  selectedStickerId = null;
+  stickersHidden = false;
+  stickerHideBtn.textContent = 'hide stickers';
+  stickerToolbar.style.display = 'none';
+}
+
+stickerButtons.forEach(btn=>{
+  const def = STICKER_TYPES[btn.dataset.sticker];
+  const iconCtx = btn.querySelector('.sticker-icon').getContext('2d');
+  def.draw(iconCtx, 14, 14, 20, def.fill, def.stroke);
+  btn.addEventListener('click', ()=> addSticker(btn.dataset.sticker));
+});
+stickerUndoBtn.addEventListener('click', ()=>{
+  if(stickers.length === 0) return;
+  const removed = stickers.pop();
+  if(selectedStickerId === removed.id) selectedStickerId = null;
+  redrawStrip();
+});
+stickerClearBtn.addEventListener('click', ()=>{
+  stickers = [];
+  selectedStickerId = null;
+  redrawStrip();
+});
+stickerHideBtn.addEventListener('click', ()=>{
+  stickersHidden = !stickersHidden;
+  stickerHideBtn.textContent = stickersHidden ? 'show stickers' : 'hide stickers';
+  redrawStrip();
+});
+
 let shots = [];
 let tenShots = [];
 let selectedIndices = [];
@@ -759,6 +1038,7 @@ function teardownAndReturnToGate(){
   selectedIndices = [];
   busy = false;
   selecting = false;
+  resetStickers();
   currentRoomCode = null;
   isHost = null;
   boothLayout.style.display = 'none';
@@ -904,6 +1184,7 @@ function redrawStrip(){
     drawSlot(i, i < shots.length ? shots[i] : null);
   }
   drawFooter();
+  drawStickerLayer();
 }
 
 function drawVideoCover(ctx, video, x, y, w, h, mirror){
@@ -984,6 +1265,7 @@ async function runCaptureSequence(seconds){
   shots = [];
   tenShots = [];
   selectedIndices = [];
+  resetStickers();
   hideSelectionPanel();
   redrawStrip();
 
@@ -1097,6 +1379,7 @@ function buildStripFrom(indices){
   selecting = false;
   downloadBtn.disabled = false;
   startBtn.disabled = false;
+  stickerToolbar.style.display = 'flex';
   statusLine.textContent = "all done! download your strip below";
   stripCanvas.classList.remove('celebrate');
   void stripCanvas.offsetWidth;
@@ -1122,6 +1405,7 @@ resetBtn.addEventListener('click', ()=>{
   selectedIndices = [];
   busy = false;
   selecting = false;
+  resetStickers();
   hideSelectionPanel();
   redrawStrip();
   downloadBtn.disabled = true;
@@ -1129,10 +1413,13 @@ resetBtn.addEventListener('click', ()=>{
   statusLine.textContent = connected ? "you're both in the frame — say cheese!" : "waiting to connect…";
 });
 downloadBtn.addEventListener('click', ()=>{
+  const hadSelection = selectedStickerId;
+  if(hadSelection != null){ selectedStickerId = null; redrawStrip(); }
   const link = document.createElement('a');
   link.download = 'luv-booth-live-strip.png';
   link.href = stripCanvas.toDataURL('image/png');
   link.click();
+  if(hadSelection != null){ selectedStickerId = hadSelection; redrawStrip(); }
 });
 
 redrawStrip();
