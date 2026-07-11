@@ -246,6 +246,37 @@
   #stripCanvas.swappable{ cursor:pointer; }
   .swap-modal-backdrop{position:fixed; inset:0; background:rgba(21,16,26,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
   .swap-modal-backdrop.show{display:flex; animation:modalBackdropIn 0.2s ease both;}
+
+  .fullscreen-shoot{
+    display:none; position:fixed; inset:0; z-index:200;
+    background:radial-gradient(circle at 50% 30%, var(--bg-deep2), var(--bg-deep) 70%);
+    flex-direction:column; align-items:center; justify-content:center;
+    padding:clamp(14px,3vw,32px); gap:12px; overflow-y:auto;
+  }
+  .fullscreen-shoot.show{ display:flex; animation:fsIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
+  .fullscreen-shoot.hide{ display:flex; animation:fsOut 0.25s ease both; }
+  @keyframes fsIn{ from{ opacity:0; transform:scale(0.96); } to{ opacity:1; transform:scale(1); } }
+  @keyframes fsOut{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(0.97); } }
+  .fullscreen-shoot .viewfinder{ order:1; width:min(100%,1100px); flex:none; }
+  .fullscreen-shoot .status-line{ order:2; flex:none; margin-top:2px; }
+  .fs-thumb-rail{ order:3; flex:none; display:flex; gap:8px; overflow-x:auto; width:100%; max-width:1100px; justify-content:flex-start; padding:4px 2px 2px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
+  @media (min-width:700px){
+    .fs-thumb-rail{ justify-content:center; }
+  }
+  .fs-thumb{
+    flex:none; width:60px; aspect-ratio:260/146; border-radius:8px; overflow:hidden;
+    border:2px solid rgba(251,243,231,0.25); background:rgba(251,243,231,0.05);
+    display:flex; align-items:center; justify-content:center; color:rgba(251,243,231,0.4);
+    font-weight:700; font-size:0.72rem; font-family:'Poppins',sans-serif;
+  }
+  .fs-thumb img{ width:100%; height:100%; object-fit:cover; display:block; animation:thumbPopIn 0.3s cubic-bezier(.34,1.56,.64,1) both; }
+  .fs-cancel-btn{
+    position:absolute; top:14px; right:14px;
+    background:rgba(21,16,26,0.55); color:var(--paper); width:38px; height:38px; min-width:38px;
+    padding:0; border-radius:50%; font-size:1.2rem; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fs-cancel-btn:hover{ background:rgba(21,16,26,0.75); }
   @keyframes modalBackdropIn{
     from{ opacity:0; }
     to{ opacity:1; }
@@ -394,6 +425,11 @@
     </div>
   </div>
 
+  <div class="fullscreen-shoot" id="fullscreenShoot">
+    <button class="fs-cancel-btn" id="fsCancelBtn" type="button" aria-label="Cancel and return to setup">×</button>
+    <div class="fs-thumb-rail" id="fsThumbRail"></div>
+  </div>
+
   <div class="swap-modal-backdrop" id="swapModalBackdrop">
     <div class="swap-modal">
       <div class="swap-modal-header">
@@ -515,6 +551,74 @@ const swapModalBackdrop = document.getElementById('swapModalBackdrop');
 const swapModalTitle = document.getElementById('swapModalTitle');
 const swapModalClose = document.getElementById('swapModalClose');
 const swapThumbGrid = document.getElementById('swapThumbGrid');
+const fullscreenShoot = document.getElementById('fullscreenShoot');
+const fsThumbRail = document.getElementById('fsThumbRail');
+const fsCancelBtn = document.getElementById('fsCancelBtn');
+const viewfinderEl = document.querySelector('.viewfinder');
+
+/* ---------------- Full-screen shoot mode ----------------
+   The viewfinder and status line are the same live DOM nodes used by the
+   boxed setup screen — we just reparent them into a full-viewport overlay
+   for the duration of the 10-shot sequence (so the video keeps playing
+   uninterrupted) and move them back afterward. */
+const viewfinderHome = { parent: viewfinderEl.parentNode, next: viewfinderEl.nextSibling };
+const statusLineHome = { parent: statusLine.parentNode, next: statusLine.nextSibling };
+let fullscreenActive = false;
+
+function enterFullscreenShoot(){
+  if(fullscreenActive) return;
+  fullscreenActive = true;
+  fullscreenShoot.appendChild(viewfinderEl);
+  fullscreenShoot.appendChild(statusLine);
+  fsThumbRail.innerHTML = '';
+  for(let i=0;i<SHOOT_COUNT;i++){
+    const cell = document.createElement('div');
+    cell.className = 'fs-thumb';
+    cell.textContent = i + 1;
+    fsThumbRail.appendChild(cell);
+  }
+  fullscreenShoot.classList.remove('hide');
+  fullscreenShoot.classList.add('show');
+}
+
+function fillFsThumb(i, canvas){
+  const cell = fsThumbRail.children[i];
+  if(!cell) return;
+  cell.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL('image/png');
+  img.alt = `photo ${i+1} of ${SHOOT_COUNT}`;
+  cell.appendChild(img);
+  cell.scrollIntoView({ behavior:'smooth', inline:'end', block:'nearest' });
+}
+
+function exitFullscreenShoot(){
+  if(!fullscreenActive) return;
+  fullscreenActive = false;
+  fullscreenShoot.classList.remove('show');
+  fullscreenShoot.classList.add('hide');
+  // animationend bubbles up from descendants (e.g. a thumbnail's pop-in animation),
+  // so ignore anything that isn't the container's own fsOut animation finishing.
+  const restore = (e)=>{
+    if(e && e.target !== fullscreenShoot) return;
+    fullscreenShoot.removeEventListener('animationend', restore);
+    fullscreenShoot.classList.remove('hide');
+    statusLineHome.parent.insertBefore(statusLine, statusLineHome.next);
+    viewfinderHome.parent.insertBefore(viewfinderEl, viewfinderHome.next);
+    fsThumbRail.innerHTML = '';
+  };
+  fullscreenShoot.addEventListener('animationend', restore);
+}
+
+/* Instant version (no fade-out) for full teardown scenarios where the whole booth is disappearing anyway */
+function forceExitFullscreenShoot(){
+  if(!fullscreenActive) return;
+  fullscreenActive = false;
+  fullscreenShoot.classList.remove('show', 'hide');
+  statusLineHome.parent.insertBefore(statusLine, statusLineHome.next);
+  viewfinderHome.parent.insertBefore(viewfinderEl, viewfinderHome.next);
+  fsThumbRail.innerHTML = '';
+}
 
 /* Replay a quick fade-in whenever status text changes, instead of an instant swap */
 function animateTextChange(el){
@@ -1127,6 +1231,8 @@ function handleRemoteMessage(msg){
     applyRemoteStickerMove(msg);
   }else if(msg.type === 'photoSwap'){
     applyPhotoSwap(msg.slot, msg.photoIndex);
+  }else if(msg.type === 'shootCancelled'){
+    applyShootCancel();
   }
 }
 
@@ -1278,6 +1384,7 @@ function teardownAndReturnToGate(){
   dataConn = null;
   syncNote.style.display = 'none';
   connected = false;
+  shootSessionId++;
   shots = [];
   tenShots = [];
   selectedIndices = [];
@@ -1285,6 +1392,7 @@ function teardownAndReturnToGate(){
   selecting = false;
   resetStickers();
   closeSwapModal();
+  forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
   currentRoomCode = null;
   isHost = null;
@@ -1586,8 +1694,14 @@ async function runCountdown(seconds){
   }
 }
 
+/* Each shoot gets its own incrementing token instead of a shared cancelled
+   flag — a stale in-flight loop from a cancelled (or superseded) shoot can
+   then never be un-cancelled by a later session resetting a shared boolean. */
+let shootSessionId = 0;
+
 async function runCaptureSequence(seconds){
   if(busy || !connected) return;
+  const mySessionId = ++shootSessionId;
   lastCountdownSeconds = seconds;
   busy = true;
   selecting = true;
@@ -1601,19 +1715,47 @@ async function runCaptureSequence(seconds){
   stripCanvas.classList.remove('swappable');
   redrawStrip();
   showSelectionPanel();
+  enterFullscreenShoot();
 
   for(let i=0;i<SHOOT_COUNT;i++){
+    if(shootSessionId !== mySessionId) return;
     statusLine.textContent = `photo ${i+1} of ${SHOOT_COUNT} — get ready!`;
     await runCountdown(seconds);
+    if(shootSessionId !== mySessionId) return;
     flash();
-    tenShots.push(capturePhoto(filterSelect.value));
+    const shot = capturePhoto(filterSelect.value);
+    tenShots.push(shot);
     fillThumbSlot(i);
+    fillFsThumb(i, shot);
     statusLine.textContent = `photo ${i+1} captured 🤍`;
     await wait(500);
+    if(shootSessionId !== mySessionId) return;
   }
   busy = false;
   statusLine.textContent = `nice! pick your favorite ${STRIP_SLOTS} below`;
+  exitFullscreenShoot();
 }
+
+function applyShootCancel(){
+  shootSessionId++;
+  busy = false;
+  selecting = false;
+  shots = [];
+  tenShots = [];
+  selectedIndices = [];
+  resetStickers();
+  hideSelectionPanel();
+  exitFullscreenShoot();
+  redrawStrip();
+  downloadBtn.disabled = true;
+  startBtn.disabled = !connected;
+  statusLine.textContent = connected ? "you're both in the frame — say cheese!" : "waiting to connect…";
+}
+
+fsCancelBtn.addEventListener('click', ()=>{
+  broadcastData({ type:'shootCancelled' });
+  applyShootCancel();
+});
 
 function beginSyncedSession(seconds, isRemoteTriggered){
   statusLine.textContent = isRemoteTriggered ? 'they started the countdown!' : 'starting the countdown…';
@@ -1765,6 +1907,7 @@ retakeAllBtn.addEventListener('click', ()=>{
 
 startBtn.addEventListener('click', showCountdownChoice);
 resetBtn.addEventListener('click', ()=>{
+  shootSessionId++;
   shots = [];
   tenShots = [];
   selectedIndices = [];
@@ -1772,6 +1915,7 @@ resetBtn.addEventListener('click', ()=>{
   selecting = false;
   resetStickers();
   closeSwapModal();
+  forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
   hideSelectionPanel();
   redrawStrip();
