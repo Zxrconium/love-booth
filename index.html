@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
     --bg-deep:#1c1420; --bg-deep2:#2a1c30; --paper:#fbf3e7; --ink:#2b1b2e;
@@ -80,7 +81,37 @@
     .gate-cards{ flex-direction:column; }
   }
   .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
+  .auth-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
+  .auth-toggle{background:none; border:none; color:rgba(251,243,231,0.55); font-size:0.75rem; text-decoration:underline; padding:4px; width:auto;}
+  .auth-toggle:hover{ color:rgba(251,243,231,0.8); }
+  .auth-msg{font-size:0.78rem; color:rgba(251,243,231,0.6); text-align:center; line-height:1.4; min-height:1em;}
   .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
+
+  .coin-badge{
+    position:fixed; top:14px; right:14px; z-index:60;
+    display:none; align-items:center; gap:6px;
+    background:linear-gradient(180deg, rgba(42,28,48,0.92), rgba(21,16,26,0.96));
+    border:1.5px solid var(--gold); border-radius:999px; padding:6px 12px 6px 8px;
+    font-family:'Poppins',sans-serif; font-weight:700; font-size:0.85rem; color:var(--gold);
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  }
+  .coin-badge.show{ display:flex; }
+  .coin-badge-icon{width:20px; height:20px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe9b3, var(--gold) 70%); display:flex; align-items:center; justify-content:center; font-size:0.7rem; flex:none;}
+  .coin-badge.pulse{ animation:coinPulse 0.4s ease-out; }
+  @keyframes coinPulse{ 0%{ transform:scale(1); } 40%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
+  .logout-link{position:fixed; top:52px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.68rem; text-decoration:underline; padding:4px; width:auto;}
+  .logout-link.show{ display:inline-block; }
+  .logout-link:hover{ color:rgba(251,243,231,0.7); }
+
+  .buy-coins-modal{background:linear-gradient(180deg, rgba(42,28,48,0.96), rgba(21,16,26,0.98)); border-radius:20px; padding:22px; width:100%; max-width:340px; box-shadow:0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(215,162,74,0.25); animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both; text-align:center;}
+  .buy-coins-title{font-family:'Caveat',cursive; font-size:1.4rem; color:var(--blush); margin:0 0 14px;}
+  .buy-coins-packs{display:flex; flex-direction:column; gap:10px;}
+  .buy-coin-pack{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:14px; background:rgba(251,243,231,0.04); border:1.5px solid rgba(251,243,231,0.18); color:var(--paper); text-align:left; cursor:pointer;}
+  .buy-coin-pack:hover:not(:disabled){ border-color:rgba(215,162,74,0.55); }
+  .buy-coin-pack.best-value{ border-color:var(--gold); }
+  .buy-coin-pack-label{font-weight:700;}
+  .buy-coin-pack-price{font-size:0.75rem; color:rgba(251,243,231,0.55);}
+  .buy-coins-close{margin-top:16px;}
   .gate input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
     font-family:'Poppins',sans-serif; font-weight:600; font-size:1.1rem;
@@ -311,6 +342,8 @@
 </style>
 </head>
 <body>
+<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙</span><span id="coinBadgeCount">0</span></div>
+<button class="logout-link" id="logoutLink" type="button">log out</button>
 <div class="scene">
   <div class="marquee">✦ luv booth ✦</div>
 
@@ -342,8 +375,40 @@
       <button class="leave-link" id="joinBackBtn" type="button">back</button>
     </div>
 
-    <p class="gate-footnote">no accounts, nothing saved — just the two of you</p>
+    <div class="auth-step" id="authStep" style="display:none;">
+      <p class="choice-label" id="authStepTitle">log in to start a room</p>
+      <input id="authEmail" type="email" placeholder="EMAIL" autocomplete="email" style="text-transform:none; letter-spacing:normal;">
+      <input id="authPassword" type="password" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
+      <button class="btn-primary" id="authSubmitBtn">log in</button>
+      <button class="auth-toggle" id="authToggleBtn" type="button">need an account? sign up</button>
+      <p class="auth-msg" id="authMsg"></p>
+      <button class="leave-link" id="authBackBtn" type="button">back</button>
+    </div>
+
+    <p class="gate-footnote" id="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
     <div class="error-msg" id="gateError" role="alert"></div>
+  </div>
+
+  <div class="swap-modal-backdrop" id="buyCoinsBackdrop">
+    <div class="buy-coins-modal">
+      <p class="buy-coins-title">buy coins</p>
+      <div class="buy-coins-packs">
+        <button class="buy-coin-pack" data-pack="1" type="button" disabled>
+          <span class="buy-coin-pack-label">🪙 1 coin</span>
+          <span class="buy-coin-pack-price">coming soon</span>
+        </button>
+        <button class="buy-coin-pack" data-pack="3" type="button" disabled>
+          <span class="buy-coin-pack-label">🪙 3 coins</span>
+          <span class="buy-coin-pack-price">coming soon</span>
+        </button>
+        <button class="buy-coin-pack" data-pack="5" type="button" disabled>
+          <span class="buy-coin-pack-label">🪙 5 coins</span>
+          <span class="buy-coin-pack-price">coming soon</span>
+        </button>
+      </div>
+      <p class="auth-msg">coin purchases aren't hooked up yet — check back soon</p>
+      <button class="btn-ghost buy-coins-close" id="buyCoinsCloseBtn" type="button">close</button>
+    </div>
   </div>
 
   <div class="layout" id="boothLayout" style="display:none;">
@@ -456,9 +521,129 @@ const boothLayout = document.getElementById('boothLayout');
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
 const leaveBtn = document.getElementById('leaveBtn');
+const authStep = document.getElementById('authStep');
+const authStepTitle = document.getElementById('authStepTitle');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authToggleBtn = document.getElementById('authToggleBtn');
+const authMsg = document.getElementById('authMsg');
+const authBackBtn = document.getElementById('authBackBtn');
+const coinBadge = document.getElementById('coinBadge');
+const coinBadgeCount = document.getElementById('coinBadgeCount');
+const logoutLink = document.getElementById('logoutLink');
+const buyCoinsBackdrop = document.getElementById('buyCoinsBackdrop');
+const buyCoinsCloseBtn = document.getElementById('buyCoinsCloseBtn');
 
 let currentRoomCode = null;
 let isHost = null;
+
+/* ---------------- Accounts + coins (Supabase) ----------------
+   Room creation costs 1 coin; joining is always free. Coins are only ever
+   credited server-side (the Lemon Squeezy webhook, once wired up) — the
+   client can spend but never grant itself a balance. */
+const SUPABASE_URL = 'https://psstxmiwxosjtywxpvdz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_1V0O-RlEpotHCTgQxBDAOg_RNUDVoQ1';
+let sbClient = null;
+try{
+  if(window.supabase && typeof window.supabase.createClient === 'function'){
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+}catch(e){ /* Supabase script unreachable — accounts/coins degrade gracefully below */ }
+
+let currentUser = null;
+let authMode = 'login';
+
+function setAuthMode(mode){
+  authMode = mode;
+  authStepTitle.textContent = mode === 'signup' ? 'create an account to start a room' : 'log in to start a room';
+  authSubmitBtn.textContent = mode === 'signup' ? 'sign up' : 'log in';
+  authToggleBtn.textContent = mode === 'signup' ? 'have an account? log in' : 'need an account? sign up';
+}
+setAuthMode('login');
+
+function showAuthStep(show){
+  gateCards.style.display = show ? 'none' : 'flex';
+  authStep.style.display = show ? 'flex' : 'none';
+  authMsg.textContent = '';
+  showGateError('');
+  if(show) authEmail.focus();
+}
+
+authToggleBtn.addEventListener('click', ()=> setAuthMode(authMode === 'login' ? 'signup' : 'login'));
+authBackBtn.addEventListener('click', ()=> showAuthStep(false));
+
+authSubmitBtn.addEventListener('click', async ()=>{
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+  if(!email || !password){
+    authMsg.textContent = 'enter both an email and a password.';
+    return;
+  }
+  if(!sbClient){
+    authMsg.textContent = "accounts aren't available right now — try again later.";
+    return;
+  }
+  authSubmitBtn.disabled = true;
+  authMsg.textContent = authMode === 'signup' ? 'creating your account…' : 'logging in…';
+  try{
+    if(authMode === 'signup'){
+      const { data, error } = await sbClient.auth.signUp({ email, password });
+      if(error) throw error;
+      if(data.session){
+        showAuthStep(false);
+        await refreshAuthState();
+      }else{
+        authMsg.textContent = 'check your email to confirm your account, then log in.';
+        setAuthMode('login');
+      }
+    }else{
+      const { error } = await sbClient.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      showAuthStep(false);
+      await refreshAuthState();
+    }
+  }catch(e){
+    authMsg.textContent = (e && e.message) || 'something went wrong — try again.';
+  }finally{
+    authSubmitBtn.disabled = false;
+  }
+});
+
+function pulseCoinBadge(){
+  coinBadge.classList.remove('pulse');
+  void coinBadge.offsetWidth;
+  coinBadge.classList.add('pulse');
+}
+
+async function refreshCoinBalance(){
+  if(!currentUser || !sbClient) return;
+  const { data, error } = await sbClient.from('profiles').select('coins').eq('id', currentUser.id).single();
+  if(!error && data) coinBadgeCount.textContent = data.coins;
+}
+
+async function refreshAuthState(){
+  if(!sbClient) return;
+  const { data:{ session } } = await sbClient.auth.getSession();
+  currentUser = session ? session.user : null;
+  coinBadge.classList.toggle('show', !!currentUser);
+  logoutLink.classList.toggle('show', !!currentUser);
+  if(currentUser) await refreshCoinBalance();
+}
+
+logoutLink.addEventListener('click', async ()=>{
+  if(sbClient) await sbClient.auth.signOut();
+  currentUser = null;
+  coinBadge.classList.remove('show');
+  logoutLink.classList.remove('show');
+});
+
+function showBuyCoinsModal(){ buyCoinsBackdrop.classList.add('show'); }
+function hideBuyCoinsModal(){ buyCoinsBackdrop.classList.remove('show'); }
+buyCoinsCloseBtn.addEventListener('click', hideBuyCoinsModal);
+buyCoinsBackdrop.addEventListener('click', (e)=>{ if(e.target === buyCoinsBackdrop) hideBuyCoinsModal(); });
+
+refreshAuthState();
 
 function randomCode(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -478,12 +663,31 @@ function showJoinStep(show){
   if(show) roomInput.focus();
 }
 
-createCard.addEventListener('click', ()=>{
+createCard.addEventListener('click', async ()=>{
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     showGateError('This browser can\'t access the camera here — try HTTPS or a modern browser, then reload.');
     return;
   }
   showGateError('');
+  if(!currentUser){
+    setAuthMode('login');
+    showAuthStep(true);
+    return;
+  }
+  createCard.disabled = true;
+  const { data: newBalance, error } = await sbClient.rpc('spend_coin');
+  createCard.disabled = false;
+  if(error){
+    showGateError('Could not check your coin balance — try again in a moment.');
+    return;
+  }
+  if(newBalance === null){
+    showGateError("you're out of coins — grab a pack to keep going");
+    showBuyCoinsModal();
+    return;
+  }
+  coinBadgeCount.textContent = newBalance;
+  pulseCoinBadge();
   const code = randomCode();
   currentRoomCode = code;
   isHost = true;
