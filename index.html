@@ -966,10 +966,13 @@ async function refreshAuthState(){
 }
 
 logoutLink.addEventListener('click', async ()=>{
-  if(sbClient) await sbClient.auth.signOut();
   currentUser = null;
   coinBadge.classList.remove('show');
   logoutLink.classList.remove('show');
+  showAuthStep(false);
+  if(sbClient){
+    try{ await sbClient.auth.signOut(); }catch(e){ /* local UI state is already cleared above regardless */ }
+  }
 });
 
 function showBuyCoinsModal(){ buyCoinsBackdrop.classList.add('show'); }
