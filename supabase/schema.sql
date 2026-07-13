@@ -119,9 +119,9 @@ create policy "recordings_insert_authenticated"
 -- URLs: recap clips are meant to be casually shareable via the QR code to
 -- someone who never logs in at all, and a public bucket gives a permanent
 -- static URL with no need to mint/refresh a signed URL on every view.
--- "Expiration" is enforced by the app (checking recordings.expires_at
--- before offering playback), not by Storage itself — the file can be swept
--- up later by a scheduled cleanup job if you want actual deletion too.
+-- Expiration is enforced for real: the daily cron job below (section 4)
+-- deletes both the storage object and its row once expires_at has passed,
+-- so the link actually goes dead rather than just being hidden by the app.
 insert into storage.buckets (id, name, public)
 values ('session-recaps', 'session-recaps', true)
 on conflict (id) do nothing;
@@ -136,3 +136,33 @@ create policy "session_recaps_authenticated_upload"
   on storage.objects for insert
   to authenticated
   with check (bucket_id = 'session-recaps');
+
+-- ---------------------------------------------------------------------------
+-- 4. Scheduled cleanup — actually delete expired recap files, not just stop
+--    offering playback, so free-tier storage doesn't quietly fill up.
+-- ---------------------------------------------------------------------------
+create extension if not exists pg_cron with schema extensions;
+-- If this errors with a permissions message, enable "pg_cron" from the
+-- Supabase dashboard under Database → Extensions instead, then re-run just
+-- the block below.
+
+create or replace function public.cleanup_expired_recordings()
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  delete from storage.objects
+    where bucket_id = 'session-recaps'
+      and name in (select storage_path from public.recordings where expires_at < now());
+
+  delete from public.recordings where expires_at < now();
+end;
+$$;
+
+select cron.schedule(
+  'cleanup-expired-recordings',
+  '0 3 * * *', -- once a day at 03:00 UTC
+  $$select public.cleanup_expired_recordings();$$
+)
+where not exists (select 1 from cron.job where jobname = 'cleanup-expired-recordings');

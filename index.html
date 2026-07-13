@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
   :root{
     --bg-deep:#1c1420; --bg-deep2:#2a1c30; --paper:#fbf3e7; --ink:#2b1b2e;
@@ -331,6 +332,12 @@
     100%{ transform:scale(1); }
   }
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
+  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:230px; background:rgba(251,243,231,0.04); border:1px solid rgba(251,243,231,0.15); border-radius:14px; padding:14px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
+  .recap-panel.show{display:flex;}
+  .recap-title{font-family:'Caveat',cursive; font-size:1.15rem; color:var(--blush); margin:0;}
+  #recapQr{border-radius:8px; background:#fff; padding:6px;}
+  .recap-link{font-size:0.7rem; color:var(--gold); word-break:break-all; text-align:center;}
+  .recap-expiry{font-size:0.65rem; color:rgba(251,243,231,0.4); margin:0;}
   .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
   .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(251,243,231,0.45);}
   .theme-select{width:100%;}
@@ -497,6 +504,12 @@
       </div>
       <canvas id="stripCanvas" width="330" height="1000"></canvas>
       <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
+      <div class="recap-panel" id="recapPanel">
+        <p class="recap-title" data-i18n="recapTitle">session recap</p>
+        <canvas id="recapQr" width="150" height="150"></canvas>
+        <a class="recap-link" id="recapLink" href="#" target="_blank" rel="noopener"></a>
+        <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
+      </div>
     </div>
   </div>
 
@@ -569,6 +582,7 @@ const TRANSLATIONS = {
     allDoneDownload: 'all done! download your strip below',
     selectionCounter: '{count} of {n} selected — tap your favorites',
     chooseForSlot: 'choose a photo for slot {slot}',
+    recapTitle: 'session recap', recapExpiry: 'link expires in 7 days',
   },
   fil: {
     langName: 'Filipino',
@@ -620,6 +634,7 @@ const TRANSLATIONS = {
     allDoneDownload: 'tapos na! i-download ang strip mo sa baba',
     selectionCounter: 'napili mo na ang {count} sa {n} — piliin ang paborito mo',
     chooseForSlot: 'pumili ng larawan para sa slot {slot}',
+    recapTitle: 'recap ng session', recapExpiry: 'mawawala ang link pagkalipas ng 7 araw',
   },
   es: {
     langName: 'Español',
@@ -671,6 +686,7 @@ const TRANSLATIONS = {
     allDoneDownload: '¡listo! descarga tu tira abajo',
     selectionCounter: '{count} de {n} seleccionadas — elige tus favoritas',
     chooseForSlot: 'elige una foto para la casilla {slot}',
+    recapTitle: 'resumen de la sesión', recapExpiry: 'el enlace vence en 7 días',
   },
   ko: {
     langName: '한국어',
@@ -722,6 +738,7 @@ const TRANSLATIONS = {
     allDoneDownload: '완성했어요! 아래에서 스트립을 다운로드하세요',
     selectionCounter: '{n}장 중 {count}장 선택함 — 마음에 드는 사진을 골라주세요',
     chooseForSlot: '슬롯 {slot}에 넣을 사진을 선택하세요',
+    recapTitle: '세션 리캡', recapExpiry: '링크는 7일 후 만료됩니다',
   },
   ja: {
     langName: '日本語',
@@ -773,6 +790,7 @@ const TRANSLATIONS = {
     allDoneDownload: '完成です！下からストリップをダウンロードしてください',
     selectionCounter: '{n}枚中{count}枚選択中 — お気に入りをタップしてください',
     chooseForSlot: 'スロット{slot}の写真を選んでください',
+    recapTitle: 'セッションのリキャップ', recapExpiry: 'リンクは7日で期限切れになります',
   },
 };
 
@@ -844,6 +862,9 @@ const coinBadgeCount = document.getElementById('coinBadgeCount');
 const logoutLink = document.getElementById('logoutLink');
 const buyCoinsBackdrop = document.getElementById('buyCoinsBackdrop');
 const buyCoinsCloseBtn = document.getElementById('buyCoinsCloseBtn');
+const recapPanel = document.getElementById('recapPanel');
+const recapQr = document.getElementById('recapQr');
+const recapLink = document.getElementById('recapLink');
 
 let currentRoomCode = null;
 let isHost = null;
@@ -1132,6 +1153,97 @@ function forceExitFullscreenShoot(){
   statusLineHome.parent.insertBefore(statusLine, statusLineHome.next);
   viewfinderHome.parent.insertBefore(viewfinderEl, viewfinderHome.next);
   fsThumbRail.innerHTML = '';
+  stopRecapRecording(false);
+}
+
+/* ---------------- Session recap recording ----------------
+   Only the host records (one canonical recap per session, not one per
+   peer) and uploads — recording is a live composite of both video feeds
+   drawn to an offscreen canvas, captured via canvas.captureStream(), so
+   it reuses the exact same drawVideoCover() compositing already used for
+   still photos. Covers only the active shoot window: started right after
+   entering full-screen, stopped and uploaded right before leaving it
+   normally, or stopped and discarded (no upload) on cancel/leave. */
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordCanvas = null;
+let recordCtx = null;
+let recordRAF = null;
+
+function startRecapRecording(){
+  if(!isHost || !sbClient || !currentUser) return;
+  if(typeof MediaRecorder === 'undefined') return;
+  // Defensively clean up any still-running recorder from a prior/superseded
+  // session before starting fresh, so one never gets silently orphaned.
+  if(recordRAF){ cancelAnimationFrame(recordRAF); recordRAF = null; }
+  if(mediaRecorder){ try{ mediaRecorder.stop(); }catch(e){} mediaRecorder = null; }
+  recordCanvas = document.createElement('canvas');
+  recordCanvas.width = 640;
+  recordCanvas.height = 360;
+  recordCtx = recordCanvas.getContext('2d');
+  recordedChunks = [];
+
+  function drawFrame(){
+    const halfW = recordCanvas.width / 2;
+    drawVideoCover(recordCtx, localVideo, 0, 0, halfW, recordCanvas.height, true);
+    drawVideoCover(recordCtx, remoteVideo, halfW, 0, halfW, recordCanvas.height, false);
+    recordRAF = requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+
+  try{
+    const stream = recordCanvas.captureStream(30);
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.start();
+  }catch(e){
+    mediaRecorder = null;
+    if(recordRAF) cancelAnimationFrame(recordRAF);
+    recordRAF = null;
+  }
+}
+
+async function stopRecapRecording(shouldUpload){
+  if(recordRAF) cancelAnimationFrame(recordRAF);
+  recordRAF = null;
+  if(!mediaRecorder){ recordedChunks = []; return; }
+  const recorder = mediaRecorder;
+  mediaRecorder = null;
+  await new Promise(resolve=>{
+    recorder.addEventListener('stop', resolve, { once:true });
+    try{ recorder.stop(); }catch(e){ resolve(); }
+  });
+  if(shouldUpload && recordedChunks.length > 0){
+    try{ await uploadRecapRecording(); }catch(e){ /* recap upload is best-effort — never block the strip flow */ }
+  }
+  recordedChunks = [];
+}
+
+async function uploadRecapRecording(){
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const path = `${crypto.randomUUID()}.webm`;
+  const { error: uploadError } = await sbClient.storage.from('session-recaps').upload(path, blob, { contentType: 'video/webm' });
+  if(uploadError) return;
+  const { error: insertError } = await sbClient.from('recordings').insert({ room_code: currentRoomCode, storage_path: path });
+  if(insertError) return;
+  const { data: urlData } = sbClient.storage.from('session-recaps').getPublicUrl(path);
+  showRecapPanel(urlData.publicUrl);
+  broadcastData({ type:'recapReady', url: urlData.publicUrl });
+}
+
+function showRecapPanel(url){
+  recapLink.href = url;
+  recapLink.textContent = url;
+  if(typeof QRCode !== 'undefined'){
+    QRCode.toCanvas(recapQr, url, { width: 150, margin: 1 }, ()=>{});
+  }else{
+    recapQr.style.display = 'none';
+  }
+  recapPanel.classList.add('show');
+}
+
+function applyRecapReady(url){
+  showRecapPanel(url);
 }
 
 /* Replay a quick fade-in whenever status text changes, instead of an instant swap */
@@ -1747,6 +1859,8 @@ function handleRemoteMessage(msg){
     applyPhotoSwap(msg.slot, msg.photoIndex);
   }else if(msg.type === 'shootCancelled'){
     applyShootCancel();
+  }else if(msg.type === 'recapReady'){
+    applyRecapReady(msg.url);
   }
 }
 
@@ -1908,6 +2022,7 @@ function teardownAndReturnToGate(){
   closeSwapModal();
   forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
+  recapPanel.classList.remove('show');
   currentRoomCode = null;
   isHost = null;
   boothLayout.style.display = 'none';
@@ -2227,9 +2342,11 @@ async function runCaptureSequence(seconds){
   resetStickers();
   closeSwapModal();
   stripCanvas.classList.remove('swappable');
+  recapPanel.classList.remove('show');
   redrawStrip();
   showSelectionPanel();
   enterFullscreenShoot();
+  startRecapRecording();
 
   for(let i=0;i<SHOOT_COUNT;i++){
     if(shootSessionId !== mySessionId) return;
@@ -2247,6 +2364,7 @@ async function runCaptureSequence(seconds){
   }
   busy = false;
   statusLine.textContent = t('pickFavorite', { n: STRIP_SLOTS });
+  stopRecapRecording(true);
   exitFullscreenShoot();
 }
 
@@ -2259,6 +2377,7 @@ function applyShootCancel(){
   selectedIndices = [];
   resetStickers();
   hideSelectionPanel();
+  stopRecapRecording(false);
   exitFullscreenShoot();
   redrawStrip();
   downloadBtn.disabled = true;
@@ -2431,6 +2550,7 @@ resetBtn.addEventListener('click', ()=>{
   closeSwapModal();
   forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
+  recapPanel.classList.remove('show');
   hideSelectionPanel();
   redrawStrip();
   downloadBtn.disabled = true;
