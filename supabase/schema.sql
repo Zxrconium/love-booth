@@ -62,10 +62,26 @@ $$;
 
 grant execute on function public.spend_coin() to authenticated;
 
--- Atomic credit: intended to be called ONLY by the Lemon Squeezy webhook
--- (Netlify Function, using the service_role key), never from client code —
--- that's why authenticated/anon are explicitly denied execute below.
-create or replace function public.credit_coins(target_user uuid, amount integer)
+-- Atomic, idempotent credit: intended to be called ONLY by the Lemon
+-- Squeezy webhook (Supabase Edge Function, using the service_role key),
+-- never from client code — that's why authenticated/anon are explicitly
+-- denied execute below.
+--
+-- Takes the Lemon Squeezy order id and records it in processed_ls_orders
+-- inside the same transaction as the credit, so a retried webhook delivery
+-- for an order we've already credited is a safe no-op (the insert conflicts
+-- and the exception branch just returns the current balance) rather than
+-- double-crediting.
+create table if not exists public.processed_ls_orders (
+  order_id text primary key,
+  created_at timestamptz not null default now()
+);
+
+alter table public.processed_ls_orders enable row level security;
+-- No policies at all: only service_role (which bypasses RLS entirely) ever
+-- touches this table, via credit_coins_for_order() below.
+
+create or replace function public.credit_coins_for_order(p_order_id text, p_user uuid, p_amount integer)
 returns integer
 language plpgsql
 security definer set search_path = public
@@ -73,15 +89,20 @@ as $$
 declare
   new_balance integer;
 begin
+  insert into public.processed_ls_orders (order_id) values (p_order_id);
   update public.profiles
-    set coins = coins + amount
-    where id = target_user
+    set coins = coins + p_amount
+    where id = p_user
   returning coins into new_balance;
   return new_balance;
+exception
+  when unique_violation then
+    select coins into new_balance from public.profiles where id = p_user;
+    return new_balance;
 end;
 $$;
 
-revoke execute on function public.credit_coins(uuid, integer) from public, anon, authenticated;
+revoke execute on function public.credit_coins_for_order(text, uuid, integer) from public, anon, authenticated;
 -- service_role bypasses grants entirely, so no explicit grant is needed for the webhook.
 
 -- ---------------------------------------------------------------------------

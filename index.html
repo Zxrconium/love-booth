@@ -119,9 +119,10 @@
   .buy-coins-packs{display:flex; flex-direction:column; gap:10px;}
   .buy-coin-pack{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:14px; background:rgba(251,243,231,0.04); border:1.5px solid rgba(251,243,231,0.18); color:var(--paper); text-align:left; cursor:pointer;}
   .buy-coin-pack:hover:not(:disabled){ border-color:rgba(215,162,74,0.55); }
-  .buy-coin-pack.best-value{ border-color:var(--gold); }
+  .buy-coin-pack.best-value{ border-color:var(--gold); box-shadow:0 0 0 1px rgba(215,162,74,0.35); }
   .buy-coin-pack-label{font-weight:700;}
   .buy-coin-pack-price{font-size:0.75rem; color:rgba(251,243,231,0.55);}
+  .best-value-badge{font-size:0.62rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-left:6px;}
   .buy-coins-close{margin-top:16px;}
   .gate input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
@@ -421,8 +422,8 @@
           <span class="buy-coin-pack-label">🪙 <span data-i18n="pack3">3 coins</span></span>
           <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
         </button>
-        <button class="buy-coin-pack" data-pack="5" type="button" disabled>
-          <span class="buy-coin-pack-label">🪙 <span data-i18n="pack5">5 coins</span></span>
+        <button class="buy-coin-pack best-value" data-pack="5" type="button" disabled>
+          <span class="buy-coin-pack-label">🪙 <span data-i18n="pack5">5 coins</span><span class="best-value-badge" data-i18n="bestValueBadge">best value</span></span>
           <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
         </button>
       </div>
@@ -545,7 +546,7 @@ const TRANSLATIONS = {
     logIn: 'log in', signUp: 'sign up',
     needAccount: 'need an account? sign up', haveAccount: 'have an account? log in',
     gateFootnote: 'your coins & recaps are tied to your account — nothing else is saved',
-    buyCoinsTitle: 'buy coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins',
+    buyCoinsTitle: 'buy coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'best value',
     comingSoon: 'coming soon', buyCoinsNotReady: "coin purchases aren't hooked up yet — check back soon", close: 'close',
     connecting: 'connecting…', copyCode: 'copy code', waitingForThem: 'waiting for them<br>to join…',
     sayCheese: "say cheese whenever you're ready",
@@ -597,7 +598,7 @@ const TRANSLATIONS = {
     logIn: 'log in', signUp: 'mag-sign up',
     needAccount: 'wala pang account? mag-sign up', haveAccount: 'may account ka na? mag-log in',
     gateFootnote: 'nakatali ang coins at recaps mo sa account mo — wala nang ibang naise-save',
-    buyCoinsTitle: 'bumili ng coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins',
+    buyCoinsTitle: 'bumili ng coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'pinaka-sulit',
     comingSoon: 'malapit na', buyCoinsNotReady: 'hindi pa gumagana ang pagbili ng coins — balikan mo na lang', close: 'isara',
     connecting: 'kumokonekta…', copyCode: 'kopyahin ang code', waitingForThem: 'hinihintay siya<br>sumali…',
     sayCheese: 'sabihin ang cheese kapag handa ka na',
@@ -649,7 +650,7 @@ const TRANSLATIONS = {
     logIn: 'iniciar sesión', signUp: 'registrarse',
     needAccount: '¿no tienes cuenta? regístrate', haveAccount: '¿ya tienes cuenta? inicia sesión',
     gateFootnote: 'tus monedas y recuerdos están ligados a tu cuenta — no se guarda nada más',
-    buyCoinsTitle: 'comprar monedas', pack1: '1 moneda', pack3: '3 monedas', pack5: '5 monedas',
+    buyCoinsTitle: 'comprar monedas', pack1: '1 moneda', pack3: '3 monedas', pack5: '5 monedas', bestValueBadge: 'mejor precio',
     comingSoon: 'muy pronto', buyCoinsNotReady: 'la compra de monedas aún no está lista — vuelve pronto', close: 'cerrar',
     connecting: 'conectando…', copyCode: 'copiar código', waitingForThem: 'esperando a que<br>se una…',
     sayCheese: 'di "whisky" cuando estés listo/a',
@@ -701,7 +702,7 @@ const TRANSLATIONS = {
     logIn: '로그인', signUp: '회원가입',
     needAccount: '계정이 없으신가요? 회원가입', haveAccount: '이미 계정이 있으신가요? 로그인',
     gateFootnote: '코인과 리캡은 계정에 연결됩니다 — 그 외에는 저장되지 않습니다',
-    buyCoinsTitle: '코인 구매', pack1: '코인 1개', pack3: '코인 3개', pack5: '코인 5개',
+    buyCoinsTitle: '코인 구매', pack1: '코인 1개', pack3: '코인 3개', pack5: '코인 5개', bestValueBadge: '최고의 혜택',
     comingSoon: '준비 중', buyCoinsNotReady: '코인 구매 기능은 아직 준비 중입니다 — 곧 다시 확인해 주세요', close: '닫기',
     connecting: '연결 중…', copyCode: '코드 복사', waitingForThem: '상대방을<br>기다리는 중…',
     sayCheese: '준비되면 활짝 웃어주세요',
@@ -753,7 +754,7 @@ const TRANSLATIONS = {
     logIn: 'ログイン', signUp: '新規登録',
     needAccount: 'アカウントをお持ちでないですか？ 新規登録', haveAccount: 'すでにアカウントをお持ちですか？ ログイン',
     gateFootnote: 'コインとリキャップはアカウントに紐づきます — それ以外は保存されません',
-    buyCoinsTitle: 'コインを購入', pack1: 'コイン1枚', pack3: 'コイン3枚', pack5: 'コイン5枚',
+    buyCoinsTitle: 'コインを購入', pack1: 'コイン1枚', pack3: 'コイン3枚', pack5: 'コイン5枚', bestValueBadge: '一番お得',
     comingSoon: '近日公開', buyCoinsNotReady: 'コイン購入はまだ準備中です — またご確認ください', close: '閉じる',
     connecting: '接続中…', copyCode: 'コードをコピー', waitingForThem: '相手の参加を<br>待っています…',
     sayCheese: '準備ができたら笑顔で',
@@ -986,6 +987,43 @@ function hideBuyCoinsModal(){ buyCoinsBackdrop.classList.remove('show'); }
 buyCoinsCloseBtn.addEventListener('click', hideBuyCoinsModal);
 buyCoinsBackdrop.addEventListener('click', (e)=>{ if(e.target === buyCoinsBackdrop) hideBuyCoinsModal(); });
 coinBadge.addEventListener('click', ()=>{ if(currentUser) showBuyCoinsModal(); });
+
+/* Lemon Squeezy checkout config. productId is real (given by the store
+   owner); variantId and the store slug still need to be copied from the
+   Lemon Squeezy dashboard (Products → variant id shown per product;
+   Settings → General → Store URL for the slug) — a pack only goes live
+   once both are filled in, so nothing here can accidentally charge real
+   money against a guessed id. */
+const LEMON_SQUEEZY_STORE_SLUG = null;
+const COIN_PACKS = [
+  { pack: 1, price: '$1.99', productId: '1219540', variantId: null },
+  { pack: 3, price: '$4.99', productId: '1219541', variantId: null },
+  { pack: 5, price: '$7.99', productId: '1219545', variantId: null },
+];
+
+function buildCheckoutUrl(pack){
+  if(!LEMON_SQUEEZY_STORE_SLUG || !pack.variantId || !currentUser) return null;
+  const url = new URL(`https://${LEMON_SQUEEZY_STORE_SLUG}.lemonsqueezy.com/checkout/buy/${pack.variantId}`);
+  url.searchParams.set('checkout[custom][user_id]', currentUser.id);
+  return url.toString();
+}
+
+function initBuyCoinsPacks(){
+  COIN_PACKS.forEach(pack=>{
+    const btn = document.querySelector(`.buy-coin-pack[data-pack="${pack.pack}"]`);
+    if(!btn) return;
+    if(!(LEMON_SQUEEZY_STORE_SLUG && pack.variantId)) return; // stays disabled, shows "coming soon"
+    const priceEl = btn.querySelector('.buy-coin-pack-price');
+    btn.disabled = false;
+    priceEl.textContent = pack.price;
+    priceEl.removeAttribute('data-i18n');
+    btn.addEventListener('click', ()=>{
+      const url = buildCheckoutUrl(pack);
+      if(url) window.open(url, '_blank', 'noopener');
+    });
+  });
+}
+initBuyCoinsPacks();
 
 refreshAuthState();
 
