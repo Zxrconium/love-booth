@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="vendor/qrcode-generator.min.js"></script>
 <style>
   :root{
     --bg-deep:#1c1420; --bg-deep2:#2a1c30; --paper:#fbf3e7; --ink:#2b1b2e;
@@ -1285,11 +1285,30 @@ async function uploadRecapRecording(){
   broadcastData({ type:'recapReady', url: urlData.publicUrl });
 }
 
+function renderRecapQr(canvas, url){
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  const count = qr.getModuleCount();
+  const marginModules = 2;
+  const cellSize = Math.floor(canvas.width / (count + marginModules * 2));
+  const drawnSize = cellSize * (count + marginModules * 2);
+  const offset = Math.floor((canvas.width - drawnSize) / 2) + cellSize * marginModules;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(offset, offset);
+  qr.renderTo2dContext(ctx, cellSize);
+  ctx.restore();
+}
+
 function showRecapPanel(url){
   recapLink.href = url;
   recapLink.textContent = url;
-  if(typeof QRCode !== 'undefined'){
-    QRCode.toCanvas(recapQr, url, { width: 150, margin: 1 }, ()=>{});
+  if(typeof qrcode !== 'undefined'){
+    recapQr.style.display = '';
+    try{ renderRecapQr(recapQr, url); }catch(e){ recapQr.style.display = 'none'; }
   }else{
     recapQr.style.display = 'none';
   }
