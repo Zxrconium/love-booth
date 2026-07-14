@@ -427,7 +427,7 @@
           <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
         </button>
       </div>
-      <p class="auth-msg" data-i18n="buyCoinsNotReady">coin purchases aren't hooked up yet — check back soon</p>
+      <p class="auth-msg" id="buyCoinsNotReadyMsg" data-i18n="buyCoinsNotReady">coin purchases aren't hooked up yet — check back soon</p>
       <button class="btn-ghost buy-coins-close" id="buyCoinsCloseBtn" type="button" data-i18n="close">close</button>
     </div>
   </div>
@@ -866,6 +866,7 @@ const coinBadgeCount = document.getElementById('coinBadgeCount');
 const logoutLink = document.getElementById('logoutLink');
 const buyCoinsBackdrop = document.getElementById('buyCoinsBackdrop');
 const buyCoinsCloseBtn = document.getElementById('buyCoinsCloseBtn');
+const buyCoinsNotReadyMsg = document.getElementById('buyCoinsNotReadyMsg');
 const recapPanel = document.getElementById('recapPanel');
 const recapQr = document.getElementById('recapQr');
 const recapLink = document.getElementById('recapLink');
@@ -994,11 +995,11 @@ coinBadge.addEventListener('click', ()=>{ if(currentUser) showBuyCoinsModal(); }
    Settings → General → Store URL for the slug) — a pack only goes live
    once both are filled in, so nothing here can accidentally charge real
    money against a guessed id. */
-const LEMON_SQUEEZY_STORE_SLUG = null;
+const LEMON_SQUEEZY_STORE_SLUG = 'luvbooth';
 const COIN_PACKS = [
-  { pack: 1, price: '$1.99', productId: '1219540', variantId: null },
-  { pack: 3, price: '$4.99', productId: '1219541', variantId: null },
-  { pack: 5, price: '$7.99', productId: '1219545', variantId: null },
+  { pack: 1, price: '$1.99', productId: '1219540', variantId: '1906502' },
+  { pack: 3, price: '$4.99', productId: '1219541', variantId: '1906504' },
+  { pack: 5, price: '$7.99', productId: '1219545', variantId: '1906510' },
 ];
 
 function buildCheckoutUrl(pack){
@@ -1009,10 +1010,11 @@ function buildCheckoutUrl(pack){
 }
 
 function initBuyCoinsPacks(){
+  let allReady = true;
   COIN_PACKS.forEach(pack=>{
     const btn = document.querySelector(`.buy-coin-pack[data-pack="${pack.pack}"]`);
     if(!btn) return;
-    if(!(LEMON_SQUEEZY_STORE_SLUG && pack.variantId)) return; // stays disabled, shows "coming soon"
+    if(!(LEMON_SQUEEZY_STORE_SLUG && pack.variantId)){ allReady = false; return; } // stays disabled, shows "coming soon"
     const priceEl = btn.querySelector('.buy-coin-pack-price');
     btn.disabled = false;
     priceEl.textContent = pack.price;
@@ -1022,6 +1024,7 @@ function initBuyCoinsPacks(){
       if(url) window.open(url, '_blank', 'noopener');
     });
   });
+  if(allReady) buyCoinsNotReadyMsg.style.display = 'none';
 }
 initBuyCoinsPacks();
 
