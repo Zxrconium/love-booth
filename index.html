@@ -1310,18 +1310,19 @@ function forceHideSelectionPanel(){
    still photos. Covers only the active shoot window: started right after
    entering full-screen, stopped and uploaded right before leaving it
    normally, or stopped and discarded (no upload) on cancel/leave. */
+const RECORD_FPS = 30;
 let mediaRecorder = null;
 let recordedChunks = [];
 let recordCanvas = null;
 let recordCtx = null;
-let recordRAF = null;
+let recordTimer = null;
 
 function startRecapRecording(){
   if(!isHost || !sbClient || !currentUser) return;
   if(typeof MediaRecorder === 'undefined') return;
   // Defensively clean up any still-running recorder from a prior/superseded
   // session before starting fresh, so one never gets silently orphaned.
-  if(recordRAF){ cancelAnimationFrame(recordRAF); recordRAF = null; }
+  if(recordTimer){ clearInterval(recordTimer); recordTimer = null; }
   if(mediaRecorder){ try{ mediaRecorder.stop(); }catch(e){} mediaRecorder = null; }
   recordCanvas = document.createElement('canvas');
   recordCanvas.width = 640;
@@ -1329,29 +1330,36 @@ function startRecapRecording(){
   recordCtx = recordCanvas.getContext('2d');
   recordedChunks = [];
 
+  // Driven by setInterval rather than requestAnimationFrame: rAF is batched
+  // with the page's own paint/animation work (countdown, flash, thumbnail
+  // pop-ins), so under load its callbacks get delayed or skipped, producing
+  // irregular frame spacing in the captured recording even though
+  // captureStream() is asked for a steady 30fps. A plain timer isn't tied to
+  // the rendering pipeline and keeps the canvas redrawn on a steady cadence
+  // regardless of what else is animating on the page.
   function drawFrame(){
     const halfW = recordCanvas.width / 2;
     drawVideoCover(recordCtx, localVideo, 0, 0, halfW, recordCanvas.height, true);
     drawVideoCover(recordCtx, remoteVideo, halfW, 0, halfW, recordCanvas.height, false);
-    recordRAF = requestAnimationFrame(drawFrame);
   }
   drawFrame();
+  recordTimer = setInterval(drawFrame, 1000 / RECORD_FPS);
 
   try{
-    const stream = recordCanvas.captureStream(30);
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const stream = recordCanvas.captureStream(RECORD_FPS);
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm', videoBitsPerSecond: 1500000 });
     mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.start();
   }catch(e){
     mediaRecorder = null;
-    if(recordRAF) cancelAnimationFrame(recordRAF);
-    recordRAF = null;
+    if(recordTimer) clearInterval(recordTimer);
+    recordTimer = null;
   }
 }
 
 async function stopRecapRecording(shouldUpload){
-  if(recordRAF) cancelAnimationFrame(recordRAF);
-  recordRAF = null;
+  if(recordTimer) clearInterval(recordTimer);
+  recordTimer = null;
   if(!mediaRecorder){ recordedChunks = []; return; }
   const recorder = mediaRecorder;
   mediaRecorder = null;
