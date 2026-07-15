@@ -36,7 +36,7 @@
     0%,100%{ opacity:0.6; transform:scale(1); }
     50%{ opacity:1; transform:scale(1.08); }
   }
-  .scene{position:relative; z-index:1; width:100%; max-width:920px; display:flex; flex-direction:column; align-items:center; gap:24px;}
+  .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
   .marquee{
     font-family:'Caveat',cursive; font-weight:700; color:var(--gold);
     font-size:clamp(1.9rem,6vw,2.6rem); text-align:center; letter-spacing:0.5px;
@@ -298,14 +298,6 @@
     from{ opacity:0; }
     to{ opacity:1; }
   }
-  .sticker-toolbar{display:none; flex-direction:column; gap:8px; width:100%; max-width:230px; background:rgba(251,243,231,0.04); border:1px solid rgba(251,243,231,0.15); border-radius:14px; padding:10px; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
-  .sticker-picker{display:flex; gap:8px; justify-content:center;}
-  .sticker-btn{flex:1; min-height:44px; min-width:44px; padding:4px; display:flex; align-items:center; justify-content:center; background:rgba(251,243,231,0.06); border:1.5px solid rgba(251,243,231,0.2);}
-  .sticker-btn:hover:not(:disabled){ border-color:rgba(215,162,74,0.55); background:rgba(251,243,231,0.1); }
-  .sticker-btn canvas{ width:26px; height:26px; pointer-events:none; }
-  .sticker-actions{display:flex; gap:6px;}
-  .sticker-actions button{flex:1; min-height:40px; padding:6px 4px; font-size:0.68rem;}
-
   #stripCanvas.swappable{ cursor:pointer; }
   .swap-modal-backdrop{position:fixed; inset:0; background:rgba(21,16,26,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
   .swap-modal-backdrop.show{display:flex; animation:modalBackdropIn 0.2s ease both;}
@@ -344,27 +336,27 @@
   .picking-screen{
     display:none; position:fixed; inset:0; z-index:190;
     background:radial-gradient(circle at 50% 30%, var(--bg-deep2), var(--bg-deep) 70%);
-    flex-direction:row; align-items:stretch; justify-content:center;
-    padding:clamp(14px,2.5vw,32px); gap:24px; overflow:hidden;
+    flex-direction:row; align-items:flex-start; justify-content:center;
+    padding:clamp(14px,2.5vw,32px); gap:24px; overflow-y:auto;
   }
   .picking-screen.show{ display:flex; animation:fsIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
   .picking-screen.hide{ display:flex; animation:fsOut 0.25s ease both; }
-  .picking-left{ flex:1 1 auto; min-width:0; max-width:900px; overflow-y:auto; padding:4px; display:flex; align-items:center; }
+  .picking-left{ flex:1 1 auto; min-width:0; max-width:900px; padding:4px; }
   .picking-grid{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr));
-    gap:16px; align-content:center; max-height:none; margin:0; width:100%;
+    gap:16px; align-content:start; max-height:none; margin:0; width:100%;
   }
   .picking-right{
     flex:0 0 240px; display:flex; flex-direction:column; align-items:center;
-    gap:12px; overflow-y:auto; padding:4px;
+    gap:12px; padding:4px;
   }
   .picking-strip-slot{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
   .picking-right .selection-actions{ width:100%; max-width:230px; }
   @media (max-width:500px){
-    .picking-screen{ flex-direction:column; justify-content:flex-start; overflow-y:auto; padding:14px; }
-    .picking-left{ max-width:100%; width:100%; overflow-y:visible; flex:none; align-items:stretch; }
-    .picking-grid{ grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); align-content:start; }
-    .picking-right{ flex:none; width:100%; max-width:340px; overflow-y:visible; }
+    .picking-screen{ flex-direction:column; justify-content:flex-start; padding:14px; }
+    .picking-left{ max-width:100%; width:100%; flex:none; }
+    .picking-grid{ grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); }
+    .picking-right{ flex:none; width:100%; max-width:340px; }
   }
 
   @keyframes modalBackdropIn{
@@ -535,30 +527,18 @@
         <label for="themeSelect" class="theme-label" data-i18n="stripStyle">strip style</label>
         <select id="themeSelect" class="theme-select"></select>
       </div>
-      <div class="sticker-toolbar" id="stickerToolbar">
-        <div class="sticker-picker">
-          <button class="sticker-btn" data-sticker="heart" type="button" aria-label="Add heart sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
-          <button class="sticker-btn" data-sticker="star" type="button" aria-label="Add star sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
-          <button class="sticker-btn" data-sticker="sparkle" type="button" aria-label="Add sparkle sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
-          <button class="sticker-btn" data-sticker="bow" type="button" aria-label="Add bow sticker"><canvas class="sticker-icon" width="28" height="28"></canvas></button>
-        </div>
-        <div class="sticker-actions">
-          <button class="btn-ghost" id="stickerUndoBtn" type="button" data-i18n="undo">undo</button>
-          <button class="btn-ghost" id="stickerClearBtn" type="button" data-i18n="clear">clear</button>
-          <button class="btn-ghost" id="stickerHideBtn" type="button" data-i18n="hideStickers">hide stickers</button>
-        </div>
-      </div>
       <div class="strip-print-frame">
         <div class="print-slot" id="printSlot"></div>
         <canvas id="stripCanvas" width="330" height="1000"></canvas>
       </div>
       <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
-      <div class="recap-panel" id="recapPanel">
-        <p class="recap-title" data-i18n="recapTitle">session recap</p>
-        <canvas id="recapQr" width="150" height="150"></canvas>
-        <a class="recap-link" id="recapLink" href="#" target="_blank" rel="noopener"></a>
-        <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
-      </div>
+    </div>
+
+    <div class="recap-panel" id="recapPanel">
+      <p class="recap-title" data-i18n="recapTitle">session recap</p>
+      <canvas id="recapQr" width="150" height="150"></canvas>
+      <a class="recap-link" id="recapLink" href="#" target="_blank" rel="noopener"></a>
+      <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
     </div>
   </div>
 
@@ -617,7 +597,6 @@ const TRANSLATIONS = {
     buildStrip: '🖤 build my strip', retakeAll: 'retake all 10',
     hint: "Photos capture both of you at once. We'll snap 10 in a row, then you pick your favorite 3. Leaving or refreshing ends the room — you'd start a fresh one.",
     leaveRoom: 'leave room', stripStyle: 'strip style',
-    undo: 'undo', clear: 'clear', hideStickers: 'hide stickers', showStickers: 'show stickers',
     downloadStrip: '⬇ download strip',
     outOfCoins: "you're out of coins — grab a pack to keep going",
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
@@ -669,7 +648,6 @@ const TRANSLATIONS = {
     buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10',
     hint: 'Sabay na kinukunan ang larawan ninyong dalawa. Kukuha kami ng 10 sunod-sunod, tapos pipili ka ng paborito mong 3. Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit kayo.',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
-    undo: 'bawiin', clear: 'burahin', hideStickers: 'itago ang stickers', showStickers: 'ipakita ang stickers',
     downloadStrip: '⬇ i-download ang strip',
     outOfCoins: 'naubusan ka na ng coins — bumili ng pack para magpatuloy',
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
@@ -721,7 +699,6 @@ const TRANSLATIONS = {
     buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos',
     hint: 'Las fotos los capturan a ambos a la vez. Tomaremos 10 seguidas y luego eliges tus 3 favoritas. Si sales o recargas la página, la sala termina — empezarías una nueva.',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
-    undo: 'deshacer', clear: 'borrar', hideStickers: 'ocultar stickers', showStickers: 'mostrar stickers',
     downloadStrip: '⬇ descargar tira',
     outOfCoins: 'te quedaste sin monedas — compra un paquete para seguir',
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
@@ -773,7 +750,6 @@ const TRANSLATIONS = {
     buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기',
     hint: '사진은 두 사람을 동시에 담습니다. 10장을 연속으로 찍은 뒤 마음에 드는 3장을 고르게 됩니다. 나가거나 새로고침하면 방이 종료되며, 다시 시작해야 합니다.',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
-    undo: '실행 취소', clear: '전체 삭제', hideStickers: '스티커 숨기기', showStickers: '스티커 보이기',
     downloadStrip: '⬇ 스트립 다운로드',
     outOfCoins: '코인이 부족합니다 — 코인 팩을 구매해 주세요',
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
@@ -825,7 +801,6 @@ const TRANSLATIONS = {
     buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す',
     hint: '写真はお二人を同時に写します。10枚連続で撮影し、その後お気に入りの3枚を選びます。退出したりページを更新するとルームは終了し、最初からやり直しになります。',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
-    undo: '元に戻す', clear: 'クリア', hideStickers: 'ステッカーを隠す', showStickers: 'ステッカーを表示',
     downloadStrip: '⬇ ストリップをダウンロード',
     outOfCoins: 'コインがなくなりました — パックを購入して続けましょう',
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
@@ -1195,11 +1170,6 @@ const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
 const printSlot = document.getElementById('printSlot');
-const stickerToolbar = document.getElementById('stickerToolbar');
-const stickerUndoBtn = document.getElementById('stickerUndoBtn');
-const stickerClearBtn = document.getElementById('stickerClearBtn');
-const stickerHideBtn = document.getElementById('stickerHideBtn');
-const stickerButtons = document.querySelectorAll('.sticker-btn');
 const swapModalBackdrop = document.getElementById('swapModalBackdrop');
 const swapModalTitle = document.getElementById('swapModalTitle');
 const swapModalClose = document.getElementById('swapModalClose');
@@ -1554,102 +1524,11 @@ themeSelect.addEventListener('change', ()=>{
   broadcastData({ type:'theme', value: currentThemeId });
 });
 
-/* ---------------- Stickers ----------------
-   A separate layer of draggable/resizable vector stickers composited on
-   top of the base strip render. redrawStrip() always draws the base
-   (theme + photos + footer) first, then this layer on top, so switching
-   themes never touches sticker data. */
-function drawHeart(ctx, cx, cy, size, fill, stroke){
-  const s = size, topY = cy - s*0.32;
-  ctx.beginPath();
-  ctx.moveTo(cx, topY + s*0.55);
-  ctx.bezierCurveTo(cx, topY, cx - s*0.55, topY, cx - s*0.55, topY + s*0.32);
-  ctx.bezierCurveTo(cx - s*0.55, topY + s*0.65, cx - s*0.22, topY + s*0.85, cx, topY + s*1.1);
-  ctx.bezierCurveTo(cx + s*0.22, topY + s*0.85, cx + s*0.55, topY + s*0.65, cx + s*0.55, topY + s*0.32);
-  ctx.bezierCurveTo(cx + s*0.55, topY, cx, topY, cx, topY + s*0.55);
-  ctx.closePath();
-  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
-  if(stroke){ ctx.lineWidth = Math.max(1.4, s*0.06); ctx.strokeStyle = stroke; ctx.stroke(); }
-}
-
-function drawStar(ctx, cx, cy, size, fill, stroke){
-  const spikes = 5, outerR = size*0.55, innerR = outerR*0.42;
-  let rot = -Math.PI/2;
-  const step = Math.PI/spikes;
-  ctx.beginPath();
-  ctx.moveTo(cx + Math.cos(rot)*outerR, cy + Math.sin(rot)*outerR);
-  for(let i=0;i<spikes;i++){
-    rot += step;
-    ctx.lineTo(cx + Math.cos(rot)*innerR, cy + Math.sin(rot)*innerR);
-    rot += step;
-    ctx.lineTo(cx + Math.cos(rot)*outerR, cy + Math.sin(rot)*outerR);
-  }
-  ctx.closePath();
-  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
-  if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
-}
-
-function drawSparkle(ctx, cx, cy, size, fill, stroke){
-  const outerR = size*0.55, innerR = outerR*0.24;
-  ctx.beginPath();
-  for(let i=0;i<4;i++){
-    const angle = (Math.PI/2)*i - Math.PI/2;
-    const midAngle = angle + Math.PI/4;
-    const ox = cx + Math.cos(angle)*outerR, oy = cy + Math.sin(angle)*outerR;
-    const mx = cx + Math.cos(midAngle)*innerR, my = cy + Math.sin(midAngle)*innerR;
-    if(i===0) ctx.moveTo(ox,oy); else ctx.lineTo(ox,oy);
-    ctx.lineTo(mx,my);
-  }
-  ctx.closePath();
-  if(fill){ ctx.fillStyle = fill; ctx.fill(); }
-  if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
-}
-
-function drawBow(ctx, cx, cy, size, fill, stroke){
-  const w = size*0.32, h = size*0.24;
-  [-1, 1].forEach(dir=>{
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.quadraticCurveTo(cx + dir*w*2.2, cy - h*2.2, cx + dir*w*2.8, cy);
-    ctx.quadraticCurveTo(cx + dir*w*2.2, cy + h*2.2, cx, cy);
-    ctx.closePath();
-    if(fill){ ctx.fillStyle = fill; ctx.fill(); }
-    if(stroke){ ctx.lineWidth = Math.max(1.4, size*0.05); ctx.strokeStyle = stroke; ctx.stroke(); }
-  });
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, size*0.12, size*0.16, 0, 0, Math.PI*2);
-  ctx.fillStyle = stroke || fill;
-  ctx.fill();
-}
-
-const STICKER_TYPES = {
-  heart:   { draw: drawHeart,   fill: '#e893a8', stroke: '#ffffff' },
-  star:    { draw: drawStar,    fill: '#d7a24a', stroke: '#5c4111' },
-  sparkle: { draw: drawSparkle, fill: '#fff8ea', stroke: '#d7a24a' },
-  bow:     { draw: drawBow,     fill: '#e893a8', stroke: '#ffffff' },
-};
-
-let stickers = [];
-let selectedStickerId = null;
-let stickersHidden = false;
-let stickerIdSeq = 1;
-let stickersActive = false;
-const STICKER_HANDLE_R = 13;
-
-function myColor(){ return isHost ? '#d7a24a' : '#e893a8'; }
+/* ---------------- Real-time cursor (Figma-style) ----------------
+   Shows where your partner's pointer is over the built strip. Active only
+   once the strip actually exists (mirrors the same "swappable" condition
+   as the per-slot photo swap feature below). */
 function remoteColor(){ return isHost ? '#e893a8' : '#d7a24a'; }
-
-function findSticker(id){ return stickers.find(s => s.id === id); }
-
-function addSticker(type){
-  const id = (isHost ? 'H' : 'G') + (stickerIdSeq++);
-  const sticker = { id, type, x: stripCanvas.width / 2, y: stripCanvas.height / 2, size: 64, remoteLocked: false };
-  stickers.push(sticker);
-  selectedStickerId = id;
-  stickersHidden = false;
-  broadcastData({ type:'stickerAdd', sticker: { id: sticker.id, type: sticker.type, x: sticker.x, y: sticker.y, size: sticker.size } });
-  redrawStrip();
-}
 
 function roundRectPath(ctx, x, y, w, h, r){
   ctx.beginPath();
@@ -1707,81 +1586,6 @@ function drawRemoteCursor(){
   stripCtx.restore();
 }
 
-function drawStickerLayer(){
-  if(stickersHidden) return;
-  stickers.forEach(st=>{
-    const def = STICKER_TYPES[st.type];
-    if(!def) return;
-    stripCtx.save();
-    def.draw(stripCtx, st.x, st.y, st.size, def.fill, def.stroke);
-    stripCtx.restore();
-
-    if(st.remoteLocked){
-      const half = st.size * 0.62;
-      stripCtx.save();
-      stripCtx.strokeStyle = remoteColor();
-      stripCtx.lineWidth = 2.2;
-      stripCtx.strokeRect(st.x - half, st.y - half, half*2, half*2);
-      stripCtx.restore();
-      return;
-    }
-    if(st.id !== selectedStickerId) return;
-
-    const half = st.size * 0.62;
-    stripCtx.save();
-    stripCtx.setLineDash([4, 3]);
-    stripCtx.strokeStyle = 'rgba(43,27,46,0.85)';
-    stripCtx.lineWidth = 1.4;
-    stripCtx.strokeRect(st.x - half, st.y - half, half*2, half*2);
-    stripCtx.restore();
-
-    stripCtx.save();
-    stripCtx.beginPath();
-    stripCtx.arc(st.x + half, st.y - half, STICKER_HANDLE_R, 0, Math.PI*2);
-    stripCtx.fillStyle = '#e0697e';
-    stripCtx.fill();
-    stripCtx.strokeStyle = '#ffffff';
-    stripCtx.lineWidth = 1.5;
-    stripCtx.stroke();
-    stripCtx.lineWidth = 1.8;
-    stripCtx.beginPath();
-    stripCtx.moveTo(st.x + half - 4, st.y - half - 4);
-    stripCtx.lineTo(st.x + half + 4, st.y - half + 4);
-    stripCtx.moveTo(st.x + half + 4, st.y - half - 4);
-    stripCtx.lineTo(st.x + half - 4, st.y - half + 4);
-    stripCtx.stroke();
-    stripCtx.restore();
-
-    stripCtx.save();
-    stripCtx.beginPath();
-    stripCtx.arc(st.x + half, st.y + half, STICKER_HANDLE_R, 0, Math.PI*2);
-    stripCtx.fillStyle = '#d7a24a';
-    stripCtx.fill();
-    stripCtx.strokeStyle = '#ffffff';
-    stripCtx.lineWidth = 1.5;
-    stripCtx.stroke();
-    stripCtx.restore();
-  });
-  drawRemoteCursor();
-}
-
-function hitTestHandle(st, x, y){
-  if(st.id !== selectedStickerId) return null;
-  const half = st.size * 0.62;
-  if(Math.hypot(x - (st.x + half), y - (st.y - half)) <= STICKER_HANDLE_R + 4) return 'delete';
-  if(Math.hypot(x - (st.x + half), y - (st.y + half)) <= STICKER_HANDLE_R + 4) return 'resize';
-  return null;
-}
-
-function hitTestSticker(x, y){
-  for(let i = stickers.length - 1; i >= 0; i--){
-    const st = stickers[i];
-    const half = st.size * 0.62;
-    if(x >= st.x - half && x <= st.x + half && y >= st.y - half && y <= st.y + half) return st;
-  }
-  return null;
-}
-
 function canvasPointFromEvent(evt){
   const rect = stripCanvas.getBoundingClientRect();
   return {
@@ -1790,11 +1594,8 @@ function canvasPointFromEvent(evt){
   };
 }
 
-let stickerDrag = null;
 let lastCursorBroadcastAt = 0;
-let lastStickerBroadcastAt = 0;
 const CURSOR_BROADCAST_THROTTLE_MS = 50;
-const STICKER_BROADCAST_THROTTLE_MS = 50;
 
 function maybeBroadcastCursor(pt){
   const now = Date.now();
@@ -1803,118 +1604,14 @@ function maybeBroadcastCursor(pt){
   broadcastData({ type:'cursor', x: pt.x / stripCanvas.width, y: pt.y / stripCanvas.height });
 }
 
-stripCanvas.addEventListener('pointerdown', (e)=>{
-  if(stickers.length === 0 || stickersHidden) return;
-  const pt = canvasPointFromEvent(e);
-  const selSt = selectedStickerId != null ? findSticker(selectedStickerId) : null;
-  if(selSt && !selSt.remoteLocked){
-    const handle = hitTestHandle(selSt, pt.x, pt.y);
-    if(handle === 'delete'){
-      stickers = stickers.filter(s => s.id !== selSt.id);
-      selectedStickerId = null;
-      broadcastData({ type:'stickerDelete', id: selSt.id });
-      redrawStrip();
-      return;
-    }
-    if(handle === 'resize'){
-      try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
-      stickerDrag = { id: selSt.id, mode:'resize', startSize: selSt.size, startDist: Math.hypot(pt.x - selSt.x, pt.y - selSt.y) || 1 };
-      broadcastData({ type:'stickerLock', id: selSt.id });
-      e.preventDefault();
-      return;
-    }
-  }
-  const hit = hitTestSticker(pt.x, pt.y);
-  if(hit && hit.remoteLocked){
-    return; // someone else is actively dragging/resizing this one right now
-  }
-  if(hit){
-    selectedStickerId = hit.id;
-    try{ stripCanvas.setPointerCapture(e.pointerId); }catch(err){}
-    stickerDrag = { id: hit.id, mode:'move', offsetX: pt.x - hit.x, offsetY: pt.y - hit.y };
-    broadcastData({ type:'stickerLock', id: hit.id });
-    redrawStrip();
-    e.preventDefault();
-  }else if(selectedStickerId != null){
-    selectedStickerId = null;
-    redrawStrip();
-  }
-});
-
 stripCanvas.addEventListener('pointermove', (e)=>{
-  if(!stickersActive) return;
-  const pt = canvasPointFromEvent(e);
-  maybeBroadcastCursor(pt);
-  if(!stickerDrag) return;
-  const st = findSticker(stickerDrag.id);
-  if(!st) return;
-  if(stickerDrag.mode === 'move'){
-    st.x = Math.min(Math.max(pt.x - stickerDrag.offsetX, 0), stripCanvas.width);
-    st.y = Math.min(Math.max(pt.y - stickerDrag.offsetY, 0), stripCanvas.height);
-  }else if(stickerDrag.mode === 'resize'){
-    const dist = Math.hypot(pt.x - st.x, pt.y - st.y) || 1;
-    st.size = Math.min(Math.max(stickerDrag.startSize * (dist / stickerDrag.startDist), 24), 200);
-  }
-  redrawStrip();
-  const now = Date.now();
-  if(now - lastStickerBroadcastAt >= STICKER_BROADCAST_THROTTLE_MS){
-    lastStickerBroadcastAt = now;
-    broadcastData({ type:'stickerMove', id: st.id, x: st.x, y: st.y, size: st.size, final:false });
-  }
-  e.preventDefault();
+  if(!stripCanvas.classList.contains('swappable')) return;
+  maybeBroadcastCursor(canvasPointFromEvent(e));
 });
 
 stripCanvas.addEventListener('pointerleave', ()=>{
-  if(!stickersActive) return;
+  if(!stripCanvas.classList.contains('swappable')) return;
   broadcastData({ type:'cursorHide' });
-});
-
-function endStickerDrag(e){
-  if(stickerDrag){
-    try{ stripCanvas.releasePointerCapture(e.pointerId); }catch(err){}
-    const st = findSticker(stickerDrag.id);
-    if(st){
-      broadcastData({ type:'stickerMove', id: st.id, x: st.x, y: st.y, size: st.size, final:true });
-    }
-    broadcastData({ type:'stickerUnlock', id: stickerDrag.id });
-  }
-  stickerDrag = null;
-}
-stripCanvas.addEventListener('pointerup', endStickerDrag);
-stripCanvas.addEventListener('pointercancel', endStickerDrag);
-
-function resetStickers(){
-  stickers = [];
-  selectedStickerId = null;
-  stickersHidden = false;
-  stickersActive = false;
-  stickerHideBtn.textContent = t('hideStickers');
-  stickerToolbar.style.display = 'none';
-}
-
-stickerButtons.forEach(btn=>{
-  const def = STICKER_TYPES[btn.dataset.sticker];
-  const iconCtx = btn.querySelector('.sticker-icon').getContext('2d');
-  def.draw(iconCtx, 14, 14, 20, def.fill, def.stroke);
-  btn.addEventListener('click', ()=> addSticker(btn.dataset.sticker));
-});
-stickerUndoBtn.addEventListener('click', ()=>{
-  if(stickers.length === 0) return;
-  const removed = stickers.pop();
-  if(selectedStickerId === removed.id) selectedStickerId = null;
-  broadcastData({ type:'stickerDelete', id: removed.id });
-  redrawStrip();
-});
-stickerClearBtn.addEventListener('click', ()=>{
-  stickers = [];
-  selectedStickerId = null;
-  broadcastData({ type:'stickersClear' });
-  redrawStrip();
-});
-stickerHideBtn.addEventListener('click', ()=>{
-  stickersHidden = !stickersHidden;
-  stickerHideBtn.textContent = stickersHidden ? t('showStickers') : t('hideStickers');
-  redrawStrip();
 });
 
 let shots = [];
@@ -1999,52 +1696,6 @@ function applyRemoteSelection(indices){
   redrawStrip();
 }
 
-function applyRemoteStickerAdd(sticker){
-  if(!sticker || !sticker.id || findSticker(sticker.id)) return;
-  stickers.push({ id: sticker.id, type: sticker.type, x: sticker.x, y: sticker.y, size: sticker.size, remoteLocked: false });
-  redrawStrip();
-}
-
-function applyRemoteStickerDelete(id){
-  stickers = stickers.filter(s => s.id !== id);
-  if(selectedStickerId === id) selectedStickerId = null;
-  redrawStrip();
-}
-
-function applyRemoteStickersClear(){
-  stickers = [];
-  selectedStickerId = null;
-  redrawStrip();
-}
-
-function applyRemoteStickerLock(id){
-  const st = findSticker(id);
-  if(!st) return;
-  if(stickerDrag && stickerDrag.id === id){
-    if(isHost) return; // host wins simultaneous-start conflicts — keep our own drag
-    stickerDrag = null; // guest yields to the host's claim
-    if(selectedStickerId === id) selectedStickerId = null;
-  }
-  st.remoteLocked = true;
-  redrawStrip();
-}
-
-function applyRemoteStickerUnlock(id){
-  const st = findSticker(id);
-  if(!st) return;
-  st.remoteLocked = false;
-  redrawStrip();
-}
-
-function applyRemoteStickerMove(msg){
-  const st = findSticker(msg.id);
-  if(!st) return;
-  st.x = msg.x;
-  st.y = msg.y;
-  st.size = msg.size;
-  redrawStrip();
-}
-
 function handleRemoteMessage(msg){
   if(!msg || typeof msg !== 'object') return;
   if(msg.type === 'filter'){
@@ -2061,18 +1712,6 @@ function handleRemoteMessage(msg){
     applyRemoteCursor(msg.x, msg.y);
   }else if(msg.type === 'cursorHide'){
     hideRemoteCursor();
-  }else if(msg.type === 'stickerAdd'){
-    applyRemoteStickerAdd(msg.sticker);
-  }else if(msg.type === 'stickerDelete'){
-    applyRemoteStickerDelete(msg.id);
-  }else if(msg.type === 'stickersClear'){
-    applyRemoteStickersClear();
-  }else if(msg.type === 'stickerLock'){
-    applyRemoteStickerLock(msg.id);
-  }else if(msg.type === 'stickerUnlock'){
-    applyRemoteStickerUnlock(msg.id);
-  }else if(msg.type === 'stickerMove'){
-    applyRemoteStickerMove(msg);
   }else if(msg.type === 'photoSwap'){
     applyPhotoSwap(msg.slot, msg.photoIndex);
   }else if(msg.type === 'shootCancelled'){
@@ -2237,7 +1876,6 @@ function teardownAndReturnToGate(){
   selectedIndices = [];
   busy = false;
   selecting = false;
-  resetStickers();
   closeSwapModal();
   forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
@@ -2393,7 +2031,7 @@ function redrawStrip(){
     drawSlot(i, photo || null);
   }
   drawFooter();
-  drawStickerLayer();
+  drawRemoteCursor();
   updatePrintSlotTheme();
 }
 
@@ -2406,8 +2044,8 @@ function updatePrintSlotTheme(){
 }
 
 /* Plays once, right when the finished strip first becomes visible after the
-   user builds it from their picks — not on theme changes, sticker edits, or
-   per-slot swaps afterward, which just redraw in place. */
+   user builds it from their picks — not on theme changes or per-slot swaps
+   afterward, which just redraw in place. */
 function playStripPrintAnimation(){
   stripCanvas.classList.remove('print-out', 'print-fade-reduced');
   void stripCanvas.offsetWidth;
@@ -2600,7 +2238,6 @@ async function runCaptureSequence(seconds){
   shots = [];
   tenShots = [];
   selectedIndices = [];
-  resetStickers();
   closeSwapModal();
   stripCanvas.classList.remove('swappable');
   recapPanel.classList.remove('show');
@@ -2636,7 +2273,6 @@ function applyShootCancel(){
   shots = [];
   tenShots = [];
   selectedIndices = [];
-  resetStickers();
   hideSelectionPanel();
   stopRecapRecording(false);
   exitFullscreenShoot();
@@ -2768,8 +2404,6 @@ function buildStripFrom(indices){
   selecting = false;
   downloadBtn.disabled = false;
   startBtn.disabled = false;
-  stickerToolbar.style.display = 'flex';
-  stickersActive = true;
   stripCanvas.classList.add('swappable');
   statusLine.textContent = t('allDoneDownload');
 }
@@ -2794,7 +2428,6 @@ resetBtn.addEventListener('click', ()=>{
   selectedIndices = [];
   busy = false;
   selecting = false;
-  resetStickers();
   closeSwapModal();
   forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
@@ -2806,13 +2439,10 @@ resetBtn.addEventListener('click', ()=>{
   statusLine.textContent = connected ? t('inFrame') : t('waitingToConnect');
 });
 downloadBtn.addEventListener('click', ()=>{
-  const hadSelection = selectedStickerId;
-  if(hadSelection != null){ selectedStickerId = null; redrawStrip(); }
   const link = document.createElement('a');
   link.download = 'luv-booth-live-strip.png';
   link.href = stripCanvas.toDataURL('image/png');
   link.click();
-  if(hadSelection != null){ selectedStickerId = hadSelection; redrawStrip(); }
 });
 
 redrawStrip();
@@ -2820,7 +2450,6 @@ redrawStrip();
 /* Re-render any currently-visible dynamic (non data-i18n) text after a language switch. */
 function refreshDynamicLabels(){
   setAuthMode(authMode);
-  stickerHideBtn.textContent = stickersHidden ? t('showStickers') : t('hideStickers');
   if(!reconnectBtn.classList.contains('show')) reconnectBtn.textContent = t('reconnect');
   if(pickingScreen.classList.contains('show')) updateSelectionCounter();
   if(swapModalSlot !== null) swapModalTitle.textContent = t('chooseForSlot', { slot: swapModalSlot + 1 });
