@@ -204,6 +204,8 @@
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
   .half video{width:100%; height:100%; object-fit:cover; display:block;}
   .half.mirror video{transform:scaleX(-1);}
+  .video-glow{position:absolute; inset:0; display:none; pointer-events:none;}
+  .video-glow.show{display:block; mix-blend-mode:screen; opacity:0.35;}
   .divider{width:3px; background:var(--gold); flex:none;}
   .waiting-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-size:1.15rem; color:rgba(251,243,231,0.6); text-align:center; padding:10px; line-height:1.3; animation:breathe 2.6s ease-in-out infinite;}
   @keyframes breathe{
@@ -484,10 +486,14 @@
         <button class="copy-btn" id="copyBtn" type="button" data-i18n="copyCode">copy code</button>
       </div>
       <div class="viewfinder">
-        <div class="half mirror"><video id="localVideo" autoplay playsinline muted></video></div>
+        <div class="half mirror">
+          <video id="localVideo" autoplay playsinline muted></video>
+          <video id="localVideoGlow" class="video-glow" autoplay playsinline muted></video>
+        </div>
         <div class="divider"></div>
         <div class="half" id="remoteHalf">
           <video id="remoteVideo" autoplay playsinline></video>
+          <video id="remoteVideoGlow" class="video-glow" autoplay playsinline muted></video>
           <div class="waiting-label" id="waitingLabel" data-i18n="waitingForThem">waiting for them<br>to join…</div>
         </div>
         <div id="countdown" class="countdown">3</div>
@@ -498,10 +504,9 @@
       <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">📸 start strip</button>
         <select id="filterSelect">
-          <option value="none" data-i18n="filterNone">no filter</option>
-          <option value="grayscale(1) contrast(1.1)" data-i18n="filterBw">black &amp; white</option>
-          <option value="sepia(0.55) saturate(1.3)" data-i18n="filterSepia">sepia</option>
-          <option value="saturate(1.4) contrast(1.05) brightness(1.05)" data-i18n="filterWarm">warm pop</option>
+          <option value="grayscale(1) contrast(1.15) brightness(0.95) sepia(0.15)" data-i18n="filterBwVintage">black and white vintage</option>
+          <option value="sepia(0.35) saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-5deg)" data-i18n="filterWarmVintage">warm vintage</option>
+          <option value="bw-glow" data-i18n="filterBwGlow">black and white vintage with a little glow</option>
         </select>
         <button class="btn-ghost" id="resetBtn" data-i18n="reset">reset</button>
         <button class="btn-reconnect" id="reconnectBtn" type="button" data-i18n="reconnect">reconnect</button>
@@ -605,7 +610,7 @@ const TRANSLATIONS = {
     connecting: 'connecting…', copyCode: 'copy code', waitingForThem: 'waiting for them<br>to join…',
     sayCheese: "say cheese whenever you're ready",
     syncLost: "live sync lost — filter, theme, and countdown changes won't update for both of you until it's back",
-    startStrip: '📸 start strip', filterNone: 'no filter', filterBw: 'black & white', filterSepia: 'sepia', filterWarm: 'warm pop',
+    startStrip: '📸 start strip', filterBwVintage: 'black and white vintage', filterWarmVintage: 'warm vintage', filterBwGlow: 'black and white vintage + glow',
     reset: 'reset', reconnect: 'reconnect',
     countdownChoiceLabel: 'how long should the countdown be before each of your 10 shots?',
     sec: 'sec', defaultTag: 'default',
@@ -657,7 +662,7 @@ const TRANSLATIONS = {
     connecting: 'kumokonekta…', copyCode: 'kopyahin ang code', waitingForThem: 'hinihintay siya<br>sumali…',
     sayCheese: 'sabihin ang cheese kapag handa ka na',
     syncLost: 'nawala ang live sync — hindi mag-a-update ang filter, theme, at countdown para sa inyong dalawa hanggang bumalik ito',
-    startStrip: '📸 simulan ang strip', filterNone: 'walang filter', filterBw: 'itim at puti', filterSepia: 'sepia', filterWarm: 'warm pop',
+    startStrip: '📸 simulan ang strip', filterBwVintage: 'itim at puti na vintage', filterWarmVintage: 'mainit na vintage', filterBwGlow: 'itim at puti na vintage na may glow',
     reset: 'i-reset', reconnect: 'kumonekta ulit',
     countdownChoiceLabel: 'gaano katagal ang countdown bago ang bawat isa sa 10 kuha?',
     sec: 'sec', defaultTag: 'default',
@@ -709,7 +714,7 @@ const TRANSLATIONS = {
     connecting: 'conectando…', copyCode: 'copiar código', waitingForThem: 'esperando a que<br>se una…',
     sayCheese: 'di "whisky" cuando estés listo/a',
     syncLost: 'se perdió la sincronización en vivo — los cambios de filtro, tema y cuenta regresiva no se actualizarán para ambos hasta que vuelva',
-    startStrip: '📸 iniciar la tira', filterNone: 'sin filtro', filterBw: 'blanco y negro', filterSepia: 'sepia', filterWarm: 'cálido',
+    startStrip: '📸 iniciar la tira', filterBwVintage: 'blanco y negro vintage', filterWarmVintage: 'cálido vintage', filterBwGlow: 'blanco y negro vintage con brillo',
     reset: 'reiniciar', reconnect: 'reconectar',
     countdownChoiceLabel: '¿cuánto debe durar la cuenta regresiva antes de cada una de tus 10 fotos?',
     sec: 'seg', defaultTag: 'predeterminado',
@@ -761,7 +766,7 @@ const TRANSLATIONS = {
     connecting: '연결 중…', copyCode: '코드 복사', waitingForThem: '상대방을<br>기다리는 중…',
     sayCheese: '준비되면 활짝 웃어주세요',
     syncLost: '실시간 동기화가 끊겼습니다 — 필터, 테마, 카운트다운 변경 사항이 복구될 때까지 서로에게 반영되지 않습니다',
-    startStrip: '📸 스트립 시작', filterNone: '필터 없음', filterBw: '흑백', filterSepia: '세피아', filterWarm: '따뜻한 톤',
+    startStrip: '📸 스트립 시작', filterBwVintage: '빈티지 흑백', filterWarmVintage: '빈티지 웜톤', filterBwGlow: '빈티지 흑백 + 글로우',
     reset: '초기화', reconnect: '재연결',
     countdownChoiceLabel: '10장의 사진마다 카운트다운을 몇 초로 할까요?',
     sec: '초', defaultTag: '기본',
@@ -813,7 +818,7 @@ const TRANSLATIONS = {
     connecting: '接続中…', copyCode: 'コードをコピー', waitingForThem: '相手の参加を<br>待っています…',
     sayCheese: '準備ができたら笑顔で',
     syncLost: 'ライブ同期が切れました — フィルター、テーマ、カウントダウンの変更は復旧するまでお互いに反映されません',
-    startStrip: '📸 撮影開始', filterNone: 'フィルターなし', filterBw: '白黒', filterSepia: 'セピア', filterWarm: 'ウォームポップ',
+    startStrip: '📸 撮影開始', filterBwVintage: 'ヴィンテージ白黒', filterWarmVintage: 'ヴィンテージウォーム', filterBwGlow: 'ヴィンテージ白黒＋グロー',
     reset: 'リセット', reconnect: '再接続',
     countdownChoiceLabel: '10枚それぞれの前のカウントダウンは何秒にしますか？',
     sec: '秒', defaultTag: '標準',
@@ -1163,6 +1168,8 @@ roomInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') joinConfirmBt
 /* ---------------- Elements ---------------- */
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
+const localVideoGlow = document.getElementById('localVideoGlow');
+const remoteVideoGlow = document.getElementById('remoteVideoGlow');
 const waitingLabel = document.getElementById('waitingLabel');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
@@ -1444,10 +1451,31 @@ function animateTextChange(el){
   new MutationObserver(()=> animateTextChange(el)).observe(el, { characterData:true, childList:true, subtree:true });
 });
 
+/* The "glow" filter needs actual layered compositing (a second, blurred +
+   brightened copy blended on top with mix-blend-mode:screen) rather than a
+   single CSS filter string — a plain blur() on the whole image would just
+   look soft/out of focus, not glowing. BW_VINTAGE_FILTER must match the
+   first <option>'s value in the HTML (the "glow" look is that same
+   black-and-white-vintage base with the glow layered on top). */
+const BW_VINTAGE_FILTER = 'grayscale(1) contrast(1.15) brightness(0.95) sepia(0.15)';
+const GLOW_OVERLAY_FILTER = 'blur(4px) brightness(1.3)';
+const GLOW_FILTER_VALUE = 'bw-glow';
+
 function applyLiveFilter(){
   const f = filterSelect.value;
-  localVideo.style.filter = f;
-  remoteVideo.style.filter = f;
+  if(f === GLOW_FILTER_VALUE){
+    localVideo.style.filter = BW_VINTAGE_FILTER;
+    remoteVideo.style.filter = BW_VINTAGE_FILTER;
+    localVideoGlow.style.filter = GLOW_OVERLAY_FILTER;
+    remoteVideoGlow.style.filter = GLOW_OVERLAY_FILTER;
+    localVideoGlow.classList.add('show');
+    remoteVideoGlow.classList.add('show');
+  }else{
+    localVideo.style.filter = f;
+    remoteVideo.style.filter = f;
+    localVideoGlow.classList.remove('show');
+    remoteVideoGlow.classList.remove('show');
+  }
 }
 filterSelect.addEventListener('change', ()=>{
   applyLiveFilter();
@@ -1938,6 +1966,7 @@ async function getCamera(){
   try{
     localStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false });
     localVideo.srcObject = localStream;
+    localVideoGlow.srcObject = localStream;
     return true;
   }catch(e){
     setStatus(t('cameraBlockedSettings'), false);
@@ -2088,6 +2117,7 @@ function wireCall(call){
   activeCall = call;
   call.on('stream', (remoteStream)=>{
     remoteVideo.srcObject = remoteStream;
+    remoteVideoGlow.srcObject = remoteStream;
     waitingLabel.style.display = 'none';
     connected = true;
     setStatus(t('connectedStatus'), true);
@@ -2491,10 +2521,27 @@ function capturePhoto(filterValue){
   const c = document.createElement('canvas');
   c.width = PHOTO_W; c.height = PHOTO_H;
   const ctx = c.getContext('2d');
-  ctx.filter = filterValue === 'none' ? 'none' : filterValue;
   const halfW = PHOTO_W / 2;
-  drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
-  drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+
+  if(filterValue === GLOW_FILTER_VALUE){
+    // Base layer: the sharp black-and-white-vintage photo.
+    ctx.filter = BW_VINTAGE_FILTER;
+    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
+    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+    // Glow layer: a blurred, brightened second pass screened on top at low
+    // opacity — a soft bloom around bright areas, not a blurred whole image.
+    ctx.filter = GLOW_OVERLAY_FILTER;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.35;
+    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
+    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }else{
+    ctx.filter = filterValue;
+    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
+    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+  }
   ctx.filter = 'none';
   return c;
 }
