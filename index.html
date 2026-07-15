@@ -254,7 +254,6 @@
     .choice-card{ padding:12px 6px; }
     .choice-num{ font-size:1.5rem; }
   }
-  .selection-panel{margin-top:14px; width:100%; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .thumb-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-height:420px; overflow-y:auto; padding:4px; margin:10px 0;}
   .thumb{position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:2.5px solid rgba(251,243,231,0.15); transition:border-color .15s ease, transform .15s ease; aspect-ratio:260/146; background:#000;}
   .thumb img, .thumb canvas{width:100%; height:100%; display:block; object-fit:cover;}
@@ -320,6 +319,33 @@
     display:flex; align-items:center; justify-content:center;
   }
   .fs-cancel-btn:hover{ background:rgba(21,16,26,0.75); }
+
+  .picking-screen{
+    display:none; position:fixed; inset:0; z-index:190;
+    background:radial-gradient(circle at 50% 30%, var(--bg-deep2), var(--bg-deep) 70%);
+    flex-direction:row; align-items:stretch; justify-content:center;
+    padding:clamp(14px,2.5vw,32px); gap:24px; overflow:hidden;
+  }
+  .picking-screen.show{ display:flex; animation:fsIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
+  .picking-screen.hide{ display:flex; animation:fsOut 0.25s ease both; }
+  .picking-left{ flex:1 1 auto; min-width:0; max-width:900px; overflow-y:auto; padding:4px; display:flex; align-items:center; }
+  .picking-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr));
+    gap:16px; align-content:center; max-height:none; margin:0; width:100%;
+  }
+  .picking-right{
+    flex:0 0 240px; display:flex; flex-direction:column; align-items:center;
+    gap:12px; overflow-y:auto; padding:4px;
+  }
+  .picking-strip-slot{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
+  .picking-right .selection-actions{ width:100%; max-width:230px; }
+  @media (max-width:500px){
+    .picking-screen{ flex-direction:column; justify-content:flex-start; overflow-y:auto; padding:14px; }
+    .picking-left{ max-width:100%; width:100%; overflow-y:visible; flex:none; align-items:stretch; }
+    .picking-grid{ grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); align-content:start; }
+    .picking-right{ flex:none; width:100%; max-width:340px; overflow-y:visible; }
+  }
+
   @keyframes modalBackdropIn{
     from{ opacity:0; }
     to{ opacity:1; }
@@ -476,20 +502,12 @@
           </button>
         </div>
       </div>
-      <div class="selection-panel" id="selectionPanel" style="display:none;">
-        <p class="choice-label" id="selectionCounter">0 of 3 selected — tap your favorites</p>
-        <div class="thumb-grid" id="thumbGrid"></div>
-        <div class="selection-actions">
-          <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
-          <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
-        </div>
-      </div>
       <p class="hint" data-i18n="hint">Photos capture both of you at once. We'll snap 10 in a row, then you pick your favorite 3. Leaving or refreshing ends the room — you'd start a fresh one.</p>
       <div class="leave-row"><button class="leave-link" id="leaveBtn" type="button" data-i18n="leaveRoom">leave room</button></div>
     </div>
 
     <div class="strip-wrap">
-      <div class="theme-picker">
+      <div class="theme-picker" id="themePicker">
         <label for="themeSelect" class="theme-label" data-i18n="stripStyle">strip style</label>
         <select id="themeSelect" class="theme-select"></select>
       </div>
@@ -520,6 +538,20 @@
   <div class="fullscreen-shoot" id="fullscreenShoot">
     <button class="fs-cancel-btn" id="fsCancelBtn" type="button" aria-label="Cancel and return to setup">×</button>
     <div class="fs-thumb-rail" id="fsThumbRail"></div>
+  </div>
+
+  <div class="picking-screen" id="pickingScreen">
+    <div class="picking-left">
+      <div class="thumb-grid picking-grid" id="thumbGrid"></div>
+    </div>
+    <div class="picking-right">
+      <div class="picking-strip-slot" id="pickingStripSlot"></div>
+      <p class="choice-label" id="selectionCounter">0 of 3 selected — tap your favorites</p>
+      <div class="selection-actions">
+        <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
+        <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
+      </div>
+    </div>
   </div>
 
   <div class="swap-modal-backdrop" id="swapModalBackdrop">
@@ -1122,7 +1154,9 @@ const reconnectBtn = document.getElementById('reconnectBtn');
 const filterSelect = document.getElementById('filterSelect');
 const mainControls = document.getElementById('mainControls');
 const countdownChoice = document.getElementById('countdownChoice');
-const selectionPanel = document.getElementById('selectionPanel');
+const pickingScreen = document.getElementById('pickingScreen');
+const pickingStripSlot = document.getElementById('pickingStripSlot');
+const themePicker = document.getElementById('themePicker');
 const selectionCounter = document.getElementById('selectionCounter');
 const thumbGrid = document.getElementById('thumbGrid');
 const buildStripBtn = document.getElementById('buildStripBtn');
@@ -1208,6 +1242,53 @@ function forceExitFullscreenShoot(){
   viewfinderHome.parent.insertBefore(viewfinderEl, viewfinderHome.next);
   fsThumbRail.innerHTML = '';
   stopRecapRecording(false);
+}
+
+/* ---------------- Full-screen picking screen ----------------
+   Same reparenting trick as the shoot overlay above: the theme picker and
+   strip canvas are the same live nodes used by the boxed final-result
+   screen, moved into the full-viewport picking overlay for the duration of
+   photo selection (so the strip preview updates live as photos are picked)
+   and moved back to their original spot afterward. */
+const themePickerHome = { parent: themePicker.parentNode, next: themePicker.nextSibling };
+const stripCanvasHome = { parent: stripCanvas.parentNode, next: stripCanvas.nextSibling };
+let pickingActive = false;
+
+function showSelectionPanel(){
+  mainControls.style.display = 'none';
+  countdownChoice.style.display = 'none';
+  pickingActive = true;
+  pickingStripSlot.appendChild(themePicker);
+  pickingStripSlot.appendChild(stripCanvas);
+  pickingScreen.classList.remove('hide');
+  pickingScreen.classList.add('show');
+  renderThumbGrid();
+}
+
+function hideSelectionPanel(){
+  mainControls.style.display = 'flex';
+  if(!pickingActive) return;
+  pickingActive = false;
+  pickingScreen.classList.remove('show');
+  pickingScreen.classList.add('hide');
+  const restore = (e)=>{
+    if(e && e.target !== pickingScreen) return;
+    pickingScreen.removeEventListener('animationend', restore);
+    pickingScreen.classList.remove('hide');
+    themePickerHome.parent.insertBefore(themePicker, themePickerHome.next);
+    stripCanvasHome.parent.insertBefore(stripCanvas, stripCanvasHome.next);
+  };
+  pickingScreen.addEventListener('animationend', restore);
+}
+
+/* Instant version (no fade-out) for full teardown/reset scenarios */
+function forceHideSelectionPanel(){
+  mainControls.style.display = 'flex';
+  if(!pickingActive) return;
+  pickingActive = false;
+  pickingScreen.classList.remove('show', 'hide');
+  themePickerHome.parent.insertBefore(themePicker, themePickerHome.next);
+  stripCanvasHome.parent.insertBefore(stripCanvas, stripCanvasHome.next);
 }
 
 /* ---------------- Session recap recording ----------------
@@ -1852,6 +1933,7 @@ function applyRemoteSelection(indices){
   selectedIndices = indices.slice();
   applySelectionToGrid();
   updateSelectionCounter();
+  redrawStrip();
 }
 
 function applyRemoteStickerAdd(sticker){
@@ -2111,7 +2193,7 @@ function teardownAndReturnToGate(){
   showReconnect(false);
   statusDot.classList.remove('live', 'waiting');
   countdownChoice.style.display = 'none';
-  selectionPanel.style.display = 'none';
+  forceHideSelectionPanel();
   mainControls.style.display = 'flex';
   redrawStrip();
 }
@@ -2235,10 +2317,16 @@ function drawFooter(){
   stripCtx.fillText('luv booth.', stripCanvas.width / 2, stripCanvas.height - 22);
 }
 
+/* While picking favorites, the strip preview builds live from whatever's
+   currently selected (so empty slots show placeholders); once the strip is
+   actually built, it draws from the final per-slot "shots" array instead. */
 function redrawStrip(){
   drawStripBase();
   for(let i = 0; i < STRIP_SLOTS; i++){
-    drawSlot(i, i < shots.length ? shots[i] : null);
+    const photo = selecting
+      ? (selectedIndices[i] !== undefined ? tenShots[selectedIndices[i]] : null)
+      : (i < shots.length ? shots[i] : null);
+    drawSlot(i, photo || null);
   }
   drawFooter();
   drawStickerLayer();
@@ -2485,18 +2573,6 @@ document.querySelectorAll('.choice-card').forEach(card=>{
 });
 
 /* ---------------- Pick-your-favorites selection grid ---------------- */
-function hideSelectionPanel(){
-  selectionPanel.style.display = 'none';
-  mainControls.style.display = 'flex';
-}
-
-function showSelectionPanel(){
-  mainControls.style.display = 'none';
-  countdownChoice.style.display = 'none';
-  selectionPanel.style.display = 'block';
-  renderThumbGrid();
-}
-
 function updateSelectionCounter(){
   selectionCounter.textContent = t('selectionCounter', { count: selectedIndices.length, n: STRIP_SLOTS });
   buildStripBtn.disabled = selectedIndices.length !== STRIP_SLOTS;
@@ -2531,6 +2607,7 @@ function toggleSelect(i){
   }
   applySelectionToGrid();
   updateSelectionCounter();
+  redrawStrip();
   broadcastData({ type:'selection', indices: selectedIndices.slice() });
 }
 
@@ -2624,7 +2701,7 @@ resetBtn.addEventListener('click', ()=>{
   forceExitFullscreenShoot();
   stripCanvas.classList.remove('swappable');
   recapPanel.classList.remove('show');
-  hideSelectionPanel();
+  forceHideSelectionPanel();
   redrawStrip();
   downloadBtn.disabled = true;
   startBtn.disabled = !connected;
@@ -2647,7 +2724,7 @@ function refreshDynamicLabels(){
   setAuthMode(authMode);
   stickerHideBtn.textContent = stickersHidden ? t('showStickers') : t('hideStickers');
   if(!reconnectBtn.classList.contains('show')) reconnectBtn.textContent = t('reconnect');
-  if(getComputedStyle(selectionPanel).display !== 'none') updateSelectionCounter();
+  if(pickingScreen.classList.contains('show')) updateSelectionCounter();
   if(swapModalSlot !== null) swapModalTitle.textContent = t('chooseForSlot', { slot: swapModalSlot + 1 });
 }
 </script>
