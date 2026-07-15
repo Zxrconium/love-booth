@@ -275,8 +275,27 @@
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
 
   .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:260px;}
-  #stripCanvas{border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none;}
+  .strip-print-frame{position:relative; width:100%; max-width:230px; display:flex; flex-direction:column; align-items:center;}
+  .print-slot{
+    width:86%; height:9px; border-radius:5px 5px 2px 2px; background:#1a1a1a;
+    box-shadow:inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08);
+    margin-bottom:-3px; position:relative; z-index:1;
+  }
+  #stripCanvas{border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
+  #stripCanvas.print-out{ animation:stripPrintOut 1.15s both; }
+  #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
+  @keyframes stripPrintOut{
+    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0); animation-timing-function:cubic-bezier(.25,.46,.45,.94); }
+    58%{ clip-path:inset(0 0 5% 0); transform:translateY(0); animation-timing-function:cubic-bezier(.34,1.56,.64,1); }
+    74%{ clip-path:inset(0 0 0% 0); transform:translateY(9px); }
+    89%{ clip-path:inset(0 0 0% 0); transform:translateY(-3px); }
+    100%{ clip-path:inset(0 0 0% 0); transform:translateY(0); }
+  }
+  @keyframes stripFadeReduced{
+    from{ opacity:0; }
+    to{ opacity:1; }
+  }
   .sticker-toolbar{display:none; flex-direction:column; gap:8px; width:100%; max-width:230px; background:rgba(251,243,231,0.04); border:1px solid rgba(251,243,231,0.15); border-radius:14px; padding:10px; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
   .sticker-picker{display:flex; gap:8px; justify-content:center;}
   .sticker-btn{flex:1; min-height:44px; min-width:44px; padding:4px; display:flex; align-items:center; justify-content:center; background:rgba(251,243,231,0.06); border:1.5px solid rgba(251,243,231,0.2);}
@@ -524,7 +543,10 @@
           <button class="btn-ghost" id="stickerHideBtn" type="button" data-i18n="hideStickers">hide stickers</button>
         </div>
       </div>
-      <canvas id="stripCanvas" width="330" height="1000"></canvas>
+      <div class="strip-print-frame">
+        <div class="print-slot" id="printSlot"></div>
+        <canvas id="stripCanvas" width="330" height="1000"></canvas>
+      </div>
       <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
       <div class="recap-panel" id="recapPanel">
         <p class="recap-title" data-i18n="recapTitle">session recap</p>
@@ -1165,6 +1187,7 @@ const downloadBtn = document.getElementById('downloadBtn');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
+const printSlot = document.getElementById('printSlot');
 const stickerToolbar = document.getElementById('stickerToolbar');
 const stickerUndoBtn = document.getElementById('stickerUndoBtn');
 const stickerClearBtn = document.getElementById('stickerClearBtn');
@@ -1253,11 +1276,18 @@ function forceExitFullscreenShoot(){
 const themePickerHome = { parent: themePicker.parentNode, next: themePicker.nextSibling };
 const stripCanvasHome = { parent: stripCanvas.parentNode, next: stripCanvas.nextSibling };
 let pickingActive = false;
+/* Set by buildStripFrom() right before hiding the picking screen, so the
+   "print out" reveal plays only once the strip is back in its boxed home
+   and actually visible — not while still hidden behind the still-fading
+   picking overlay. Left false for every other way the picking screen can
+   close (cancel, reset, teardown), so it never plays for those. */
+let pendingPrintAnimation = false;
 
 function showSelectionPanel(){
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'none';
   pickingActive = true;
+  pendingPrintAnimation = false;
   pickingStripSlot.appendChild(themePicker);
   pickingStripSlot.appendChild(stripCanvas);
   pickingScreen.classList.remove('hide');
@@ -1277,6 +1307,10 @@ function hideSelectionPanel(){
     pickingScreen.classList.remove('hide');
     themePickerHome.parent.insertBefore(themePicker, themePickerHome.next);
     stripCanvasHome.parent.insertBefore(stripCanvas, stripCanvasHome.next);
+    if(pendingPrintAnimation){
+      pendingPrintAnimation = false;
+      playStripPrintAnimation();
+    }
   };
   pickingScreen.addEventListener('animationend', restore);
 }
@@ -2330,6 +2364,25 @@ function redrawStrip(){
   }
   drawFooter();
   drawStickerLayer();
+  updatePrintSlotTheme();
+}
+
+/* Keeps the decorative "print slot" bar above the strip styled consistently
+   with whatever theme is currently active. */
+function updatePrintSlotTheme(){
+  const theme = getTheme();
+  printSlot.style.background = theme.ink;
+  printSlot.style.boxShadow = `inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 ${theme.accent}`;
+}
+
+/* Plays once, right when the finished strip first becomes visible after the
+   user builds it from their picks — not on theme changes, sticker edits, or
+   per-slot swaps afterward, which just redraw in place. */
+function playStripPrintAnimation(){
+  stripCanvas.classList.remove('print-out', 'print-fade-reduced');
+  void stripCanvas.offsetWidth;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  stripCanvas.classList.add(reduced ? 'print-fade-reduced' : 'print-out');
 }
 
 /* ---------------- Per-slot photo swap ---------------- */
@@ -2663,6 +2716,7 @@ function buildStripFrom(indices){
   shots = indices.map(i => tenShots[i]);
   selectedIndices = indices.slice();
   redrawStrip();
+  pendingPrintAnimation = true;
   hideSelectionPanel();
   selecting = false;
   downloadBtn.disabled = false;
@@ -2671,9 +2725,6 @@ function buildStripFrom(indices){
   stickersActive = true;
   stripCanvas.classList.add('swappable');
   statusLine.textContent = t('allDoneDownload');
-  stripCanvas.classList.remove('celebrate');
-  void stripCanvas.offsetWidth;
-  stripCanvas.classList.add('celebrate');
 }
 
 buildStripBtn.addEventListener('click', ()=>{
