@@ -271,8 +271,11 @@
   .thumb.selected{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(215,162,74,0.35); }
   .thumb-badge{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); color:var(--film-black); font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.35); font-family:'Poppins',sans-serif;}
   .selection-actions{display:flex; flex-direction:column; gap:8px;}
-  .hint{text-align:center; font-size:0.72rem; color:rgba(251,243,231,0.45); margin:14px 4px 0; line-height:1.5;}
-  .leave-row{text-align:center; margin-top:10px;}
+  .hint-list{text-align:left; font-size:0.72rem; color:rgba(251,243,231,0.45); line-height:1.5; margin:14px auto 0; padding-left:18px; max-width:280px;}
+  .hint-list li{margin-bottom:4px;}
+  .hint-list li:last-child{margin-bottom:0;}
+  .leave-row{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;}
+  .leave-row .btn-ghost{width:auto;}
   .leave-link{background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.7rem; text-decoration:underline; padding:4px; width:auto;}
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
 
@@ -518,8 +521,15 @@
           </button>
         </div>
       </div>
-      <p class="hint" data-i18n="hint">Photos capture both of you at once. We'll snap 10 in a row, then you pick your favorite 3. Leaving or refreshing ends the room — you'd start a fresh one.</p>
-      <div class="leave-row"><button class="leave-link" id="leaveBtn" type="button" data-i18n="leaveRoom">leave room</button></div>
+      <ol class="hint-list">
+        <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
+        <li data-i18n="hintStep2">You pick your favorite 3 to build the strip</li>
+        <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
+      </ol>
+      <div class="leave-row">
+        <button class="btn-ghost btn-small" id="leaveBtn" type="button" data-i18n="leaveRoom">leave room</button>
+        <button class="leave-link" id="countdownBackBtn" type="button" data-i18n="back" style="display:none;">back</button>
+      </div>
     </div>
 
     <div class="strip-wrap">
@@ -595,7 +605,7 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'how long should the countdown be before each of your 10 shots?',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 build my strip', retakeAll: 'retake all 10',
-    hint: "Photos capture both of you at once. We'll snap 10 in a row, then you pick your favorite 3. Leaving or refreshing ends the room — you'd start a fresh one.",
+    hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 3 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
     leaveRoom: 'leave room', stripStyle: 'strip style',
     downloadStrip: '⬇ download strip',
     outOfCoins: "you're out of coins — grab a pack to keep going",
@@ -646,7 +656,7 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'gaano katagal ang countdown bago ang bawat isa sa 10 kuha?',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10',
-    hint: 'Sabay na kinukunan ang larawan ninyong dalawa. Kukuha kami ng 10 sunod-sunod, tapos pipili ka ng paborito mong 3. Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit kayo.',
+    hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 3 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
     downloadStrip: '⬇ i-download ang strip',
     outOfCoins: 'naubusan ka na ng coins — bumili ng pack para magpatuloy',
@@ -697,7 +707,7 @@ const TRANSLATIONS = {
     countdownChoiceLabel: '¿cuánto debe durar la cuenta regresiva antes de cada una de tus 10 fotos?',
     sec: 'seg', defaultTag: 'predeterminado',
     buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos',
-    hint: 'Las fotos los capturan a ambos a la vez. Tomaremos 10 seguidas y luego eliges tus 3 favoritas. Si sales o recargas la página, la sala termina — empezarías una nueva.',
+    hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 3 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
     downloadStrip: '⬇ descargar tira',
     outOfCoins: 'te quedaste sin monedas — compra un paquete para seguir',
@@ -748,7 +758,7 @@ const TRANSLATIONS = {
     countdownChoiceLabel: '10장의 사진마다 카운트다운을 몇 초로 할까요?',
     sec: '초', defaultTag: '기본',
     buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기',
-    hint: '사진은 두 사람을 동시에 담습니다. 10장을 연속으로 찍은 뒤 마음에 드는 3장을 고르게 됩니다. 나가거나 새로고침하면 방이 종료되며, 다시 시작해야 합니다.',
+    hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 3장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
     downloadStrip: '⬇ 스트립 다운로드',
     outOfCoins: '코인이 부족합니다 — 코인 팩을 구매해 주세요',
@@ -799,7 +809,7 @@ const TRANSLATIONS = {
     countdownChoiceLabel: '10枚それぞれの前のカウントダウンは何秒にしますか？',
     sec: '秒', defaultTag: '標準',
     buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す',
-    hint: '写真はお二人を同時に写します。10枚連続で撮影し、その後お気に入りの3枚を選びます。退出したりページを更新するとルームは終了し、最初からやり直しになります。',
+    hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの3枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
     downloadStrip: '⬇ ストリップをダウンロード',
     outOfCoins: 'コインがなくなりました — パックを購入して続けましょう',
@@ -887,6 +897,7 @@ const boothLayout = document.getElementById('boothLayout');
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
 const leaveBtn = document.getElementById('leaveBtn');
+const countdownBackBtn = document.getElementById('countdownBackBtn');
 const authStep = document.getElementById('authStep');
 const authStepTitle = document.getElementById('authStepTitle');
 const authEmail = document.getElementById('authEmail');
@@ -1263,6 +1274,7 @@ let pendingPrintAnimation = false;
 function showSelectionPanel(){
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'none';
+  countdownBackBtn.style.display = 'none';
   pickingActive = true;
   pendingPrintAnimation = false;
   pickingStripSlot.appendChild(themePicker);
@@ -1903,6 +1915,7 @@ function teardownAndReturnToGate(){
   showReconnect(false);
   statusDot.classList.remove('live', 'waiting');
   countdownChoice.style.display = 'none';
+  countdownBackBtn.style.display = 'none';
   forceHideSelectionPanel();
   mainControls.style.display = 'flex';
   redrawStrip();
@@ -2304,12 +2317,22 @@ function showCountdownChoice(){
   if(busy || selecting || !connected) return;
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'block';
+  countdownBackBtn.style.display = 'inline-block';
 }
+
+/* Lighter-weight than "leave room": returns to the setup screen without
+   ending the room or disconnecting from the other person. */
+function hideCountdownChoice(){
+  countdownChoice.style.display = 'none';
+  mainControls.style.display = 'flex';
+  countdownBackBtn.style.display = 'none';
+}
+
+countdownBackBtn.addEventListener('click', hideCountdownChoice);
 
 document.querySelectorAll('.choice-card').forEach(card=>{
   card.addEventListener('click', ()=>{
-    countdownChoice.style.display = 'none';
-    mainControls.style.display = 'flex';
+    hideCountdownChoice();
     const seconds = Number(card.dataset.seconds);
     broadcastData({ type:'sessionStart', seconds });
     beginSyncedSession(seconds, false);
