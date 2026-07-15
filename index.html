@@ -202,10 +202,18 @@
 
   .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; border:3px solid var(--gold); display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4);}
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
-  .half video{width:100%; height:100%; object-fit:cover; display:block;}
+  .half video{width:100%; height:100%; object-fit:cover; display:block; will-change:filter;}
   .half.mirror video{transform:scaleX(-1);}
-  .video-glow{position:absolute; inset:0; display:none; pointer-events:none;}
-  .video-glow.show{display:block; mix-blend-mode:screen; opacity:0.35;}
+  /* Overlays stay permanently in the render tree (never display:none/block
+     toggled — that forces a layout invalidation and a cold compositing-layer
+     start-up, which is what actually made switching filters feel laggy) and
+     instead just fade their opacity in/out, GPU-composited the whole time. */
+  .video-glow{position:absolute; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:0; transition:opacity .15s ease; will-change:opacity;}
+  .video-glow.show{opacity:0.35;}
+  .video-vignette{position:absolute; inset:0; pointer-events:none; mix-blend-mode:multiply; background:radial-gradient(circle, rgba(20,15,10,0) 0%, rgba(20,15,10,0.5) 100%); opacity:0; transition:opacity .15s ease; will-change:opacity;}
+  .video-vignette.show{opacity:1;}
+  .video-grain{position:absolute; inset:0; pointer-events:none; mix-blend-mode:overlay; background-repeat:repeat; opacity:0; transition:opacity .15s ease; will-change:opacity;}
+  .video-grain.show{opacity:0.08;}
   .divider{width:3px; background:var(--gold); flex:none;}
   .waiting-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-size:1.15rem; color:rgba(251,243,231,0.6); text-align:center; padding:10px; line-height:1.3; animation:breathe 2.6s ease-in-out infinite;}
   @keyframes breathe{
@@ -503,11 +511,15 @@
       <div class="viewfinder">
         <div class="half mirror">
           <video id="localVideo" autoplay playsinline muted></video>
+          <div class="video-vignette" id="localVignette"></div>
+          <div class="video-grain" id="localGrain"></div>
           <video id="localVideoGlow" class="video-glow" autoplay playsinline muted></video>
         </div>
         <div class="divider"></div>
         <div class="half" id="remoteHalf">
           <video id="remoteVideo" autoplay playsinline></video>
+          <div class="video-vignette" id="remoteVignette"></div>
+          <div class="video-grain" id="remoteGrain"></div>
           <video id="remoteVideoGlow" class="video-glow" autoplay playsinline muted></video>
           <div class="waiting-label" id="waitingLabel" data-i18n="waitingForThem">waiting for them<br>to join…</div>
         </div>
@@ -519,7 +531,7 @@
       <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">📸 start strip</button>
         <select id="filterSelect">
-          <option value="grayscale(1) contrast(1.15) brightness(0.95) sepia(0.15)" data-i18n="filterBwVintage">black and white vintage</option>
+          <option value="grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)" data-i18n="filterBwVintage">black and white vintage</option>
           <option value="sepia(0.35) saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-5deg)" data-i18n="filterWarmVintage">warm vintage</option>
           <option value="bw-glow" data-i18n="filterBwGlow">black and white vintage with a little glow</option>
         </select>
@@ -1179,6 +1191,10 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const localVideoGlow = document.getElementById('localVideoGlow');
 const remoteVideoGlow = document.getElementById('remoteVideoGlow');
+const localVignette = document.getElementById('localVignette');
+const remoteVignette = document.getElementById('remoteVignette');
+const localGrain = document.getElementById('localGrain');
+const remoteGrain = document.getElementById('remoteGrain');
 const waitingLabel = document.getElementById('waitingLabel');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
@@ -1466,18 +1482,66 @@ function animateTextChange(el){
   new MutationObserver(()=> animateTextChange(el)).observe(el, { characterData:true, childList:true, subtree:true });
 });
 
-/* The "glow" filter needs actual layered compositing (a second, blurred +
-   brightened copy blended on top with mix-blend-mode:screen) rather than a
-   single CSS filter string — a plain blur() on the whole image would just
-   look soft/out of focus, not glowing. BW_VINTAGE_FILTER must match the
-   first <option>'s value in the HTML (the "glow" look is that same
-   black-and-white-vintage base with the glow layered on top). */
-const BW_VINTAGE_FILTER = 'grayscale(1) contrast(1.15) brightness(0.95) sepia(0.15)';
-const GLOW_OVERLAY_FILTER = 'blur(4px) brightness(1.3)';
+/* The two black-and-white filters share a base look (deep warm-toned
+   blacks, high contrast, film grain, vignette) achieved with real
+   canvas-level compositing rather than a single CSS filter string — grain
+   and vignette aren't expressible with filter() alone. The "glow" variant
+   layers a blurred/brightened screen-blend pass on top of that same base.
+   BW_VINTAGE_FILTER must match the first <option>'s value in the HTML.
+
+   Live preview reuses the identical vignette/grain textures as static,
+   pre-rendered overlay layers (CSS mix-blend-mode) rather than redrawing
+   them every frame — cheap, GPU-composited, and guaranteed to look exactly
+   like what gets baked into the captured photo. */
+const BW_VINTAGE_FILTER = 'grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)';
+const GLOW_OVERLAY_FILTER = 'grayscale(1) sepia(0.2) blur(4px) brightness(1.3)';
 const GLOW_FILTER_VALUE = 'bw-glow';
+const VIGNETTE_RGB = '20,15,10';
+const GRAIN_ALPHA = 0.08;
+
+/* Generated once at load and reused everywhere (live preview + every
+   capture) rather than regenerating random noise per frame/per photo. */
+function createNoiseCanvas(size){
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const nctx = c.getContext('2d');
+  const imgData = nctx.createImageData(size, size);
+  for(let i = 0; i < imgData.data.length; i += 4){
+    const v = Math.max(0, Math.min(255, 128 + (Math.random() - 0.5) * 255));
+    imgData.data[i] = v; imgData.data[i+1] = v; imgData.data[i+2] = v; imgData.data[i+3] = 255;
+  }
+  nctx.putImageData(imgData, 0, 0);
+  return c;
+}
+const grainNoiseCanvas = createNoiseCanvas(128);
+const grainNoiseDataUrl = grainNoiseCanvas.toDataURL();
+[localGrain, remoteGrain].forEach(el => { el.style.backgroundImage = `url(${grainNoiseDataUrl})`; });
+
+function applyVignette(ctx, w, h){
+  const cx = w / 2, cy = h / 2;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(cx, cy));
+  grad.addColorStop(0, `rgba(${VIGNETTE_RGB},0)`);
+  grad.addColorStop(1, `rgba(${VIGNETTE_RGB},0.5)`);
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
+function applyGrain(ctx, w, h){
+  ctx.save();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = GRAIN_ALPHA;
+  ctx.fillStyle = ctx.createPattern(grainNoiseCanvas, 'repeat');
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
 
 function applyLiveFilter(){
   const f = filterSelect.value;
+  const isBw = (f === BW_VINTAGE_FILTER || f === GLOW_FILTER_VALUE);
+  [localVignette, remoteVignette, localGrain, remoteGrain].forEach(el => el.classList.toggle('show', isBw));
   if(f === GLOW_FILTER_VALUE){
     localVideo.style.filter = BW_VINTAGE_FILTER;
     remoteVideo.style.filter = BW_VINTAGE_FILTER;
@@ -2241,21 +2305,29 @@ function capturePhoto(filterValue){
   c.width = PHOTO_W; c.height = PHOTO_H;
   const ctx = c.getContext('2d');
   const halfW = PHOTO_W / 2;
+  const isBw = (filterValue === BW_VINTAGE_FILTER || filterValue === GLOW_FILTER_VALUE);
 
-  if(filterValue === GLOW_FILTER_VALUE){
-    // Base layer: the sharp black-and-white-vintage photo.
+  if(isBw){
+    // Base layer: grayscale + contrast + warm-toned shadows.
     ctx.filter = BW_VINTAGE_FILTER;
     drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
     drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
-    // Glow layer: a blurred, brightened second pass screened on top at low
-    // opacity — a soft bloom around bright areas, not a blurred whole image.
-    ctx.filter = GLOW_OVERLAY_FILTER;
-    ctx.globalCompositeOperation = 'screen';
-    ctx.globalAlpha = 0.35;
-    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
-    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
+    ctx.filter = 'none';
+
+    applyVignette(ctx, c.width, c.height);
+    applyGrain(ctx, c.width, c.height);
+
+    if(filterValue === GLOW_FILTER_VALUE){
+      // Glow layer: a blurred, brightened pass screened on top at low
+      // opacity — a soft bloom around bright areas, not a blurred whole image.
+      ctx.filter = GLOW_OVERLAY_FILTER;
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = 0.35;
+      drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
+      drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+    }
   }else{
     ctx.filter = filterValue;
     drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
