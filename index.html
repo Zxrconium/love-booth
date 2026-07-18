@@ -622,7 +622,7 @@
         <div class="printing-indicator" id="printingIndicator">
           <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
         </div>
-        <canvas id="stripCanvas" width="330" height="1000"></canvas>
+        <canvas id="stripCanvas" width="300" height="506"></canvas>
       </div>
       <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
     </div>
@@ -1671,59 +1671,34 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-const PHOTO_W = 260, PHOTO_H = 146, SIDE = 20, GAP = 14, TOP = 56, BOTTOM = 56;
+const PHOTO_W = 260, PHOTO_H = 146, SIDE = 20, GAP = 14, TOP = 20, BOTTOM = 20;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 3;
 
 /* ---------------- Strip themes ----------------
-   Only 3 themes now, each a plain data object: colors, an optional bold
-   header line (+ rule), an optional thick outer border, an optional
-   "receipt" perforation between photos, and a photo-frame border. Draw
-   functions below read from the active theme rather than branching on its
-   id. Each theme's 3 slots either show a captured photo or, until then, a
-   shared illustrated sky/cloud/hill placeholder. */
+   Exactly 2 plain themes: "Framed" (thin black outer border + a thin
+   black divider between each photo slot) and "Frameless" (identical
+   layout, no border, no dividers). No header text, no caption/footer,
+   no sprockets/textures — draw functions below read from the active
+   theme's borderWidth/divider rather than branching on its id. Each
+   theme's 3 slots either show a captured photo or, until then, a shared
+   illustrated sky/cloud/hill placeholder. */
 const THEMES = [
   {
-    id: 'classic',
-    label: 'Classic',
-    background: '#ffffff',
-    ink: '#1a1a1a',
-    accent: '#1a1a1a',
-    headerText: '',
-    headerFont: "800 22px 'Poppins', sans-serif",
-    headerRule: false,
-    borderWidth: 0,
-    perforation: false,
-    photoBorder: { color: '#1a1a1a', width: 3 },
-    captionFont: "800 22px 'Poppins', sans-serif"
-  },
-  {
-    id: 'receipt',
-    label: 'Receipt',
+    id: 'framed',
+    label: 'Framed',
     background: '#ffffff',
     ink: '#000000',
-    accent: '#000000',
-    headerText: 'RECEIPT',
-    headerFont: "900 26px 'Poppins', sans-serif",
-    headerRule: true,
-    borderWidth: 6,
-    perforation: true,
-    photoBorder: null,
-    captionFont: "800 20px 'Poppins', sans-serif"
+    borderWidth: 3,
+    divider: true
   },
   {
-    id: 'noir',
-    label: 'Noir',
-    background: '#000000',
-    ink: '#ffffff',
-    accent: '#ffffff',
-    headerText: '',
-    headerFont: "800 22px 'Poppins', sans-serif",
-    headerRule: false,
+    id: 'frameless',
+    label: 'Frameless',
+    background: '#ffffff',
+    ink: '#000000',
     borderWidth: 0,
-    perforation: false,
-    photoBorder: { color: '#ffffff', width: 6 },
-    captionFont: "800 22px 'Poppins', sans-serif"
+    divider: false
   }
 ];
 let currentThemeId = THEMES[0].id;
@@ -2170,17 +2145,15 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
   ctx.restore();
 }
 
-function drawPerforation(theme){
+function drawDivider(theme){
   stripCtx.save();
   stripCtx.strokeStyle = theme.ink;
-  stripCtx.globalAlpha = 0.5;
-  stripCtx.setLineDash([4, 3]);
-  stripCtx.lineWidth = 1.5;
+  stripCtx.lineWidth = 2;
   for(let i = 0; i < STRIP_SLOTS - 1; i++){
     const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
     stripCtx.beginPath();
-    stripCtx.moveTo(SIDE + 10, y);
-    stripCtx.lineTo(SIDE + PHOTO_W - 10, y);
+    stripCtx.moveTo(SIDE, y);
+    stripCtx.lineTo(SIDE + PHOTO_W, y);
     stripCtx.stroke();
   }
   stripCtx.restore();
@@ -2191,21 +2164,7 @@ function drawStripBase(){
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
   stripCtx.fillStyle = theme.background;
   stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
-  if(theme.headerText){
-    stripCtx.fillStyle = theme.ink;
-    stripCtx.font = theme.headerFont;
-    stripCtx.textAlign = 'center';
-    stripCtx.fillText(theme.headerText, stripCanvas.width / 2, 34);
-    if(theme.headerRule){
-      stripCtx.strokeStyle = theme.ink;
-      stripCtx.lineWidth = 3;
-      stripCtx.beginPath();
-      stripCtx.moveTo(14, 46);
-      stripCtx.lineTo(stripCanvas.width - 14, 46);
-      stripCtx.stroke();
-    }
-  }
-  if(theme.perforation) drawPerforation(theme);
+  if(theme.divider) drawDivider(theme);
   if(theme.borderWidth){
     stripCtx.strokeStyle = theme.ink;
     stripCtx.lineWidth = theme.borderWidth;
@@ -2218,25 +2177,11 @@ function drawSlot(index, imgCanvas){
   const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
   if(imgCanvas){
     stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
-    stripCtx.fillStyle = theme.accent;
+    stripCtx.fillStyle = theme.ink;
     stripCtx.fillRect(x + PHOTO_W / 2 - 1, y, 2, PHOTO_H);
   }else{
     drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
   }
-  if(theme.photoBorder){
-    const pb = theme.photoBorder;
-    stripCtx.strokeStyle = pb.color;
-    stripCtx.lineWidth = pb.width;
-    stripCtx.strokeRect(x + pb.width / 2, y + pb.width / 2, PHOTO_W - pb.width, PHOTO_H - pb.width);
-  }
-}
-
-function drawFooter(){
-  const theme = getTheme();
-  stripCtx.fillStyle = theme.ink;
-  stripCtx.textAlign = 'center';
-  stripCtx.font = theme.captionFont;
-  stripCtx.fillText('luv booth.', stripCanvas.width / 2, stripCanvas.height - 22);
 }
 
 /* While picking favorites, the strip preview builds live from whatever's
@@ -2250,7 +2195,6 @@ function redrawStrip(){
       : (i < shots.length ? shots[i] : null);
     drawSlot(i, photo || null);
   }
-  drawFooter();
   drawRemoteCursor();
   updatePrintSlotTheme();
 }
@@ -2261,7 +2205,7 @@ function redrawStrip(){
 function updatePrintSlotTheme(){
   const theme = getTheme();
   printSlot.style.background = theme.ink;
-  printSlot.style.boxShadow = `inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 ${theme.accent}`;
+  printSlot.style.boxShadow = `inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 ${theme.ink}`;
   printingIndicator.style.background = theme.ink;
 }
 
