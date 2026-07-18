@@ -89,10 +89,25 @@
     .gate-cards{ flex-direction:column; }
   }
   .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
-  .auth-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
-  .auth-toggle{background:none; border:none; color:rgba(251,243,231,0.55); font-size:0.75rem; text-decoration:underline; padding:4px; width:auto;}
-  .auth-toggle:hover{ color:rgba(251,243,231,0.8); }
-  .auth-msg{font-size:0.78rem; color:rgba(251,243,231,0.6); text-align:center; line-height:1.4; min-height:1em;}
+  .auth-step{display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:300px; margin:0 auto;}
+  .auth-tabs{display:flex; width:100%; background:rgba(251,243,231,0.05); border:1.5px solid rgba(251,243,231,0.18); border-radius:999px; padding:4px; gap:4px;}
+  .auth-tab{flex:1; background:transparent; border:none; border-radius:999px; padding:9px 10px; font-size:0.82rem; font-weight:700; color:rgba(251,243,231,0.55); cursor:pointer; transition:background-color .2s ease, color .2s ease, box-shadow .2s ease;}
+  .auth-tab:hover:not(.is-active):not(:disabled){ color:rgba(251,243,231,0.8); }
+  .auth-tab.is-active{ background:linear-gradient(180deg, #edaabc, var(--blush)); color:var(--film-black); box-shadow:0 4px 14px rgba(232,147,168,0.3); }
+  .auth-form-fields{display:flex; flex-direction:column; gap:10px; width:100%;}
+  .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;}
+  .auth-banner-icon{flex:none; font-size:0.95rem; line-height:1.3;}
+  .auth-banner-error{background:rgba(224,105,126,0.14); border:1.5px solid rgba(224,105,126,0.5); color:#ffd4dc;}
+  .auth-banner-success{background:rgba(143,209,158,0.14); border:1.5px solid rgba(143,209,158,0.5); color:#c9f0d1;}
+  .auth-submit-btn{display:flex; align-items:center; justify-content:center; gap:8px;}
+  .btn-spinner{display:none; flex:none; width:15px; height:15px; border-radius:50%; border:2px solid rgba(21,16,26,0.3); border-top-color:var(--film-black); animation:authSpin 0.7s linear infinite;}
+  .auth-submit-btn.is-loading .btn-spinner{ display:inline-block; }
+  @keyframes authSpin{ to{ transform:rotate(360deg); } }
+  .auth-confirm-card{display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; background:rgba(251,243,231,0.05); border:1.5px solid rgba(215,162,74,0.4); border-radius:16px; padding:22px 18px; text-align:center; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
+  .auth-confirm-icon{font-size:1.8rem;}
+  .auth-confirm-title{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--gold); margin:0;}
+  .auth-confirm-text{font-size:0.82rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
+  #authConfirmOkBtn{margin-top:6px;}
   .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
 
   .coin-badge{
@@ -467,12 +482,31 @@
     </div>
 
     <div class="auth-step" id="authStep" style="display:none;">
-      <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
-      <input id="authEmail" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="email" style="text-transform:none; letter-spacing:normal;">
-      <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
-      <button class="btn-primary" id="authSubmitBtn" data-i18n="logIn">log in</button>
-      <button class="auth-toggle" id="authToggleBtn" type="button" data-i18n="needAccount">need an account? sign up</button>
-      <p class="auth-msg" id="authMsg"></p>
+      <div class="auth-tabs" id="authTabs" role="tablist">
+        <button class="auth-tab is-active" id="authTabLogin" type="button" role="tab" aria-selected="true" data-i18n="logIn">log in</button>
+        <button class="auth-tab" id="authTabSignup" type="button" role="tab" aria-selected="false" data-i18n="signUp">sign up</button>
+      </div>
+      <div class="auth-form-fields" id="authFormFields">
+        <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
+        <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
+        </div>
+        <input id="authEmail" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="email" style="text-transform:none; letter-spacing:normal;">
+        <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
+        <button class="btn-primary auth-submit-btn" id="authSubmitBtn" type="button">
+          <span class="btn-spinner" id="authSpinner" aria-hidden="true"></span>
+          <span id="authSubmitLabel" data-i18n="logIn">log in</span>
+        </button>
+        <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
+        </div>
+      </div>
+      <div class="auth-confirm-card" id="authConfirmCard" style="display:none;">
+        <span class="auth-confirm-icon" aria-hidden="true">✉</span>
+        <p class="auth-confirm-title" data-i18n="checkEmailTitle">check your email</p>
+        <p class="auth-confirm-text" id="authConfirmText" data-i18n="checkEmailConfirm">check your email to confirm your account, then log in.</p>
+        <button class="btn-primary" id="authConfirmOkBtn" type="button" data-i18n="gotIt">got it</button>
+      </div>
       <button class="leave-link" id="authBackBtn" type="button" data-i18n="back">back</button>
     </div>
 
@@ -628,7 +662,8 @@ const TRANSLATIONS = {
     authTitleLogin: 'log in to start a room', authTitleSignup: 'create an account to start a room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
     logIn: 'log in', signUp: 'sign up',
-    needAccount: 'need an account? sign up', haveAccount: 'have an account? log in',
+    checkEmailTitle: 'check your email', gotIt: 'got it',
+    loginSuccessMsg: "you're in!", signupSuccessMsg: 'account created!',
     gateFootnote: 'your coins & recaps are tied to your account — nothing else is saved',
     buyCoinsTitle: 'buy coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'best value',
     comingSoon: 'coming soon', buyCoinsNotReady: "coin purchases aren't hooked up yet — check back soon", close: 'close',
@@ -679,7 +714,8 @@ const TRANSLATIONS = {
     authTitleLogin: 'mag-log in para magsimula ng room', authTitleSignup: 'gumawa ng account para magsimula ng room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
     logIn: 'log in', signUp: 'mag-sign up',
-    needAccount: 'wala pang account? mag-sign up', haveAccount: 'may account ka na? mag-log in',
+    checkEmailTitle: 'tingnan ang iyong email', gotIt: 'sige',
+    loginSuccessMsg: 'nakapasok ka na!', signupSuccessMsg: 'nagawa ang account!',
     gateFootnote: 'nakatali ang coins at recaps mo sa account mo — wala nang ibang naise-save',
     buyCoinsTitle: 'bumili ng coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'pinaka-sulit',
     comingSoon: 'malapit na', buyCoinsNotReady: 'hindi pa gumagana ang pagbili ng coins — balikan mo na lang', close: 'isara',
@@ -730,7 +766,8 @@ const TRANSLATIONS = {
     authTitleLogin: 'inicia sesión para crear una sala', authTitleSignup: 'crea una cuenta para iniciar una sala',
     emailPlaceholder: 'CORREO', passwordPlaceholder: 'CONTRASEÑA',
     logIn: 'iniciar sesión', signUp: 'registrarse',
-    needAccount: '¿no tienes cuenta? regístrate', haveAccount: '¿ya tienes cuenta? inicia sesión',
+    checkEmailTitle: 'revisa tu correo', gotIt: 'entendido',
+    loginSuccessMsg: '¡ya estás dentro!', signupSuccessMsg: '¡cuenta creada!',
     gateFootnote: 'tus monedas y recuerdos están ligados a tu cuenta — no se guarda nada más',
     buyCoinsTitle: 'comprar monedas', pack1: '1 moneda', pack3: '3 monedas', pack5: '5 monedas', bestValueBadge: 'mejor precio',
     comingSoon: 'muy pronto', buyCoinsNotReady: 'la compra de monedas aún no está lista — vuelve pronto', close: 'cerrar',
@@ -781,7 +818,8 @@ const TRANSLATIONS = {
     authTitleLogin: '방을 만들려면 로그인하세요', authTitleSignup: '방을 만들려면 계정을 만드세요',
     emailPlaceholder: '이메일', passwordPlaceholder: '비밀번호',
     logIn: '로그인', signUp: '회원가입',
-    needAccount: '계정이 없으신가요? 회원가입', haveAccount: '이미 계정이 있으신가요? 로그인',
+    checkEmailTitle: '이메일을 확인하세요', gotIt: '확인',
+    loginSuccessMsg: '로그인되었습니다!', signupSuccessMsg: '계정이 생성되었습니다!',
     gateFootnote: '코인과 리캡은 계정에 연결됩니다 — 그 외에는 저장되지 않습니다',
     buyCoinsTitle: '코인 구매', pack1: '코인 1개', pack3: '코인 3개', pack5: '코인 5개', bestValueBadge: '최고의 혜택',
     comingSoon: '준비 중', buyCoinsNotReady: '코인 구매 기능은 아직 준비 중입니다 — 곧 다시 확인해 주세요', close: '닫기',
@@ -832,7 +870,8 @@ const TRANSLATIONS = {
     authTitleLogin: 'ルームを作るにはログインしてください', authTitleSignup: 'ルームを作るにはアカウントを作成してください',
     emailPlaceholder: 'メールアドレス', passwordPlaceholder: 'パスワード',
     logIn: 'ログイン', signUp: '新規登録',
-    needAccount: 'アカウントをお持ちでないですか？ 新規登録', haveAccount: 'すでにアカウントをお持ちですか？ ログイン',
+    checkEmailTitle: 'メールをご確認ください', gotIt: 'わかりました',
+    loginSuccessMsg: 'ログインしました！', signupSuccessMsg: 'アカウントを作成しました！',
     gateFootnote: 'コインとリキャップはアカウントに紐づきます — それ以外は保存されません',
     buyCoinsTitle: 'コインを購入', pack1: 'コイン1枚', pack3: 'コイン3枚', pack5: 'コイン5枚', bestValueBadge: '一番お得',
     comingSoon: '近日公開', buyCoinsNotReady: 'コイン購入はまだ準備中です — またご確認ください', close: '閉じる',
@@ -934,12 +973,21 @@ const copyBtn = document.getElementById('copyBtn');
 const leaveBtn = document.getElementById('leaveBtn');
 const countdownBackBtn = document.getElementById('countdownBackBtn');
 const authStep = document.getElementById('authStep');
+const authTabLogin = document.getElementById('authTabLogin');
+const authTabSignup = document.getElementById('authTabSignup');
+const authFormFields = document.getElementById('authFormFields');
 const authStepTitle = document.getElementById('authStepTitle');
 const authEmail = document.getElementById('authEmail');
 const authPassword = document.getElementById('authPassword');
 const authSubmitBtn = document.getElementById('authSubmitBtn');
-const authToggleBtn = document.getElementById('authToggleBtn');
-const authMsg = document.getElementById('authMsg');
+const authSpinner = document.getElementById('authSpinner');
+const authSubmitLabel = document.getElementById('authSubmitLabel');
+const authErrorBanner = document.getElementById('authErrorBanner');
+const authErrorText = document.getElementById('authErrorText');
+const authSuccessBanner = document.getElementById('authSuccessBanner');
+const authSuccessText = document.getElementById('authSuccessText');
+const authConfirmCard = document.getElementById('authConfirmCard');
+const authConfirmOkBtn = document.getElementById('authConfirmOkBtn');
 const authBackBtn = document.getElementById('authBackBtn');
 const coinBadge = document.getElementById('coinBadge');
 const coinBadgeCount = document.getElementById('coinBadgeCount');
@@ -976,60 +1024,107 @@ try{
 let currentUser = null;
 let authMode = 'login';
 
+function hideAuthFeedback(){
+  authErrorBanner.style.display = 'none';
+  authSuccessBanner.style.display = 'none';
+}
+
+function showAuthError(msg){
+  authSuccessBanner.style.display = 'none';
+  authErrorText.textContent = msg;
+  authErrorBanner.style.display = 'flex';
+}
+
+function showAuthSuccess(msg){
+  authErrorBanner.style.display = 'none';
+  authSuccessText.textContent = msg;
+  authSuccessBanner.style.display = 'flex';
+}
+
+function showAuthConfirmCard(){
+  hideAuthFeedback();
+  authFormFields.style.display = 'none';
+  authConfirmCard.style.display = 'flex';
+}
+
+function setAuthLoading(loading){
+  authSubmitBtn.disabled = loading;
+  authSubmitBtn.classList.toggle('is-loading', loading);
+  authTabLogin.disabled = loading;
+  authTabSignup.disabled = loading;
+  authBackBtn.disabled = loading;
+  authSubmitLabel.textContent = loading
+    ? (authMode === 'signup' ? t('creatingAccount') : t('loggingIn'))
+    : (authMode === 'signup' ? t('signUp') : t('logIn'));
+}
+
 function setAuthMode(mode){
   authMode = mode;
+  authTabLogin.classList.toggle('is-active', mode === 'login');
+  authTabLogin.setAttribute('aria-selected', mode === 'login' ? 'true' : 'false');
+  authTabSignup.classList.toggle('is-active', mode === 'signup');
+  authTabSignup.setAttribute('aria-selected', mode === 'signup' ? 'true' : 'false');
   authStepTitle.textContent = mode === 'signup' ? t('authTitleSignup') : t('authTitleLogin');
-  authSubmitBtn.textContent = mode === 'signup' ? t('signUp') : t('logIn');
-  authToggleBtn.textContent = mode === 'signup' ? t('haveAccount') : t('needAccount');
+  authFormFields.style.display = 'flex';
+  authConfirmCard.style.display = 'none';
+  hideAuthFeedback();
+  setAuthLoading(false);
 }
 setAuthMode('login');
 
 function showAuthStep(show){
   gateCards.style.display = show ? 'none' : 'flex';
   authStep.style.display = show ? 'flex' : 'none';
-  authMsg.textContent = '';
+  authFormFields.style.display = 'flex';
+  authConfirmCard.style.display = 'none';
+  hideAuthFeedback();
+  setAuthLoading(false);
   showGateError('');
   if(show) authEmail.focus();
 }
 
-authToggleBtn.addEventListener('click', ()=> setAuthMode(authMode === 'login' ? 'signup' : 'login'));
+authTabLogin.addEventListener('click', ()=>{ if(authMode !== 'login') setAuthMode('login'); });
+authTabSignup.addEventListener('click', ()=>{ if(authMode !== 'signup') setAuthMode('signup'); });
+authConfirmOkBtn.addEventListener('click', ()=> setAuthMode('login'));
 authBackBtn.addEventListener('click', ()=> showAuthStep(false));
 
 authSubmitBtn.addEventListener('click', async ()=>{
   const email = authEmail.value.trim();
   const password = authPassword.value;
+  hideAuthFeedback();
   if(!email || !password){
-    authMsg.textContent = t('enterBothFields');
+    showAuthError(t('enterBothFields'));
     return;
   }
   if(!sbClient){
-    authMsg.textContent = t('accountsNotAvailable');
+    showAuthError(t('accountsNotAvailable'));
     return;
   }
-  authSubmitBtn.disabled = true;
-  authMsg.textContent = authMode === 'signup' ? t('creatingAccount') : t('loggingIn');
+  setAuthLoading(true);
   try{
     if(authMode === 'signup'){
       const { data, error } = await sbClient.auth.signUp({ email, password, options: { emailRedirectTo: AUTH_REDIRECT_URL } });
       if(error) throw error;
       if(data.session){
-        showAuthStep(false);
+        showAuthSuccess(t('signupSuccessMsg'));
         await refreshAuthState();
+        setTimeout(()=> showAuthStep(false), 900);
+        return; // keep the button in its loading/disabled state through the success transition
       }else{
-        authMsg.textContent = t('checkEmailConfirm');
-        setAuthMode('login');
+        showAuthConfirmCard();
       }
     }else{
       const { error } = await sbClient.auth.signInWithPassword({ email, password });
       if(error) throw error;
-      showAuthStep(false);
+      showAuthSuccess(t('loginSuccessMsg'));
       await refreshAuthState();
+      setTimeout(()=> showAuthStep(false), 900);
+      return; // keep the button in its loading/disabled state through the success transition
     }
   }catch(e){
-    authMsg.textContent = (e && e.message) || t('authGenericError');
-  }finally{
-    authSubmitBtn.disabled = false;
+    showAuthError((e && e.message) || t('authGenericError'));
   }
+  setAuthLoading(false);
 });
 
 function pulseCoinBadge(){
