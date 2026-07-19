@@ -9,8 +9,19 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   coins integer not null default 0 check (coins >= 0),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Tracks the most recent spend_coin() call so refund_last_spend() can
+  -- safely give back a coin if the room creation it paid for never got off
+  -- the ground (camera denied, left before any photo) — see that function
+  -- below for the abuse-resistant refund window.
+  last_spend_at timestamptz,
+  last_spend_refunded boolean not null default true
 );
+
+-- Safe to re-run against an already-deployed profiles table too (create
+-- table if not exists skips the columns above if the table already exists).
+alter table public.profiles add column if not exists last_spend_at timestamptz;
+alter table public.profiles add column if not exists last_spend_refunded boolean not null default true;
 
 alter table public.profiles enable row level security;
 
@@ -44,6 +55,8 @@ create trigger on_auth_user_created
 
 -- Atomic spend: only succeeds if balance > 0. Returns the new balance,
 -- or NULL if the user had no coins (caller should show "you're out of coins").
+-- Also stamps last_spend_at and clears last_spend_refunded, opening a
+-- one-shot refund window for refund_last_spend() below.
 create or replace function public.spend_coin()
 returns integer
 language plpgsql
@@ -53,7 +66,7 @@ declare
   new_balance integer;
 begin
   update public.profiles
-    set coins = coins - 1
+    set coins = coins - 1, last_spend_at = now(), last_spend_refunded = false
     where id = auth.uid() and coins > 0
   returning coins into new_balance;
   return new_balance;
@@ -61,6 +74,32 @@ end;
 $$;
 
 grant execute on function public.spend_coin() to authenticated;
+
+-- Gives back the most recent spend, but only if: (a) it hasn't already been
+-- refunded (one-shot — flips last_spend_refunded to true so this can't be
+-- called twice for the same spend), and (b) it happened within the last 10
+-- minutes (caps how long a room-creation stays "refundable", so this can't
+-- be used to farm coins on old spends). Returns the new balance, or NULL if
+-- there was no eligible un-refunded recent spend (safe no-op).
+create or replace function public.refund_last_spend()
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  new_balance integer;
+begin
+  update public.profiles
+    set coins = coins + 1, last_spend_refunded = true
+    where id = auth.uid()
+      and last_spend_refunded = false
+      and last_spend_at > now() - interval '10 minutes'
+  returning coins into new_balance;
+  return new_balance;
+end;
+$$;
+
+grant execute on function public.refund_last_spend() to authenticated;
 
 -- Atomic, idempotent credit: intended to be called ONLY by the Lemon
 -- Squeezy webhook (Supabase Edge Function, using the service_role key),
