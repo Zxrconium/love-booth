@@ -468,7 +468,7 @@
   <div class="marquee">✦ luv booth ✦</div>
 
   <div class="gate" id="gate">
-    <div class="gate-cards" id="gateCards">
+    <div class="gate-cards" id="gateCards" style="display:none;">
       <button class="gate-card" id="createCard" type="button">
         <span class="gate-icon blush" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="#7a4456" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>
@@ -521,7 +521,6 @@
         <p class="auth-confirm-text" id="authConfirmText" data-i18n="checkEmailConfirm">check your email to confirm your account, then log in.</p>
         <button class="btn-primary" id="authConfirmOkBtn" type="button" data-i18n="gotIt">got it</button>
       </div>
-      <button class="leave-link" id="authBackBtn" type="button" data-i18n="back">back</button>
     </div>
 
     <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
@@ -1002,7 +1001,6 @@ const authSuccessBanner = document.getElementById('authSuccessBanner');
 const authSuccessText = document.getElementById('authSuccessText');
 const authConfirmCard = document.getElementById('authConfirmCard');
 const authConfirmOkBtn = document.getElementById('authConfirmOkBtn');
-const authBackBtn = document.getElementById('authBackBtn');
 const coinBadge = document.getElementById('coinBadge');
 const coinBadgeCount = document.getElementById('coinBadgeCount');
 const logoutLink = document.getElementById('logoutLink');
@@ -1066,7 +1064,6 @@ function setAuthLoading(loading){
   authSubmitBtn.classList.toggle('is-loading', loading);
   authTabLogin.disabled = loading;
   authTabSignup.disabled = loading;
-  authBackBtn.disabled = loading;
   authSubmitLabel.textContent = loading
     ? (authMode === 'signup' ? t('creatingAccount') : t('loggingIn'))
     : (authMode === 'signup' ? t('signUp') : t('logIn'));
@@ -1100,7 +1097,6 @@ function showAuthStep(show){
 authTabLogin.addEventListener('click', ()=>{ if(authMode !== 'login') setAuthMode('login'); });
 authTabSignup.addEventListener('click', ()=>{ if(authMode !== 'signup') setAuthMode('signup'); });
 authConfirmOkBtn.addEventListener('click', ()=> setAuthMode('login'));
-authBackBtn.addEventListener('click', ()=> showAuthStep(false));
 
 authSubmitBtn.addEventListener('click', async ()=>{
   const email = authEmail.value.trim();
@@ -1166,7 +1162,8 @@ logoutLink.addEventListener('click', async ()=>{
   currentUser = null;
   coinBadge.classList.remove('show');
   logoutLink.classList.remove('show');
-  showAuthStep(false);
+  setAuthMode('login');
+  showAuthStep(true);
   if(sbClient){
     try{ await sbClient.auth.signOut(); }catch(e){ /* local UI state is already cleared above regardless */ }
   }
@@ -1217,7 +1214,15 @@ function initBuyCoinsPacks(){
 }
 initBuyCoinsPacks();
 
-refreshAuthState();
+/* Login/signup is the very first thing anyone sees. gateCards starts
+   hidden (see the inline style on #gateCards) so there's no flash of
+   Create/Join before we know whether a session already exists — once
+   refreshAuthState() resolves, this reveals either the auth step (no
+   session) or the Create/Join cards (already logged in). */
+(async ()=>{
+  await refreshAuthState();
+  showAuthStep(!currentUser);
+})();
 
 function randomCode(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1270,7 +1275,14 @@ createCard.addEventListener('click', async ()=>{
   startAsHost(code);
 });
 
-joinCard.addEventListener('click', ()=> showJoinStep(true));
+joinCard.addEventListener('click', ()=>{
+  if(!currentUser){
+    setAuthMode('login');
+    showAuthStep(true);
+    return;
+  }
+  showJoinStep(true);
+});
 joinBackBtn.addEventListener('click', ()=> showJoinStep(false));
 
 joinConfirmBtn.addEventListener('click', ()=>{
