@@ -109,15 +109,6 @@
   .auth-confirm-text{font-size:0.82rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
   #authConfirmOkBtn{margin-top:6px;}
   .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
-  .checkout-status-card{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:280px; margin:0 auto 16px; background:rgba(143,209,158,0.1); border:1.5px solid rgba(143,209,158,0.4); border-radius:16px; padding:20px 18px; text-align:center; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
-  .checkout-status-card.show{display:flex;}
-  .checkout-status-icon{font-size:1.8rem;}
-  .checkout-status-title{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--ok); margin:0;}
-  .checkout-status-text{font-size:0.82rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
-  .checkout-status-spinner{display:none; width:20px; height:20px; border-radius:50%; border:2.5px solid rgba(251,243,231,0.25); border-top-color:var(--ok); animation:authSpin 0.7s linear infinite; margin:4px 0;}
-  .checkout-status-card.processing .checkout-status-spinner{display:block;}
-  .checkout-status-card.timeout{background:rgba(215,162,74,0.1); border-color:rgba(215,162,74,0.4);}
-  .checkout-status-card.timeout .checkout-status-title{color:var(--gold);}
 
   .coin-badge{
     position:fixed; top:14px; right:14px; z-index:60;
@@ -132,44 +123,38 @@
   .coin-badge:active{ transform:scale(0.96) translateY(0); }
   .coin-badge.show{ display:flex; }
   .coin-badge-icon{width:32px; height:32px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe9b3, var(--gold) 70%); display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex:none;}
-  .coin-badge-plus{
-    display:flex; align-items:center; justify-content:center; flex:none;
-    width:22px; height:22px; border-radius:50%;
-    background:var(--gold); color:var(--film-black); font-size:0.95rem; font-weight:800; line-height:1;
-  }
   .coin-badge.pulse{ animation:coinPulse 0.4s ease-out; }
   @keyframes coinPulse{ 0%{ transform:scale(1); } 40%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
   .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.68rem; text-decoration:underline; padding:4px; width:auto;}
   .logout-link.show{ display:inline-block; }
   .logout-link:hover{ color:rgba(251,243,231,0.7); }
+  #adminLink{position:fixed; top:100px; right:14px; z-index:60;}
 
-  .buy-coins-modal{background:linear-gradient(180deg, rgba(42,28,48,0.96), rgba(21,16,26,0.98)); border-radius:22px; padding:28px 24px; width:100%; max-width:380px; box-shadow:0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(215,162,74,0.25); animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both; text-align:center;}
-  .buy-coins-title{font-family:'Caveat',cursive; font-size:1.7rem; color:var(--blush); margin:0 0 17px;}
-  .buy-coins-packs{display:flex; flex-direction:column; gap:12px;}
-  .buy-coin-pack{display:flex; align-items:center; justify-content:space-between; gap:11px; padding:17px 18px; border-radius:15px; background:rgba(251,243,231,0.04); border:1.5px solid rgba(251,243,231,0.18); color:var(--paper); text-align:left; cursor:pointer;}
-  .buy-coin-pack:hover:not(:disabled){ border-color:rgba(215,162,74,0.55); }
-  .buy-coin-pack.best-value{ border-color:var(--gold); box-shadow:0 0 0 1.5px rgba(215,162,74,0.35); }
-  .buy-coin-pack-label{font-weight:700; font-size:1.05rem;}
-  .buy-coin-pack-price{font-size:0.88rem; color:rgba(251,243,231,0.65); font-weight:600;}
-  .best-value-badge{font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-left:7px;}
-  .buy-coins-close{margin-top:20px; font-size:0.92rem; padding:13px 18px;}
+  .admin-modal{max-width:380px; text-align:center;}
+  .admin-form{display:flex; flex-direction:column; gap:10px; text-align:left;}
+  .admin-password-row{display:flex; gap:8px; align-items:center;}
+  .admin-password-row input{flex:1;}
+  .admin-password-row button{width:auto; flex:none; padding:11px 14px; font-size:0.78rem;}
+  .admin-accounts-list{margin-top:18px; text-align:left;}
+  .admin-accounts-title{font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 8px;}
+  .admin-account-row{display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.8rem; margin-bottom:6px;}
+  .admin-account-email{color:var(--paper); word-break:break-all;}
+  .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
+  .admin-empty-list{font-size:0.78rem; color:rgba(251,243,231,0.4); text-align:center; padding:10px 0;}
   @media (max-width: 400px){
-    .buy-coins-modal{ padding:20px 16px; }
-    .buy-coin-pack{ padding:14px 13px; }
-    .buy-coins-title{ font-size:1.45rem; }
     .coin-badge{ font-size:1.05rem; padding:8px 13px 8px 8px; gap:7px; }
     .coin-badge-icon{ width:28px; height:28px; font-size:0.95rem; }
-    .coin-badge-plus{ width:19px; height:19px; font-size:0.85rem; }
     .logout-link{ top:68px; }
+    #adminLink{ top:92px; }
   }
-  .gate input{
+  .gate input, .admin-modal input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
     font-family:'Poppins',sans-serif; font-weight:600; font-size:1.1rem;
     padding:12px; border-radius:12px; border:1.5px solid rgba(215,162,74,0.4);
     background:rgba(251,243,231,0.05); color:var(--paper); margin:0;
     transition:border-color .2s ease, background-color .2s ease;
   }
-  .gate input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
+  .gate input:focus, .admin-modal input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
   .gate input.invalid{ border-color:var(--err); animation:shake 0.4s ease; }
   @keyframes shake{
     0%,100%{ transform:translateX(0); }
@@ -482,8 +467,9 @@
 </style>
 </head>
 <body>
-<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙</span><span id="coinBadgeCount">0</span><span class="coin-badge-plus" aria-hidden="true">+</span></div>
+<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙</span><span id="coinBadgeCount">0</span></div>
 <button class="logout-link" id="logoutLink" type="button" data-i18n="logout">log out</button>
+<button class="logout-link" id="adminLink" type="button" data-i18n="adminLink">admin</button>
 <div class="recap-viewer" id="recapViewer">
   <div class="recap-viewer-card">
     <p class="recap-viewer-title" data-i18n="recapTitle">session recap</p>
@@ -502,13 +488,6 @@
   <div class="marquee">✦ luv booth ✦</div>
 
   <div class="gate" id="gate">
-    <div class="checkout-status-card" id="checkoutStatusCard">
-      <span class="checkout-status-icon" id="checkoutStatusIcon" aria-hidden="true">✓</span>
-      <p class="checkout-status-title" id="checkoutStatusTitle" data-i18n="paymentReceivedTitle">payment received!</p>
-      <p class="checkout-status-text" id="checkoutStatusText" data-i18n="paymentProcessingText">your coins are on their way</p>
-      <div class="checkout-status-spinner" id="checkoutStatusSpinner"></div>
-      <button class="btn-ghost" id="checkoutStatusCloseBtn" type="button" data-i18n="close">close</button>
-    </div>
     <div class="gate-cards" id="gateCards" style="display:none;">
       <button class="gate-card" id="createCard" type="button">
         <span class="gate-icon blush" aria-hidden="true">
@@ -588,25 +567,34 @@
     <div class="error-msg" id="gateError" role="alert"></div>
   </div>
 
-  <div class="swap-modal-backdrop" id="buyCoinsBackdrop">
-    <div class="buy-coins-modal">
-      <p class="buy-coins-title" data-i18n="buyCoinsTitle">buy coins</p>
-      <div class="buy-coins-packs">
-        <button class="buy-coin-pack" data-pack="1" type="button" disabled>
-          <span class="buy-coin-pack-label">🪙 <span data-i18n="pack1">1 coin</span></span>
-          <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
-        </button>
-        <button class="buy-coin-pack" data-pack="3" type="button" disabled>
-          <span class="buy-coin-pack-label">🪙 <span data-i18n="pack3">3 coins</span></span>
-          <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
-        </button>
-        <button class="buy-coin-pack best-value" data-pack="5" type="button" disabled>
-          <span class="buy-coin-pack-label">🪙 <span data-i18n="pack5">5 coins</span><span class="best-value-badge" data-i18n="bestValueBadge">best value</span></span>
-          <span class="buy-coin-pack-price" data-i18n="comingSoon">coming soon</span>
-        </button>
+  <div class="swap-modal-backdrop" id="adminBackdrop">
+    <div class="swap-modal admin-modal">
+      <div class="swap-modal-header">
+        <span data-i18n="adminPanelTitle">create an account</span>
+        <button class="swap-modal-close" id="adminCloseBtn" type="button" aria-label="Close">×</button>
       </div>
-      <p class="auth-msg" id="buyCoinsNotReadyMsg" data-i18n="buyCoinsNotReady">coin purchases aren't hooked up yet — check back soon</p>
-      <button class="btn-ghost buy-coins-close" id="buyCoinsCloseBtn" type="button" data-i18n="close">close</button>
+      <div class="admin-form">
+        <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
+        </div>
+        <input id="adminEmailInput" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+        <div class="admin-password-row">
+          <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+          <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
+        </div>
+        <input id="adminCoinsInput" type="number" min="0" step="1" data-i18n-placeholder="startingCoinsPlaceholder" placeholder="STARTING COINS" style="text-transform:none; letter-spacing:normal;">
+        <button class="btn-primary auth-submit-btn" id="adminCreateBtn" type="button">
+          <span class="btn-spinner" id="adminCreateSpinner" aria-hidden="true"></span>
+          <span id="adminCreateLabel" data-i18n="createAccountBtn">create account</span>
+        </button>
+        <div class="auth-banner auth-banner-success" id="adminSuccessBanner" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="adminSuccessText"></span>
+        </div>
+      </div>
+      <div class="admin-accounts-list">
+        <p class="admin-accounts-title" data-i18n="adminAccountsListTitle">accounts you've created</p>
+        <div id="adminAccountsRows"></div>
+      </div>
     </div>
   </div>
 
@@ -743,8 +731,6 @@ const TRANSLATIONS = {
     checkEmailTitle: 'check your email', gotIt: 'got it',
     loginSuccessMsg: "you're in!", signupSuccessMsg: 'account created!',
     gateFootnote: 'your coins & recaps are tied to your account — nothing else is saved',
-    buyCoinsTitle: 'buy coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'best value',
-    comingSoon: 'coming soon', buyCoinsNotReady: "coin purchases aren't hooked up yet — check back soon", close: 'close',
     connecting: 'connecting…', copyCode: 'copy code', waitingForThem: 'waiting for them<br>to join…',
     sayCheese: "say cheese whenever you're ready",
     syncLost: "live sync lost — filter, theme, and countdown changes won't update for both of you until it's back",
@@ -756,7 +742,7 @@ const TRANSLATIONS = {
     hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 3 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
     leaveRoom: 'leave room', stripStyle: 'strip style',
     downloadStrip: '⬇ download strip',
-    outOfCoins: "you're out of coins — grab a pack to keep going",
+    outOfCoins: "you're out of coins — message us on [YOUR SOCIAL HANDLE] to get set up",
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
     accountsNotAvailable: "accounts aren't available right now — try again later.",
     enterBothFields: 'enter both an email and a password.',
@@ -794,14 +780,17 @@ const TRANSLATIONS = {
     setNewPasswordTitle: 'set a new password', newPasswordPlaceholder: 'NEW PASSWORD',
     setNewPasswordBtn: 'set new password', settingNewPassword: 'setting your password…',
     passwordUpdatedSuccess: 'password updated — log in with your new password',
-    paymentReceivedTitle: 'payment received!', paymentProcessingText: 'your coins are on their way',
-    coinsAddedTitle: 'coins added!', coinsAddedText: 'your balance has been updated',
-    paymentDelayedTitle: 'still processing',
-    paymentDelayedText: 'this is taking longer than usual — your coins should appear shortly, or contact support if not',
     recapProcessingTitle: 'your recap is still being prepared', recapProcessingText: 'try again in a moment',
     recapExpiredTitle: 'this recap has expired', recapExpiredText: 'recap links expire after 7 days',
     recapNotFoundTitle: 'recap not found', recapNotFoundText: 'this link may be incorrect or the recap may have expired',
     backToApp: 'back to luv booth',
+    adminLink: 'admin', adminPanelTitle: 'create an account',
+    temporaryPasswordPlaceholder: 'TEMPORARY PASSWORD', generate: 'generate',
+    startingCoinsPlaceholder: 'STARTING COINS', createAccountBtn: 'create account',
+    creatingAccountAdmin: 'creating account…',
+    adminAccountsListTitle: "accounts you've created", adminNoAccountsYet: 'no accounts created yet',
+    enterValidCoins: 'enter a valid starting coin amount.',
+    accountCreatedSuccess: 'account created for {email}',
   },
   fil: {
     langName: 'Filipino',
@@ -814,8 +803,6 @@ const TRANSLATIONS = {
     checkEmailTitle: 'tingnan ang iyong email', gotIt: 'sige',
     loginSuccessMsg: 'nakapasok ka na!', signupSuccessMsg: 'nagawa ang account!',
     gateFootnote: 'nakatali ang coins at recaps mo sa account mo — wala nang ibang naise-save',
-    buyCoinsTitle: 'bumili ng coins', pack1: '1 coin', pack3: '3 coins', pack5: '5 coins', bestValueBadge: 'pinaka-sulit',
-    comingSoon: 'malapit na', buyCoinsNotReady: 'hindi pa gumagana ang pagbili ng coins — balikan mo na lang', close: 'isara',
     connecting: 'kumokonekta…', copyCode: 'kopyahin ang code', waitingForThem: 'hinihintay siya<br>sumali…',
     sayCheese: 'sabihin ang cheese kapag handa ka na',
     syncLost: 'nawala ang live sync — hindi mag-a-update ang filter, theme, at countdown para sa inyong dalawa hanggang bumalik ito',
@@ -827,7 +814,7 @@ const TRANSLATIONS = {
     hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 3 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
     downloadStrip: '⬇ i-download ang strip',
-    outOfCoins: 'naubusan ka na ng coins — bumili ng pack para magpatuloy',
+    outOfCoins: 'naubusan ka na ng coins — mag-message sa [YOUR SOCIAL HANDLE] para ma-set up',
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
     accountsNotAvailable: 'hindi pa available ang accounts ngayon — subukan ulit mamaya.',
     enterBothFields: 'ilagay ang email at password.',
@@ -865,14 +852,17 @@ const TRANSLATIONS = {
     setNewPasswordTitle: 'maglagay ng bagong password', newPasswordPlaceholder: 'BAGONG PASSWORD',
     setNewPasswordBtn: 'itakda ang bagong password', settingNewPassword: 'itinatakda ang password mo…',
     passwordUpdatedSuccess: 'na-update na ang password — mag-log in gamit ang bago mong password',
-    paymentReceivedTitle: 'natanggap ang bayad!', paymentProcessingText: 'paparating na ang coins mo',
-    coinsAddedTitle: 'nadagdag ang coins!', coinsAddedText: 'na-update na ang balanse mo',
-    paymentDelayedTitle: 'pinoproseso pa rin',
-    paymentDelayedText: 'mas matagal ito kaysa karaniwan — lalabas din ang coins mo, o mag-contact sa support kung hindi',
     recapProcessingTitle: 'inihahanda pa ang recap mo', recapProcessingText: 'subukan ulit sandali',
     recapExpiredTitle: 'nag-expire na ang recap na ito', recapExpiredText: 'nag-e-expire ang mga recap link pagkalipas ng 7 araw',
     recapNotFoundTitle: 'hindi nahanap ang recap', recapNotFoundText: 'maaaring mali ang link na ito o nag-expire na ang recap',
     backToApp: 'bumalik sa luv booth',
+    adminLink: 'admin', adminPanelTitle: 'gumawa ng account',
+    temporaryPasswordPlaceholder: 'PANSAMANTALANG PASSWORD', generate: 'gumawa',
+    startingCoinsPlaceholder: 'SIMULANG COINS', createAccountBtn: 'gumawa ng account',
+    creatingAccountAdmin: 'ginagawa ang account…',
+    adminAccountsListTitle: 'mga account na ginawa mo', adminNoAccountsYet: 'wala pang account na ginawa',
+    enterValidCoins: 'maglagay ng valid na simulang bilang ng coins.',
+    accountCreatedSuccess: 'nagawa ang account para kay {email}',
   },
   es: {
     langName: 'Español',
@@ -885,8 +875,6 @@ const TRANSLATIONS = {
     checkEmailTitle: 'revisa tu correo', gotIt: 'entendido',
     loginSuccessMsg: '¡ya estás dentro!', signupSuccessMsg: '¡cuenta creada!',
     gateFootnote: 'tus monedas y recuerdos están ligados a tu cuenta — no se guarda nada más',
-    buyCoinsTitle: 'comprar monedas', pack1: '1 moneda', pack3: '3 monedas', pack5: '5 monedas', bestValueBadge: 'mejor precio',
-    comingSoon: 'muy pronto', buyCoinsNotReady: 'la compra de monedas aún no está lista — vuelve pronto', close: 'cerrar',
     connecting: 'conectando…', copyCode: 'copiar código', waitingForThem: 'esperando a que<br>se una…',
     sayCheese: 'di "whisky" cuando estés listo/a',
     syncLost: 'se perdió la sincronización en vivo — los cambios de filtro, tema y cuenta regresiva no se actualizarán para ambos hasta que vuelva',
@@ -898,7 +886,7 @@ const TRANSLATIONS = {
     hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 3 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
     downloadStrip: '⬇ descargar tira',
-    outOfCoins: 'te quedaste sin monedas — compra un paquete para seguir',
+    outOfCoins: 'te quedaste sin monedas — escríbenos a [YOUR SOCIAL HANDLE] para activarlas',
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
     accountsNotAvailable: 'las cuentas no están disponibles ahora mismo — intenta más tarde.',
     enterBothFields: 'ingresa tu correo y contraseña.',
@@ -936,14 +924,17 @@ const TRANSLATIONS = {
     setNewPasswordTitle: 'establece una nueva contraseña', newPasswordPlaceholder: 'NUEVA CONTRASEÑA',
     setNewPasswordBtn: 'establecer contraseña', settingNewPassword: 'estableciendo tu contraseña…',
     passwordUpdatedSuccess: 'contraseña actualizada — inicia sesión con tu nueva contraseña',
-    paymentReceivedTitle: '¡pago recibido!', paymentProcessingText: 'tus monedas están en camino',
-    coinsAddedTitle: '¡monedas agregadas!', coinsAddedText: 'tu saldo se ha actualizado',
-    paymentDelayedTitle: 'aún procesando',
-    paymentDelayedText: 'esto está tardando más de lo normal — tus monedas deberían aparecer pronto, o contacta a soporte si no es así',
     recapProcessingTitle: 'tu recuerdo todavía se está preparando', recapProcessingText: 'intenta de nuevo en un momento',
     recapExpiredTitle: 'este recuerdo ha vencido', recapExpiredText: 'los enlaces de recuerdos vencen después de 7 días',
     recapNotFoundTitle: 'recuerdo no encontrado', recapNotFoundText: 'este enlace puede ser incorrecto o el recuerdo puede haber vencido',
     backToApp: 'volver a luv booth',
+    adminLink: 'admin', adminPanelTitle: 'crear una cuenta',
+    temporaryPasswordPlaceholder: 'CONTRASEÑA TEMPORAL', generate: 'generar',
+    startingCoinsPlaceholder: 'MONEDAS INICIALES', createAccountBtn: 'crear cuenta',
+    creatingAccountAdmin: 'creando cuenta…',
+    adminAccountsListTitle: 'cuentas que has creado', adminNoAccountsYet: 'aún no se han creado cuentas',
+    enterValidCoins: 'ingresa una cantidad inicial de monedas válida.',
+    accountCreatedSuccess: 'cuenta creada para {email}',
   },
   ko: {
     langName: '한국어',
@@ -956,8 +947,6 @@ const TRANSLATIONS = {
     checkEmailTitle: '이메일을 확인하세요', gotIt: '확인',
     loginSuccessMsg: '로그인되었습니다!', signupSuccessMsg: '계정이 생성되었습니다!',
     gateFootnote: '코인과 리캡은 계정에 연결됩니다 — 그 외에는 저장되지 않습니다',
-    buyCoinsTitle: '코인 구매', pack1: '코인 1개', pack3: '코인 3개', pack5: '코인 5개', bestValueBadge: '최고의 혜택',
-    comingSoon: '준비 중', buyCoinsNotReady: '코인 구매 기능은 아직 준비 중입니다 — 곧 다시 확인해 주세요', close: '닫기',
     connecting: '연결 중…', copyCode: '코드 복사', waitingForThem: '상대방을<br>기다리는 중…',
     sayCheese: '준비되면 활짝 웃어주세요',
     syncLost: '실시간 동기화가 끊겼습니다 — 필터, 테마, 카운트다운 변경 사항이 복구될 때까지 서로에게 반영되지 않습니다',
@@ -969,7 +958,7 @@ const TRANSLATIONS = {
     hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 3장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
     downloadStrip: '⬇ 스트립 다운로드',
-    outOfCoins: '코인이 부족합니다 — 코인 팩을 구매해 주세요',
+    outOfCoins: '코인이 부족합니다 — [YOUR SOCIAL HANDLE]으로 메시지를 보내주세요',
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
     accountsNotAvailable: '지금은 계정 기능을 사용할 수 없습니다 — 나중에 다시 시도해 주세요.',
     enterBothFields: '이메일과 비밀번호를 모두 입력해 주세요.',
@@ -1007,14 +996,17 @@ const TRANSLATIONS = {
     setNewPasswordTitle: '새 비밀번호 설정', newPasswordPlaceholder: '새 비밀번호',
     setNewPasswordBtn: '새 비밀번호 설정하기', settingNewPassword: '비밀번호 설정 중…',
     passwordUpdatedSuccess: '비밀번호가 변경되었습니다 — 새 비밀번호로 로그인해 주세요',
-    paymentReceivedTitle: '결제가 완료되었습니다!', paymentProcessingText: '코인이 곧 지급됩니다',
-    coinsAddedTitle: '코인이 추가되었습니다!', coinsAddedText: '잔액이 업데이트되었습니다',
-    paymentDelayedTitle: '아직 처리 중입니다',
-    paymentDelayedText: '평소보다 시간이 더 걸리고 있습니다 — 곧 코인이 표시될 예정이며, 계속 안 보이면 고객 지원에 문의해 주세요',
     recapProcessingTitle: '리캡을 아직 준비하고 있습니다', recapProcessingText: '잠시 후 다시 시도해 주세요',
     recapExpiredTitle: '이 리캡은 만료되었습니다', recapExpiredText: '리캡 링크는 7일 후 만료됩니다',
     recapNotFoundTitle: '리캡을 찾을 수 없습니다', recapNotFoundText: '링크가 잘못되었거나 리캡이 만료되었을 수 있습니다',
     backToApp: 'luv booth로 돌아가기',
+    adminLink: '관리자', adminPanelTitle: '계정 만들기',
+    temporaryPasswordPlaceholder: '임시 비밀번호', generate: '생성',
+    startingCoinsPlaceholder: '시작 코인 수', createAccountBtn: '계정 만들기',
+    creatingAccountAdmin: '계정을 만드는 중…',
+    adminAccountsListTitle: '생성한 계정 목록', adminNoAccountsYet: '아직 생성된 계정이 없습니다',
+    enterValidCoins: '유효한 시작 코인 수를 입력해 주세요.',
+    accountCreatedSuccess: '{email} 계정이 생성되었습니다',
   },
   ja: {
     langName: '日本語',
@@ -1027,8 +1019,6 @@ const TRANSLATIONS = {
     checkEmailTitle: 'メールをご確認ください', gotIt: 'わかりました',
     loginSuccessMsg: 'ログインしました！', signupSuccessMsg: 'アカウントを作成しました！',
     gateFootnote: 'コインとリキャップはアカウントに紐づきます — それ以外は保存されません',
-    buyCoinsTitle: 'コインを購入', pack1: 'コイン1枚', pack3: 'コイン3枚', pack5: 'コイン5枚', bestValueBadge: '一番お得',
-    comingSoon: '近日公開', buyCoinsNotReady: 'コイン購入はまだ準備中です — またご確認ください', close: '閉じる',
     connecting: '接続中…', copyCode: 'コードをコピー', waitingForThem: '相手の参加を<br>待っています…',
     sayCheese: '準備ができたら笑顔で',
     syncLost: 'ライブ同期が切れました — フィルター、テーマ、カウントダウンの変更は復旧するまでお互いに反映されません',
@@ -1040,7 +1030,7 @@ const TRANSLATIONS = {
     hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの3枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
     downloadStrip: '⬇ ストリップをダウンロード',
-    outOfCoins: 'コインがなくなりました — パックを購入して続けましょう',
+    outOfCoins: 'コインがなくなりました — [YOUR SOCIAL HANDLE] までメッセージをお送りください',
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
     accountsNotAvailable: '現在アカウント機能はご利用いただけません — 後でもう一度お試しください。',
     enterBothFields: 'メールアドレスとパスワードの両方を入力してください。',
@@ -1078,14 +1068,17 @@ const TRANSLATIONS = {
     setNewPasswordTitle: '新しいパスワードを設定', newPasswordPlaceholder: '新しいパスワード',
     setNewPasswordBtn: '新しいパスワードを設定する', settingNewPassword: 'パスワードを設定中…',
     passwordUpdatedSuccess: 'パスワードが更新されました — 新しいパスワードでログインしてください',
-    paymentReceivedTitle: 'お支払いを受け付けました！', paymentProcessingText: 'まもなくコインが反映されます',
-    coinsAddedTitle: 'コインが追加されました！', coinsAddedText: '残高が更新されました',
-    paymentDelayedTitle: '処理中です',
-    paymentDelayedText: '通常より時間がかかっています — まもなくコインが反映されます。反映されない場合はサポートまでご連絡ください',
     recapProcessingTitle: 'リキャップを準備中です', recapProcessingText: 'しばらくしてからもう一度お試しください',
     recapExpiredTitle: 'このリキャップは期限切れです', recapExpiredText: 'リキャップのリンクは7日で期限切れになります',
     recapNotFoundTitle: 'リキャップが見つかりません', recapNotFoundText: 'リンクが間違っているか、リキャップの期限が切れている可能性があります',
     backToApp: 'luv boothに戻る',
+    adminLink: '管理者', adminPanelTitle: 'アカウントを作成',
+    temporaryPasswordPlaceholder: '仮パスワード', generate: '生成',
+    startingCoinsPlaceholder: '初期コイン数', createAccountBtn: 'アカウントを作成',
+    creatingAccountAdmin: 'アカウントを作成中…',
+    adminAccountsListTitle: '作成したアカウント', adminNoAccountsYet: 'まだ作成されたアカウントはありません',
+    enterValidCoins: '有効な初期コイン数を入力してください。',
+    accountCreatedSuccess: '{email} のアカウントを作成しました',
   },
 };
 
@@ -1140,11 +1133,6 @@ const joinCard = document.getElementById('joinCard');
 const joinConfirmBtn = document.getElementById('joinConfirmBtn');
 const joinBackBtn = document.getElementById('joinBackBtn');
 const gateError = document.getElementById('gateError');
-const checkoutStatusCard = document.getElementById('checkoutStatusCard');
-const checkoutStatusIcon = document.getElementById('checkoutStatusIcon');
-const checkoutStatusTitle = document.getElementById('checkoutStatusTitle');
-const checkoutStatusText = document.getElementById('checkoutStatusText');
-const checkoutStatusCloseBtn = document.getElementById('checkoutStatusCloseBtn');
 const boothLayout = document.getElementById('boothLayout');
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
@@ -1180,9 +1168,21 @@ const resetPasswordSuccessText = document.getElementById('resetPasswordSuccessTe
 const coinBadge = document.getElementById('coinBadge');
 const coinBadgeCount = document.getElementById('coinBadgeCount');
 const logoutLink = document.getElementById('logoutLink');
-const buyCoinsBackdrop = document.getElementById('buyCoinsBackdrop');
-const buyCoinsCloseBtn = document.getElementById('buyCoinsCloseBtn');
-const buyCoinsNotReadyMsg = document.getElementById('buyCoinsNotReadyMsg');
+const adminLink = document.getElementById('adminLink');
+const adminBackdrop = document.getElementById('adminBackdrop');
+const adminCloseBtn = document.getElementById('adminCloseBtn');
+const adminEmailInput = document.getElementById('adminEmailInput');
+const adminPasswordInput = document.getElementById('adminPasswordInput');
+const adminGeneratePasswordBtn = document.getElementById('adminGeneratePasswordBtn');
+const adminCoinsInput = document.getElementById('adminCoinsInput');
+const adminCreateBtn = document.getElementById('adminCreateBtn');
+const adminCreateSpinner = document.getElementById('adminCreateSpinner');
+const adminCreateLabel = document.getElementById('adminCreateLabel');
+const adminErrorBanner = document.getElementById('adminErrorBanner');
+const adminErrorText = document.getElementById('adminErrorText');
+const adminSuccessBanner = document.getElementById('adminSuccessBanner');
+const adminSuccessText = document.getElementById('adminSuccessText');
+const adminAccountsRows = document.getElementById('adminAccountsRows');
 const recapPanel = document.getElementById('recapPanel');
 const recapQr = document.getElementById('recapQr');
 const recapLink = document.getElementById('recapLink');
@@ -1388,6 +1388,7 @@ async function refreshAuthState(){
   currentUser = session ? session.user : null;
   coinBadge.classList.toggle('show', !!currentUser);
   logoutLink.classList.toggle('show', !!currentUser);
+  updateAdminLinkVisibility();
   if(currentUser) await refreshCoinBalance();
 }
 
@@ -1462,6 +1463,7 @@ logoutLink.addEventListener('click', async ()=>{
   currentUser = null;
   coinBadge.classList.remove('show');
   logoutLink.classList.remove('show');
+  updateAdminLinkVisibility();
   setAuthMode('login');
   showAuthStep(true);
   if(sbClient){
@@ -1469,58 +1471,129 @@ logoutLink.addEventListener('click', async ()=>{
   }
 });
 
-function showBuyCoinsModal(){ buyCoinsBackdrop.classList.add('show'); }
-function hideBuyCoinsModal(){ buyCoinsBackdrop.classList.remove('show'); }
-buyCoinsCloseBtn.addEventListener('click', hideBuyCoinsModal);
-buyCoinsBackdrop.addEventListener('click', (e)=>{ if(e.target === buyCoinsBackdrop) hideBuyCoinsModal(); });
-coinBadge.addEventListener('click', ()=>{ if(currentUser) showBuyCoinsModal(); });
+/* Admin panel: manually provisions coin-loaded accounts for people who pay
+   outside the app (social-media DM, etc). ADMIN_EMAIL only controls whether
+   the link is shown in the UI — the real gate is server-side, inside the
+   admin-create-account Edge Function, which independently re-verifies the
+   caller's own authenticated session email rather than trusting this. */
+const ADMIN_EMAIL = 'hnnhmanuel1224@gmail.com';
 
-/* Lemon Squeezy checkout config. productId is real (given by the store
-   owner); variantId and the store slug still need to be copied from the
-   Lemon Squeezy dashboard (Products → variant id shown per product;
-   Settings → General → Store URL for the slug) — a pack only goes live
-   once both are filled in, so nothing here can accidentally charge real
-   money against a guessed id. */
-const LEMON_SQUEEZY_STORE_SLUG = 'luvbooth';
-const COIN_PACKS = [
-  { pack: 1, price: '$1.99', productId: '1219540', variantId: '1906502' },
-  { pack: 3, price: '$4.99', productId: '1219541', variantId: '1906504' },
-  { pack: 5, price: '$7.99', productId: '1219545', variantId: '1906510' },
-];
-
-/* NOTE ON ACCURACY: Lemon Squeezy's hosted checkout supports a
-   checkout[redirect_url] param that sends the buyer back here after a
-   successful payment, appending a checkout_id query param of its own —
-   this matches Lemon Squeezy's documented checkout-link behavior, but
-   like the webhook payload shape elsewhere in this app, it has not been
-   exercised against a real checkout (this sandbox can't reach Lemon
-   Squeezy). Confirm with one real test purchase before fully trusting it. */
-function buildCheckoutUrl(pack){
-  if(!LEMON_SQUEEZY_STORE_SLUG || !pack.variantId || !currentUser) return null;
-  const url = new URL(`https://${LEMON_SQUEEZY_STORE_SLUG}.lemonsqueezy.com/checkout/buy/${pack.variantId}`);
-  url.searchParams.set('checkout[custom][user_id]', currentUser.id);
-  url.searchParams.set('checkout[redirect_url]', `${AUTH_REDIRECT_URL}?checkout=success`);
-  return url.toString();
+function updateAdminLinkVisibility(){
+  adminLink.classList.toggle('show', !!currentUser && currentUser.email === ADMIN_EMAIL);
 }
 
-function initBuyCoinsPacks(){
-  let allReady = true;
-  COIN_PACKS.forEach(pack=>{
-    const btn = document.querySelector(`.buy-coin-pack[data-pack="${pack.pack}"]`);
-    if(!btn) return;
-    if(!(LEMON_SQUEEZY_STORE_SLUG && pack.variantId)){ allReady = false; return; } // stays disabled, shows "coming soon"
-    const priceEl = btn.querySelector('.buy-coin-pack-price');
-    btn.disabled = false;
-    priceEl.textContent = pack.price;
-    priceEl.removeAttribute('data-i18n');
-    btn.addEventListener('click', ()=>{
-      const url = buildCheckoutUrl(pack);
-      if(url) window.open(url, '_blank', 'noopener');
-    });
+function generateTempPassword(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let pass = '';
+  for(let i=0;i<12;i++) pass += chars[Math.floor(Math.random()*chars.length)];
+  return pass;
+}
+
+function showAdminError(msg){
+  adminSuccessBanner.style.display = 'none';
+  adminErrorText.textContent = msg;
+  adminErrorBanner.style.display = 'flex';
+}
+function showAdminSuccess(msg){
+  adminErrorBanner.style.display = 'none';
+  adminSuccessText.textContent = msg;
+  adminSuccessBanner.style.display = 'flex';
+}
+function hideAdminFeedback(){
+  adminErrorBanner.style.display = 'none';
+  adminSuccessBanner.style.display = 'none';
+}
+
+function setAdminLoading(loading){
+  adminCreateBtn.disabled = loading;
+  adminCreateBtn.classList.toggle('is-loading', loading);
+  adminCreateLabel.textContent = loading ? t('creatingAccountAdmin') : t('createAccountBtn');
+}
+
+function renderAdminAccounts(accounts){
+  adminAccountsRows.innerHTML = '';
+  if(!accounts || !accounts.length){
+    const empty = document.createElement('p');
+    empty.className = 'admin-empty-list';
+    empty.textContent = t('adminNoAccountsYet');
+    adminAccountsRows.appendChild(empty);
+    return;
+  }
+  accounts.forEach(acc=>{
+    const row = document.createElement('div');
+    row.className = 'admin-account-row';
+    const email = document.createElement('span');
+    email.className = 'admin-account-email';
+    email.textContent = acc.email;
+    const coins = document.createElement('span');
+    coins.className = 'admin-account-coins';
+    coins.textContent = `🪙 ${acc.coins}`;
+    row.appendChild(email);
+    row.appendChild(coins);
+    adminAccountsRows.appendChild(row);
   });
-  if(allReady) buyCoinsNotReadyMsg.style.display = 'none';
 }
-initBuyCoinsPacks();
+
+async function refreshAdminAccountsList(){
+  if(!sbClient) return;
+  try{
+    const { data, error } = await sbClient.functions.invoke('admin-create-account', { body: { action: 'list' } });
+    if(error) throw error;
+    renderAdminAccounts(data && data.accounts);
+  }catch(e){
+    renderAdminAccounts([]);
+  }
+}
+
+function showAdminModal(){
+  hideAdminFeedback();
+  adminEmailInput.value = '';
+  adminPasswordInput.value = '';
+  adminCoinsInput.value = '';
+  adminBackdrop.classList.add('show');
+  refreshAdminAccountsList();
+}
+function hideAdminModal(){ adminBackdrop.classList.remove('show'); }
+
+adminLink.addEventListener('click', showAdminModal);
+adminCloseBtn.addEventListener('click', hideAdminModal);
+adminBackdrop.addEventListener('click', (e)=>{ if(e.target === adminBackdrop) hideAdminModal(); });
+adminGeneratePasswordBtn.addEventListener('click', ()=>{ adminPasswordInput.value = generateTempPassword(); });
+
+adminCreateBtn.addEventListener('click', async ()=>{
+  const email = adminEmailInput.value.trim();
+  const password = adminPasswordInput.value;
+  const coins = parseInt(adminCoinsInput.value, 10);
+  hideAdminFeedback();
+  if(!email || !password){
+    showAdminError(t('authGenericError'));
+    return;
+  }
+  if(isNaN(coins) || coins < 0){
+    showAdminError(t('enterValidCoins'));
+    return;
+  }
+  if(!sbClient){
+    showAdminError(t('accountsNotAvailable'));
+    return;
+  }
+  setAdminLoading(true);
+  try{
+    const { data, error } = await sbClient.functions.invoke('admin-create-account', {
+      body: { action: 'create', email, password, coins },
+    });
+    if(error) throw error;
+    if(data && data.error) throw new Error(data.error);
+    showAdminSuccess(t('accountCreatedSuccess', { email }));
+    adminEmailInput.value = '';
+    adminPasswordInput.value = '';
+    adminCoinsInput.value = '';
+    refreshAdminAccountsList();
+  }catch(e){
+    showAdminError((e && e.message) || t('authGenericError'));
+  }
+  setAdminLoading(false);
+});
 
 /* Recap viewer: the QR/link shared after a session now points back at this
    same page with ?recap=<recordings row id> instead of the raw Supabase
@@ -1577,70 +1650,6 @@ async function loadRecapViewer(recapId){
 const recapIdFromUrl = detectRecapView();
 if(recapIdFromUrl) loadRecapViewer(recapIdFromUrl);
 
-/* Checkout return handling: Lemon Squeezy redirects back to
-   checkout[redirect_url] (set in buildCheckoutUrl above) after a
-   successful payment, so a fresh page load with ?checkout=success in the
-   URL means "they just paid." The webhook that actually credits coins
-   runs asynchronously, so rather than assume it's instant, poll the
-   balance for a while and be honest if it's taking longer than usual. */
-let COIN_POLL_INTERVAL_MS = 3000;
-let COIN_POLL_TIMEOUT_MS = 30000;
-
-function detectCheckoutReturn(){
-  const params = new URLSearchParams(window.location.search);
-  if(params.get('checkout') !== 'success') return false;
-  params.delete('checkout');
-  params.delete('checkout_id');
-  const query = params.toString();
-  const cleanUrl = window.location.pathname + (query ? '?' + query : '') + window.location.hash;
-  history.replaceState(null, '', cleanUrl); // so refreshing doesn't replay this
-  return true;
-}
-
-function setCheckoutStatus(state){
-  checkoutStatusCard.classList.remove('processing', 'timeout');
-  checkoutStatusCard.classList.add('show');
-  if(state === 'received'){
-    checkoutStatusCard.classList.add('processing');
-    checkoutStatusIcon.textContent = '✓';
-    checkoutStatusTitle.textContent = t('paymentReceivedTitle');
-    checkoutStatusText.textContent = t('paymentProcessingText');
-  }else if(state === 'success'){
-    checkoutStatusIcon.textContent = '🎉';
-    checkoutStatusTitle.textContent = t('coinsAddedTitle');
-    checkoutStatusText.textContent = t('coinsAddedText');
-  }else if(state === 'timeout'){
-    checkoutStatusCard.classList.add('timeout');
-    checkoutStatusIcon.textContent = '⏳';
-    checkoutStatusTitle.textContent = t('paymentDelayedTitle');
-    checkoutStatusText.textContent = t('paymentDelayedText');
-  }
-}
-checkoutStatusCloseBtn.addEventListener('click', ()=> checkoutStatusCard.classList.remove('show'));
-
-async function pollForCoinCredit(startingBalance){
-  const start = Date.now();
-  while(Date.now() - start < COIN_POLL_TIMEOUT_MS){
-    await new Promise(r=>setTimeout(r, COIN_POLL_INTERVAL_MS));
-    await refreshCoinBalance();
-    const current = parseInt(coinBadgeCount.textContent, 10);
-    if(!isNaN(current) && !isNaN(startingBalance) && current > startingBalance){
-      pulseCoinBadge();
-      setCheckoutStatus('success');
-      setTimeout(()=> checkoutStatusCard.classList.remove('show'), 5000);
-      return;
-    }
-  }
-  setCheckoutStatus('timeout');
-}
-
-async function handleCheckoutReturn(){
-  if(!detectCheckoutReturn() || !currentUser) return;
-  const startingBalance = parseInt(coinBadgeCount.textContent, 10) || 0;
-  setCheckoutStatus('received');
-  pollForCoinCredit(startingBalance);
-}
-
 /* Login/signup is the very first thing anyone sees. gateCards starts
    hidden (see the inline style on #gateCards) so there's no flash of
    Create/Join before we know whether a session already exists — once
@@ -1649,7 +1658,6 @@ async function handleCheckoutReturn(){
 (async ()=>{
   await refreshAuthState();
   showAuthStep(!currentUser);
-  handleCheckoutReturn();
 })();
 
 function randomCode(){
@@ -1690,7 +1698,6 @@ createCard.addEventListener('click', async ()=>{
   }
   if(newBalance === null){
     showGateError(t('outOfCoins'));
-    showBuyCoinsModal();
     return;
   }
   coinBadgeCount.textContent = newBalance;

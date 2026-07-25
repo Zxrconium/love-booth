@@ -101,48 +101,20 @@ $$;
 
 grant execute on function public.refund_last_spend() to authenticated;
 
--- Atomic, idempotent credit: intended to be called ONLY by the Lemon
--- Squeezy webhook (Supabase Edge Function, using the service_role key),
--- never from client code — that's why authenticated/anon are explicitly
--- denied execute below.
---
--- Takes the Lemon Squeezy order id and records it in processed_ls_orders
--- inside the same transaction as the credit, so a retried webhook delivery
--- for an order we've already credited is a safe no-op (the insert conflicts
--- and the exception branch just returns the current balance) rather than
--- double-crediting.
-create table if not exists public.processed_ls_orders (
-  order_id text primary key,
+-- Manual coin provisioning: coins are no longer sold through a self-serve
+-- checkout. Instead, the admin-create-account Edge Function (service_role,
+-- gated on the site owner's own authenticated session) creates accounts
+-- with a starting coin balance already loaded, and records them here so
+-- the admin panel can list "accounts I've created" without exposing the
+-- full user base. No client-facing policies on purpose: only the Edge
+-- Function (service_role, bypasses RLS) ever reads or writes this table.
+create table if not exists public.admin_created_accounts (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
   created_at timestamptz not null default now()
 );
 
-alter table public.processed_ls_orders enable row level security;
--- No policies at all: only service_role (which bypasses RLS entirely) ever
--- touches this table, via credit_coins_for_order() below.
-
-create or replace function public.credit_coins_for_order(p_order_id text, p_user uuid, p_amount integer)
-returns integer
-language plpgsql
-security definer set search_path = public
-as $$
-declare
-  new_balance integer;
-begin
-  insert into public.processed_ls_orders (order_id) values (p_order_id);
-  update public.profiles
-    set coins = coins + p_amount
-    where id = p_user
-  returning coins into new_balance;
-  return new_balance;
-exception
-  when unique_violation then
-    select coins into new_balance from public.profiles where id = p_user;
-    return new_balance;
-end;
-$$;
-
-revoke execute on function public.credit_coins_for_order(text, uuid, integer) from public, anon, authenticated;
--- service_role bypasses grants entirely, so no explicit grant is needed for the webhook.
+alter table public.admin_created_accounts enable row level security;
 
 -- ---------------------------------------------------------------------------
 -- 2. Session recap recordings
