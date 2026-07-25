@@ -30,17 +30,35 @@
   body::before{
     content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
     background:radial-gradient(circle at 50% 44%, rgba(232,147,168,0.16), transparent 55%);
-    animation:bgGlow 8s ease-in-out infinite;
+    animation:bgGlow 8s ease-in-out infinite, bgDrift 26s ease-in-out infinite alternate;
+    will-change:opacity, transform;
   }
   @keyframes bgGlow{
-    0%,100%{ opacity:0.6; transform:scale(1); }
-    50%{ opacity:1; transform:scale(1.08); }
+    0%,100%{ opacity:0.6; }
+    50%{ opacity:1; }
+  }
+  /* Very slow, barely-perceptible drift so the background glow doesn't read
+     as a flat static image — deliberately tiny (a couple % of translation,
+     a hair of scale) and long-cycled (26s) so it never looks like it's
+     "moving" on purpose, just quietly alive. */
+  @keyframes bgDrift{
+    0%{ transform:translate(-2%,-1%) scale(1.02); }
+    50%{ transform:translate(1.5%,1%) scale(1.08); }
+    100%{ transform:translate(2%,-1.5%) scale(1.03); }
   }
   .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
   .marquee{
     font-family:'Caveat',cursive; font-weight:700; color:var(--gold);
     font-size:clamp(1.9rem,6vw,2.6rem); text-align:center; letter-spacing:0.5px;
     animation:glow 4s ease-in-out infinite;
+  }
+  .marquee .sparkle{
+    display:inline-block; animation:sparkleTwinkle 3.4s ease-in-out infinite;
+  }
+  .marquee .sparkle:nth-of-type(2){ animation-delay:1.7s; }
+  @keyframes sparkleTwinkle{
+    0%,100%{ opacity:0.55; transform:scale(0.85); }
+    50%{ opacity:1; transform:scale(1.15); }
   }
   .lang-switcher-row{width:100%; display:flex; justify-content:center;}
   .lang-switcher{
@@ -70,12 +88,18 @@
   }
   .gate-cards{display:flex; gap:16px; width:100%;}
   .gate-card{
+    position:relative; overflow:hidden;
     flex:1; display:flex; flex-direction:column; align-items:center; gap:12px;
     background:rgba(251,243,231,0.03); border:1.5px solid rgba(251,243,231,0.18);
     border-radius:18px; padding:28px 16px; cursor:pointer; text-align:center;
     font-family:'Poppins',sans-serif; color:var(--paper);
     transition:border-color .2s ease, background-color .2s ease, transform .15s ease, box-shadow .2s ease;
+    animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;
   }
+  /* Staggered entrance — each card animates in slightly after the last,
+     rather than both popping in at once. */
+  .gate-card:nth-child(1){ animation-delay:0.05s; }
+  .gate-card:nth-child(2){ animation-delay:0.16s; }
   .gate-card:hover{ border-color:rgba(215,162,74,0.55); background:rgba(251,243,231,0.06); transform:translateY(-2px); box-shadow:0 10px 26px rgba(215,162,74,0.15); }
   .gate-card:active{ transform:scale(0.98) translateY(0); transition-duration:.08s; }
   .gate-icon{width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none;}
@@ -121,14 +145,35 @@
   }
   .coin-badge:hover{ box-shadow:0 8px 22px rgba(215,162,74,0.35); transform:translateY(-1px); }
   .coin-badge:active{ transform:scale(0.96) translateY(0); }
-  .coin-badge.show{ display:flex; }
-  .coin-badge-icon{width:32px; height:32px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe9b3, var(--gold) 70%); display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex:none;}
-  .coin-badge.pulse{ animation:coinPulse 0.4s ease-out; }
-  @keyframes coinPulse{ 0%{ transform:scale(1); } 40%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
+  .coin-badge.show{ display:flex; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; }
+  .coin-badge-icon{position:relative; width:32px; height:32px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe9b3, var(--gold) 70%); display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex:none;}
+  .coin-badge.pulse{ animation:coinPulse 0.45s ease-out; }
+  @keyframes coinPulse{
+    0%{ transform:scale(1) rotate(0deg); }
+    35%{ transform:scale(1.16) rotate(-6deg); }
+    65%{ transform:scale(1.05) rotate(4deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  /* Small burst of sparkles around the coin icon specifically when a coin
+     is added (never on a spend) — see pulseCoinBadge(increased) in JS. */
+  .coin-sparkle{
+    position:absolute; top:50%; left:50%; font-size:0.6rem; line-height:1; color:#fff6da;
+    opacity:0; pointer-events:none; transform:translate(-50%,-50%) scale(0);
+  }
+  .coin-badge.sparkle-burst .coin-sparkle{ animation:coinSparkleBurst 0.7s ease-out both; }
+  .coin-sparkle.s1{ --dx:-15px; --dy:-12px; }
+  .coin-sparkle.s2{ --dx:14px; --dy:-15px; animation-delay:0.06s !important; }
+  .coin-sparkle.s3{ --dx:2px; --dy:18px; animation-delay:0.12s !important; }
+  @keyframes coinSparkleBurst{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.3); }
+    35%{ opacity:1; }
+    100%{ opacity:0; transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); }
+  }
   .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.68rem; text-decoration:underline; padding:4px; width:auto;}
-  .logout-link.show{ display:inline-block; }
+  .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
   .logout-link:hover{ color:rgba(251,243,231,0.7); }
   #adminLink{position:fixed; top:100px; right:14px; z-index:60;}
+  #adminLink.show{ animation-delay:0.16s; }
 
   .admin-modal{max-width:380px; text-align:center;}
   .admin-form{display:flex; flex-direction:column; gap:10px; text-align:left;}
@@ -141,6 +186,31 @@
   .admin-account-email{color:var(--paper); word-break:break-all;}
   .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
   .admin-empty-list{font-size:0.78rem; color:rgba(251,243,231,0.4); text-align:center; padding:10px 0;}
+
+  /* Soft glow-pulse originating from the exact tap point, layered on top of
+     (not replacing) the existing :active press-down scale — see the
+     pointerdown delegation in JS that sets --rx/--ry and toggles
+     .is-rippling on whichever of these it lands on. */
+  .btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge{
+    --rx:50%; --ry:50%;
+  }
+  .btn-primary::after, .btn-gold::after, .btn-ghost::after, .btn-reconnect::after, .copy-btn::after,
+  .gate-card::after, .choice-card::after, .thumb::after, .coin-badge::after{
+    content:''; position:absolute; left:var(--rx); top:var(--ry);
+    width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%);
+    opacity:0; transform:scale(0); pointer-events:none;
+  }
+  .btn-primary.is-rippling::after, .btn-gold.is-rippling::after, .btn-ghost.is-rippling::after,
+  .btn-reconnect.is-rippling::after, .copy-btn.is-rippling::after, .gate-card.is-rippling::after,
+  .choice-card.is-rippling::after, .thumb.is-rippling::after, .coin-badge.is-rippling::after{
+    animation:rippleFx 0.55s ease-out;
+  }
+  @keyframes rippleFx{
+    0%{ opacity:0.55; transform:scale(0); }
+    100%{ opacity:0; transform:scale(9); }
+  }
+  .btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn{ position:relative; overflow:hidden; }
   @media (max-width: 400px){
     .coin-badge{ font-size:1.05rem; padding:8px 13px 8px 8px; gap:7px; }
     .coin-badge-icon{ width:28px; height:28px; font-size:0.95rem; }
@@ -203,7 +273,7 @@
   .room-tag{display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:rgba(251,243,231,0.7); margin-bottom:6px; flex-wrap:wrap; text-align:center;}
   .dot{width:8px; height:8px; border-radius:50%; background:#c0576f; flex:none; transition:background-color .3s ease;}
   .dot.live{background:var(--ok); box-shadow:0 0 0 0 rgba(143,209,158,0.6); animation:pulse-ring 1.8s ease-out infinite, dotPop 0.4s ease-out;}
-  .dot.waiting{animation:pulse-soft 1.6s ease-in-out infinite;}
+  .dot.waiting{animation:heartbeat 1.8s ease-in-out infinite;}
   @keyframes pulse-ring{
     0%{ box-shadow:0 0 0 0 rgba(143,209,158,0.55); }
     70%{ box-shadow:0 0 0 7px rgba(143,209,158,0); }
@@ -214,16 +284,32 @@
     40%{ transform:scale(1.6); }
     100%{ transform:scale(1); }
   }
-  @keyframes pulse-soft{
-    0%,100%{ opacity:1; transform:scale(1); }
-    50%{ opacity:0.45; transform:scale(0.85); }
+  /* An actual heartbeat rhythm (two quick beats, then a rest) rather than a
+     flat metronomic pulse — fits the romantic/couple theme and reads as
+     more organic. Shared by the waiting dot and the small heart icon next
+     to "waiting for them" below. */
+  @keyframes heartbeat{
+    0%, 100%{ opacity:0.7; transform:scale(0.88); }
+    14%{ opacity:1; transform:scale(1.12); }
+    28%{ opacity:0.8; transform:scale(0.94); }
+    42%{ opacity:1; transform:scale(1.08); }
+    70%{ opacity:0.7; transform:scale(0.88); }
   }
   .code-row{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
   .code-badge{background:rgba(215,162,74,0.15); border:1px solid var(--gold); color:var(--gold); padding:2px 10px; border-radius:999px; font-weight:600; letter-spacing:2px; font-size:0.9rem;}
   .copy-btn{background:rgba(251,243,231,0.1); color:var(--paper); padding:4px 10px; font-size:0.68rem; border-radius:999px;}
   .copy-btn:hover:not(:disabled){ background:rgba(251,243,231,0.18); }
 
-  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; border:3px solid var(--gold); display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4);}
+  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; border:3px solid var(--gold); display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4); animation:viewfinderIdle 5s ease-in-out infinite; will-change:transform, box-shadow;}
+  /* Only breathes in its boxed setup-screen home, before the countdown
+     moves it into the fullscreen shoot overlay (see enterFullscreenShoot in
+     JS) — never during the actual 10-shot sequence, so it doesn't distract
+     mid-shoot or fight with the countdown/flash animations. */
+  .fullscreen-shoot .viewfinder{ animation:none; }
+  @keyframes viewfinderIdle{
+    0%,100%{ transform:scale(1) rotate(0deg); box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4), 0 0 0 0 rgba(215,162,74,0); }
+    50%{ transform:scale(1.006) rotate(0.15deg); box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.4), 0 0 22px 2px rgba(215,162,74,0.22); }
+  }
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
   .half video{width:100%; height:100%; object-fit:cover; display:block; will-change:filter;}
   .half.mirror video{transform:scaleX(-1);}
@@ -238,11 +324,12 @@
   .video-grain{position:absolute; inset:0; pointer-events:none; mix-blend-mode:overlay; background-repeat:repeat; opacity:0; transition:opacity .15s ease; will-change:opacity;}
   .video-grain.show{opacity:0.08;}
   .divider{width:3px; background:var(--gold); flex:none;}
-  .waiting-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-size:1.15rem; color:rgba(251,243,231,0.6); text-align:center; padding:10px; line-height:1.3; animation:breathe 2.6s ease-in-out infinite;}
+  .waiting-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; font-family:'Caveat',cursive; font-size:1.15rem; color:rgba(251,243,231,0.6); text-align:center; padding:10px; line-height:1.3; animation:breathe 2.6s ease-in-out infinite;}
   @keyframes breathe{
     0%,100%{ opacity:0.55; }
     50%{ opacity:0.95; }
   }
+  .waiting-heart{display:inline-block; font-size:1rem; animation:heartbeat 1.8s ease-in-out infinite;}
   .countdown{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-size:clamp(3.5rem,15vw,6rem); color:#fff; text-shadow:0 4px 20px rgba(0,0,0,0.6); opacity:0; pointer-events:none; z-index:5;}
   .countdown.show{opacity:1; animation:countPop 0.55s cubic-bezier(.34,1.56,.64,1);}
   @keyframes countPop{
@@ -292,7 +379,7 @@
     .choice-num{ font-size:1.5rem; }
   }
   .thumb-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; max-height:420px; overflow-y:auto; padding:4px; margin:10px 0;}
-  .thumb{position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:2.5px solid rgba(251,243,231,0.15); transition:border-color .15s ease, transform .15s ease; aspect-ratio:260/146; background:#000;}
+  .thumb{position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:2.5px solid rgba(251,243,231,0.15); transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease; aspect-ratio:260/146; background:#000;}
   .thumb img, .thumb canvas{width:100%; height:100%; display:block; object-fit:cover;}
   .thumb img.thumb-pop{ animation:thumbPopIn 0.3s cubic-bezier(.34,1.56,.64,1) both; }
   @keyframes thumbPopIn{
@@ -303,6 +390,11 @@
   .thumb.pending{cursor:default;}
   .thumb-pending-num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.3rem; color:rgba(43,27,46,0.4); text-shadow:0 1px 2px rgba(255,255,255,0.5);}
   .thumb:hover{ transform:translateY(-1px); }
+  /* Fuller hover-lift, desktop only — skips touch devices so nothing gets
+     stuck in a "hovered" look after a tap. */
+  @media (hover:hover) and (pointer:fine){
+    .thumb:hover{ transform:translateY(-2px) scale(1.035); box-shadow:0 8px 20px rgba(0,0,0,0.4); }
+  }
   .thumb.selected{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(215,162,74,0.35); }
   .thumb-badge{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); color:var(--film-black); font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.35); font-family:'Poppins',sans-serif;}
   .selection-actions{display:flex; flex-direction:column; gap:8px;}
@@ -479,7 +571,7 @@
 </style>
 </head>
 <body>
-<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙</span><span id="coinBadgeCount">0</span></div>
+<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙<span class="coin-sparkle s1" aria-hidden="true">✦</span><span class="coin-sparkle s2" aria-hidden="true">✦</span><span class="coin-sparkle s3" aria-hidden="true">✦</span></span><span id="coinBadgeCount">0</span></div>
 <button class="logout-link" id="logoutLink" type="button" data-i18n="logout">log out</button>
 <button class="logout-link" id="adminLink" type="button" data-i18n="adminLink">admin</button>
 <div class="recap-viewer" id="recapViewer">
@@ -497,7 +589,7 @@
   </div>
 </div>
 <div class="scene">
-  <div class="marquee">✦ luv booth ✦</div>
+  <div class="marquee"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
 
   <div class="gate" id="gate">
     <div class="gate-cards" id="gateCards" style="display:none;">
@@ -598,7 +690,7 @@
           <div class="video-vignette" id="remoteVignette"></div>
           <div class="video-grain" id="remoteGrain"></div>
           <video id="remoteVideoGlow" class="video-glow" autoplay playsinline muted></video>
-          <div class="waiting-label" id="waitingLabel" data-i18n="waitingForThem">waiting for them<br>to join…</div>
+          <div class="waiting-label" id="waitingLabel"><span class="waiting-heart" aria-hidden="true">🤍</span><span id="waitingLabelText" data-i18n="waitingForThem">waiting for them<br>to join…</span></div>
         </div>
         <div id="countdown" class="countdown">3</div>
         <div id="flash" class="flash"></div>
@@ -1141,6 +1233,24 @@ langSwitcher.value = currentLang;
 langSwitcher.addEventListener('change', ()=> setLanguage(langSwitcher.value));
 applyStaticTranslations();
 
+/* ---------------- Tap-point ripple (micro-interaction) ----------------
+   Delegated so it also covers elements created after load (photo thumbs,
+   the admin accounts list, etc). Purely a CSS animation under the hood
+   (see .is-rippling above), so the global prefers-reduced-motion rule at
+   the top of this stylesheet collapses it to a no-op automatically —
+   nothing extra to gate here. */
+const RIPPLE_SELECTOR = '.btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge';
+document.addEventListener('pointerdown', (e)=>{
+  const target = e.target.closest(RIPPLE_SELECTOR);
+  if(!target || target.disabled) return;
+  const rect = target.getBoundingClientRect();
+  target.style.setProperty('--rx', (e.clientX - rect.left) + 'px');
+  target.style.setProperty('--ry', (e.clientY - rect.top) + 'px');
+  target.classList.remove('is-rippling');
+  void target.offsetWidth;
+  target.classList.add('is-rippling');
+}, { passive:true });
+
 /* ---------------- Room gate ---------------- */
 const gate = document.getElementById('gate');
 const gateCards = document.getElementById('gateCards');
@@ -1227,7 +1337,7 @@ async function refundCoinIfUnused(){
     const { data: newBalance, error } = await sbClient.rpc('refund_last_spend');
     if(!error && newBalance !== null){
       coinBadgeCount.textContent = newBalance;
-      pulseCoinBadge();
+      pulseCoinBadge(true);
       return true;
     }
   }catch(e){ /* best-effort — nothing else to do if this fails */ }
@@ -1388,10 +1498,11 @@ authSubmitBtn.addEventListener('click', async ()=>{
   setAuthLoading(false);
 });
 
-function pulseCoinBadge(){
-  coinBadge.classList.remove('pulse');
+function pulseCoinBadge(increased){
+  coinBadge.classList.remove('pulse', 'sparkle-burst');
   void coinBadge.offsetWidth;
   coinBadge.classList.add('pulse');
+  if(increased) coinBadge.classList.add('sparkle-burst');
 }
 
 async function refreshCoinBalance(){
@@ -1772,6 +1883,7 @@ const remoteVignette = document.getElementById('remoteVignette');
 const localGrain = document.getElementById('localGrain');
 const remoteGrain = document.getElementById('remoteGrain');
 const waitingLabel = document.getElementById('waitingLabel');
+const waitingLabelText = document.getElementById('waitingLabelText');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const statusLine = document.getElementById('statusLine');
@@ -2442,7 +2554,7 @@ function wireCall(call){
     setStatus(t('theyLeft'), false);
     startBtn.disabled = true;
     waitingLabel.style.display = 'flex';
-    waitingLabel.textContent = t('connectionEnded');
+    waitingLabelText.textContent = t('connectionEnded');
     statusLine.textContent = t('tapReconnectComingBack');
     showReconnect(true);
   });
@@ -2573,7 +2685,7 @@ function teardownAndReturnToGate(){
   showJoinStep(false);
   codeRow.style.display = 'none';
   waitingLabel.style.display = 'flex';
-  waitingLabel.innerHTML = t('waitingForThem');
+  waitingLabelText.innerHTML = t('waitingForThem');
   startBtn.disabled = true;
   downloadBtn.disabled = true;
   statusLine.textContent = t('sayCheese');
