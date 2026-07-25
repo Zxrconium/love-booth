@@ -323,7 +323,7 @@
   }
   #stripCanvas{border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
-  #stripCanvas.print-out{ animation:stripPrintOut 1.15s both; }
+  #stripCanvas.print-out{ animation:stripPrintOut 1.3s both; transform-origin:50% 0%; }
   #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
   #stripCanvas.print-pending{ clip-path:inset(0 0 100% 0); }
   .printing-indicator{
@@ -345,19 +345,28 @@
   .printing-dots span:nth-child(2){ animation-delay:0.2s; }
   .printing-dots span:nth-child(3){ animation-delay:0.4s; }
   @keyframes printingDotPulse{ 0%,80%,100%{ opacity:0.3; } 40%{ opacity:1; } }
+  /* Feeds out of the print slot (0-56%, a clip-path reveal — the strip
+     stays pinned under the slot while it "grows" downward, no movement
+     yet), then drops free under its own weight (56-70%, accelerating
+     ease-in like gravity) and lands with a decaying bounce — overshoot
+     past rest, rebound past rest the other way, then two smaller
+     settling wobbles — rather than sliding smoothly into place. */
   @keyframes stripPrintOut{
-    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0); animation-timing-function:cubic-bezier(.25,.46,.45,.94); }
-    58%{ clip-path:inset(0 0 5% 0); transform:translateY(0); animation-timing-function:cubic-bezier(.34,1.56,.64,1); }
-    74%{ clip-path:inset(0 0 0% 0); transform:translateY(9px); }
-    89%{ clip-path:inset(0 0 0% 0); transform:translateY(-3px); }
-    100%{ clip-path:inset(0 0 0% 0); transform:translateY(0); }
+    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.25,.46,.45,.94); }
+    48%{ clip-path:inset(0 0 8% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
+    56%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
+    70%{ clip-path:inset(0 0 0% 0); transform:translateY(20px) rotate(0.6deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
+    80%{ clip-path:inset(0 0 0% 0); transform:translateY(-8px) rotate(-0.5deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
+    88%{ clip-path:inset(0 0 0% 0); transform:translateY(4px) rotate(0.25deg); animation-timing-function:ease-out; }
+    94%{ clip-path:inset(0 0 0% 0); transform:translateY(-1.5px) rotate(-0.1deg); animation-timing-function:ease-out; }
+    100%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); }
   }
   @keyframes stripFadeReduced{
     from{ opacity:0; }
     to{ opacity:1; }
   }
   #stripCanvas.swappable{ cursor:pointer; }
-  .swap-modal-backdrop{position:fixed; inset:0; background:rgba(21,16,26,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .swap-modal-backdrop{position:fixed; inset:0; background:rgba(21,16,26,0.75); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:210; padding:20px;}
   .swap-modal-backdrop.show{display:flex; animation:modalBackdropIn 0.2s ease both;}
 
   .fullscreen-shoot{
@@ -437,7 +446,10 @@
   .recap-panel.show{display:flex;}
   .recap-title{font-family:'Caveat',cursive; font-size:1.15rem; color:var(--blush); margin:0;}
   #recapQr{border-radius:8px; background:#fff; padding:6px;}
-  .recap-link{font-size:0.7rem; color:var(--gold); word-break:break-all; text-align:center;}
+  a.btn-ghost, a.btn-gold, a.btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:600; border-radius:999px; padding:11px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease, border-color .2s ease;}
+  a.btn-ghost:hover, a.btn-gold:hover, a.btn-primary:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  a.btn-ghost:active, a.btn-gold:active, a.btn-primary:active{ transform:scale(0.96) translateY(0); transition-duration:.08s; }
+  .recap-watch-btn{width:100%; font-size:0.78rem; padding:10px 16px;}
   .recap-expiry{font-size:0.65rem; color:rgba(251,243,231,0.4); margin:0;}
   .recap-viewer{display:none; position:fixed; inset:0; z-index:300; background:radial-gradient(circle at 50% 42%, var(--bg-deep2), var(--bg-deep) 68%); align-items:center; justify-content:center; padding:20px;}
   .recap-viewer.show{display:flex;}
@@ -567,37 +579,6 @@
     <div class="error-msg" id="gateError" role="alert"></div>
   </div>
 
-  <div class="swap-modal-backdrop" id="adminBackdrop">
-    <div class="swap-modal admin-modal">
-      <div class="swap-modal-header">
-        <span data-i18n="adminPanelTitle">create an account</span>
-        <button class="swap-modal-close" id="adminCloseBtn" type="button" aria-label="Close">×</button>
-      </div>
-      <div class="admin-form">
-        <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
-        </div>
-        <input id="adminEmailInput" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
-        <div class="admin-password-row">
-          <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
-          <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
-        </div>
-        <input id="adminCoinsInput" type="number" min="0" step="1" data-i18n-placeholder="startingCoinsPlaceholder" placeholder="STARTING COINS" style="text-transform:none; letter-spacing:normal;">
-        <button class="btn-primary auth-submit-btn" id="adminCreateBtn" type="button">
-          <span class="btn-spinner" id="adminCreateSpinner" aria-hidden="true"></span>
-          <span id="adminCreateLabel" data-i18n="createAccountBtn">create account</span>
-        </button>
-        <div class="auth-banner auth-banner-success" id="adminSuccessBanner" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="adminSuccessText"></span>
-        </div>
-      </div>
-      <div class="admin-accounts-list">
-        <p class="admin-accounts-title" data-i18n="adminAccountsListTitle">accounts you've created</p>
-        <div id="adminAccountsRows"></div>
-      </div>
-    </div>
-  </div>
-
   <div class="layout" id="boothLayout" style="display:none;">
     <div class="booth-card">
       <div class="room-tag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
@@ -682,37 +663,74 @@
     <div class="recap-panel" id="recapPanel">
       <p class="recap-title" data-i18n="recapTitle">session recap</p>
       <canvas id="recapQr" width="150" height="150"></canvas>
-      <a class="recap-link" id="recapLink" href="#" target="_blank" rel="noopener"></a>
+      <a class="btn-ghost recap-watch-btn" id="recapLink" href="#" target="_blank" rel="noopener" data-i18n="watchRecapBtn">🎬 watch the recap</a>
       <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
     </div>
   </div>
+</div>
 
-  <div class="fullscreen-shoot" id="fullscreenShoot">
-    <button class="fs-cancel-btn" id="fsCancelBtn" type="button" aria-label="Cancel and return to setup">×</button>
-    <div class="fs-thumb-rail" id="fsThumbRail"></div>
+<!-- These full-viewport overlays are deliberately siblings of .scene (not
+     nested inside it) so their z-index actually wins against the coin
+     badge/log-out/admin links: .scene has its own z-index:1 (to sit above
+     the decorative body::before glow), which would otherwise trap any
+     z-index set on a descendant inside that same stacking context,
+     regardless of how high it's set. -->
+<div class="fullscreen-shoot" id="fullscreenShoot">
+  <button class="fs-cancel-btn" id="fsCancelBtn" type="button" aria-label="Cancel and return to setup">×</button>
+  <div class="fs-thumb-rail" id="fsThumbRail"></div>
+</div>
+
+<div class="picking-screen" id="pickingScreen">
+  <div class="picking-left">
+    <div class="thumb-grid picking-grid" id="thumbGrid"></div>
   </div>
-
-  <div class="picking-screen" id="pickingScreen">
-    <div class="picking-left">
-      <div class="thumb-grid picking-grid" id="thumbGrid"></div>
+  <div class="picking-right">
+    <div class="picking-strip-slot" id="pickingStripSlot"></div>
+    <p class="choice-label" id="selectionCounter">0 of 3 selected — tap your favorites</p>
+    <div class="selection-actions">
+      <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
+      <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
     </div>
-    <div class="picking-right">
-      <div class="picking-strip-slot" id="pickingStripSlot"></div>
-      <p class="choice-label" id="selectionCounter">0 of 3 selected — tap your favorites</p>
-      <div class="selection-actions">
-        <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
-        <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
+  </div>
+</div>
+
+<div class="swap-modal-backdrop" id="swapModalBackdrop">
+  <div class="swap-modal">
+    <div class="swap-modal-header">
+      <span id="swapModalTitle">choose a photo</span>
+      <button class="swap-modal-close" id="swapModalClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="thumb-grid" id="swapThumbGrid"></div>
+  </div>
+</div>
+
+<div class="swap-modal-backdrop" id="adminBackdrop">
+  <div class="swap-modal admin-modal">
+    <div class="swap-modal-header">
+      <span data-i18n="adminPanelTitle">create an account</span>
+      <button class="swap-modal-close" id="adminCloseBtn" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="admin-form">
+      <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
+        <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
+      </div>
+      <input id="adminEmailInput" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+      <div class="admin-password-row">
+        <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+        <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
+      </div>
+      <input id="adminCoinsInput" type="number" min="0" step="1" data-i18n-placeholder="startingCoinsPlaceholder" placeholder="STARTING COINS" style="text-transform:none; letter-spacing:normal;">
+      <button class="btn-primary auth-submit-btn" id="adminCreateBtn" type="button">
+        <span class="btn-spinner" id="adminCreateSpinner" aria-hidden="true"></span>
+        <span id="adminCreateLabel" data-i18n="createAccountBtn">create account</span>
+      </button>
+      <div class="auth-banner auth-banner-success" id="adminSuccessBanner" style="display:none;">
+        <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="adminSuccessText"></span>
       </div>
     </div>
-  </div>
-
-  <div class="swap-modal-backdrop" id="swapModalBackdrop">
-    <div class="swap-modal">
-      <div class="swap-modal-header">
-        <span id="swapModalTitle">choose a photo</span>
-        <button class="swap-modal-close" id="swapModalClose" type="button" aria-label="Close">×</button>
-      </div>
-      <div class="thumb-grid" id="swapThumbGrid"></div>
+    <div class="admin-accounts-list">
+      <p class="admin-accounts-title" data-i18n="adminAccountsListTitle">accounts you've created</p>
+      <div id="adminAccountsRows"></div>
     </div>
   </div>
 </div>
@@ -768,7 +786,7 @@ const TRANSLATIONS = {
     allDoneDownload: 'all done! download your strip below', printingStrip: 'printing your strip',
     selectionCounter: '{count} of {n} selected — tap your favorites',
     chooseForSlot: 'choose a photo for slot {slot}',
-    recapTitle: 'session recap', recapExpiry: 'link expires in 7 days',
+    recapTitle: 'session recap', recapExpiry: 'link expires in 7 days', watchRecapBtn: '🎬 watch the recap',
     cameraPermissionDenied: "camera access is required to use Luv Booth — please allow camera access in your browser settings and refresh the page.",
     cameraPermissionDeniedRefunded: "camera access is required to use Luv Booth — please allow camera access in your browser settings and refresh the page. Your coin has been refunded.",
     cameraPermissionDeniedShort: 'camera access needed',
@@ -840,7 +858,7 @@ const TRANSLATIONS = {
     allDoneDownload: 'tapos na! i-download ang strip mo sa baba', printingStrip: 'nagpi-print ang strip mo',
     selectionCounter: 'napili mo na ang {count} sa {n} — piliin ang paborito mo',
     chooseForSlot: 'pumili ng larawan para sa slot {slot}',
-    recapTitle: 'recap ng session', recapExpiry: 'mawawala ang link pagkalipas ng 7 araw',
+    recapTitle: 'recap ng session', recapExpiry: 'mawawala ang link pagkalipas ng 7 araw', watchRecapBtn: '🎬 panoorin ang recap',
     cameraPermissionDenied: 'kailangan ng access sa camera para magamit ang Luv Booth — paki-allow ang camera access sa settings ng browser mo at i-refresh ang page.',
     cameraPermissionDeniedRefunded: 'kailangan ng access sa camera para magamit ang Luv Booth — paki-allow ang camera access sa settings ng browser mo at i-refresh ang page. Na-refund na ang coin mo.',
     cameraPermissionDeniedShort: 'kailangan ng access sa camera',
@@ -912,7 +930,7 @@ const TRANSLATIONS = {
     allDoneDownload: '¡listo! descarga tu tira abajo', printingStrip: 'imprimiendo tu tira',
     selectionCounter: '{count} de {n} seleccionadas — elige tus favoritas',
     chooseForSlot: 'elige una foto para la casilla {slot}',
-    recapTitle: 'resumen de la sesión', recapExpiry: 'el enlace vence en 7 días',
+    recapTitle: 'resumen de la sesión', recapExpiry: 'el enlace vence en 7 días', watchRecapBtn: '🎬 ver el recuerdo',
     cameraPermissionDenied: 'se requiere acceso a la cámara para usar Luv Booth — permite el acceso a la cámara en la configuración de tu navegador y recarga la página.',
     cameraPermissionDeniedRefunded: 'se requiere acceso a la cámara para usar Luv Booth — permite el acceso a la cámara en la configuración de tu navegador y recarga la página. Se te devolvió tu moneda.',
     cameraPermissionDeniedShort: 'se necesita acceso a la cámara',
@@ -984,7 +1002,7 @@ const TRANSLATIONS = {
     allDoneDownload: '완성했어요! 아래에서 스트립을 다운로드하세요', printingStrip: '스트립 인쇄 중',
     selectionCounter: '{n}장 중 {count}장 선택함 — 마음에 드는 사진을 골라주세요',
     chooseForSlot: '슬롯 {slot}에 넣을 사진을 선택하세요',
-    recapTitle: '세션 리캡', recapExpiry: '링크는 7일 후 만료됩니다',
+    recapTitle: '세션 리캡', recapExpiry: '링크는 7일 후 만료됩니다', watchRecapBtn: '🎬 리캡 보기',
     cameraPermissionDenied: 'Luv Booth를 사용하려면 카메라 접근 권한이 필요합니다 — 브라우저 설정에서 카메라 접근을 허용한 후 페이지를 새로고침해 주세요.',
     cameraPermissionDeniedRefunded: 'Luv Booth를 사용하려면 카메라 접근 권한이 필요합니다 — 브라우저 설정에서 카메라 접근을 허용한 후 페이지를 새로고침해 주세요. 코인이 환불되었습니다.',
     cameraPermissionDeniedShort: '카메라 접근이 필요합니다',
@@ -1056,7 +1074,7 @@ const TRANSLATIONS = {
     allDoneDownload: '完成です！下からストリップをダウンロードしてください', printingStrip: 'ストリップを印刷中',
     selectionCounter: '{n}枚中{count}枚選択中 — お気に入りをタップしてください',
     chooseForSlot: 'スロット{slot}の写真を選んでください',
-    recapTitle: 'セッションのリキャップ', recapExpiry: 'リンクは7日で期限切れになります',
+    recapTitle: 'セッションのリキャップ', recapExpiry: 'リンクは7日で期限切れになります', watchRecapBtn: '🎬 リキャップを見る',
     cameraPermissionDenied: 'Luv Boothを利用するにはカメラへのアクセスが必要です — ブラウザの設定でカメラアクセスを許可し、ページを再読み込みしてください。',
     cameraPermissionDeniedRefunded: 'Luv Boothを利用するにはカメラへのアクセスが必要です — ブラウザの設定でカメラアクセスを許可し、ページを再読み込みしてください。コインは返金されました。',
     cameraPermissionDeniedShort: 'カメラへのアクセスが必要です',
@@ -2021,7 +2039,6 @@ function renderRecapQr(canvas, url){
 
 function showRecapPanel(url){
   recapLink.href = url;
-  recapLink.textContent = url;
   if(typeof qrcode !== 'undefined'){
     recapQr.style.display = '';
     try{ renderRecapQr(recapQr, url); }catch(e){ recapQr.style.display = 'none'; }
