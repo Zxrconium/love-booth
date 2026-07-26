@@ -100,11 +100,20 @@
      rather than both popping in at once. */
   .gate-card:nth-child(1){ animation-delay:0.05s; }
   .gate-card:nth-child(2){ animation-delay:0.16s; }
+  .gate-card:nth-child(3){ animation-delay:0.27s; }
   .gate-card:hover{ border-color:rgba(215,162,74,0.55); background:rgba(251,243,231,0.06); transform:translateY(-2px); box-shadow:0 10px 26px rgba(215,162,74,0.15); }
   .gate-card:active{ transform:scale(0.98) translateY(0); transition-duration:.08s; }
+  /* #adminLink reuses .gate-card but starts hidden — only ever shown (as a
+     third card, see updateAdminLinkVisibility() in JS) for the one admin
+     account. Being an ID selector, this wins over .gate-card's own
+     display:flex when not .show, and flex layout skips it entirely when
+     hidden, so Create/Join still lay out as a normal pair for everyone else. */
+  #adminLink{ display:none; }
+  #adminLink.show{ display:flex; }
   .gate-icon{width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none;}
   .gate-icon.blush{ background:rgba(232,147,168,0.22); }
   .gate-icon.gold{ background:rgba(215,162,74,0.22); }
+  .gate-icon.paper{ background:rgba(251,243,231,0.16); }
   .gate-icon svg{ width:22px; height:22px; }
   .gate-card-title{ font-weight:700; font-size:1.2rem; }
   .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.78rem; color:rgba(251,243,231,0.6); }
@@ -167,11 +176,6 @@
   .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.68rem; text-decoration:underline; padding:4px; width:auto;}
   .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
   .logout-link:hover{ color:rgba(251,243,231,0.7); }
-  /* Lives inline in the gate screen (under the footnote) rather than the
-     fixed top-right corner — .logout-link's position:fixed is only right
-     for logoutLink itself, so override it back to normal flow here. */
-  #adminLink{position:static; margin-top:10px;}
-  #adminLink.show{ animation-delay:0.16s; }
 
   .admin-modal{max-width:380px; text-align:center;}
   .admin-form{display:flex; flex-direction:column; gap:10px; text-align:left;}
@@ -607,6 +611,15 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
         </span>
       </button>
+      <button class="gate-card" id="adminLink" type="button">
+        <span class="gate-icon paper" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2b1b2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3L5.6 5.6"/></svg>
+        </span>
+        <span class="gate-card-title" data-i18n="adminLink">Admin</span>
+        <span class="gate-card-sub"><span data-i18n="adminCardSub">manage accounts</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
     </div>
 
     <div class="join-step" id="joinStep" style="display:none;">
@@ -654,7 +667,6 @@
     </div>
 
     <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
-    <button class="logout-link" id="adminLink" type="button" data-i18n="adminLink">admin</button>
     <div class="error-msg" id="gateError" role="alert"></div>
   </div>
 
@@ -879,7 +891,7 @@ const TRANSLATIONS = {
     recapExpiredTitle: 'this recap has expired', recapExpiredText: 'recap links expire after 7 days',
     recapNotFoundTitle: 'recap not found', recapNotFoundText: 'this link may be incorrect or the recap may have expired',
     backToApp: 'back to luv booth',
-    adminLink: 'admin', adminPanelTitle: 'create an account',
+    adminLink: 'Admin', adminCardSub: 'manage accounts', adminPanelTitle: 'create an account',
     temporaryPasswordPlaceholder: 'TEMPORARY PASSWORD', generate: 'generate',
     startingCoinsPlaceholder: 'STARTING COINS', createAccountBtn: 'create account',
     creatingAccountAdmin: 'creating account…',
@@ -949,7 +961,7 @@ const TRANSLATIONS = {
     recapExpiredTitle: 'nag-expire na ang recap na ito', recapExpiredText: 'nag-e-expire ang mga recap link pagkalipas ng 7 araw',
     recapNotFoundTitle: 'hindi nahanap ang recap', recapNotFoundText: 'maaaring mali ang link na ito o nag-expire na ang recap',
     backToApp: 'bumalik sa luv booth',
-    adminLink: 'admin', adminPanelTitle: 'gumawa ng account',
+    adminLink: 'Admin', adminCardSub: 'pamahalaan ang mga account', adminPanelTitle: 'gumawa ng account',
     temporaryPasswordPlaceholder: 'PANSAMANTALANG PASSWORD', generate: 'gumawa',
     startingCoinsPlaceholder: 'SIMULANG COINS', createAccountBtn: 'gumawa ng account',
     creatingAccountAdmin: 'ginagawa ang account…',
@@ -1019,7 +1031,7 @@ const TRANSLATIONS = {
     recapExpiredTitle: 'este recuerdo ha vencido', recapExpiredText: 'los enlaces de recuerdos vencen después de 7 días',
     recapNotFoundTitle: 'recuerdo no encontrado', recapNotFoundText: 'este enlace puede ser incorrecto o el recuerdo puede haber vencido',
     backToApp: 'volver a luv booth',
-    adminLink: 'admin', adminPanelTitle: 'crear una cuenta',
+    adminLink: 'Admin', adminCardSub: 'gestionar cuentas', adminPanelTitle: 'crear una cuenta',
     temporaryPasswordPlaceholder: 'CONTRASEÑA TEMPORAL', generate: 'generar',
     startingCoinsPlaceholder: 'MONEDAS INICIALES', createAccountBtn: 'crear cuenta',
     creatingAccountAdmin: 'creando cuenta…',
@@ -1089,7 +1101,7 @@ const TRANSLATIONS = {
     recapExpiredTitle: '이 리캡은 만료되었습니다', recapExpiredText: '리캡 링크는 7일 후 만료됩니다',
     recapNotFoundTitle: '리캡을 찾을 수 없습니다', recapNotFoundText: '링크가 잘못되었거나 리캡이 만료되었을 수 있습니다',
     backToApp: 'luv booth로 돌아가기',
-    adminLink: '관리자', adminPanelTitle: '계정 만들기',
+    adminLink: '관리자', adminCardSub: '계정 관리', adminPanelTitle: '계정 만들기',
     temporaryPasswordPlaceholder: '임시 비밀번호', generate: '생성',
     startingCoinsPlaceholder: '시작 코인 수', createAccountBtn: '계정 만들기',
     creatingAccountAdmin: '계정을 만드는 중…',
@@ -1159,7 +1171,7 @@ const TRANSLATIONS = {
     recapExpiredTitle: 'このリキャップは期限切れです', recapExpiredText: 'リキャップのリンクは7日で期限切れになります',
     recapNotFoundTitle: 'リキャップが見つかりません', recapNotFoundText: 'リンクが間違っているか、リキャップの期限が切れている可能性があります',
     backToApp: 'luv boothに戻る',
-    adminLink: '管理者', adminPanelTitle: 'アカウントを作成',
+    adminLink: '管理者', adminCardSub: 'アカウントを管理', adminPanelTitle: 'アカウントを作成',
     temporaryPasswordPlaceholder: '仮パスワード', generate: '生成',
     startingCoinsPlaceholder: '初期コイン数', createAccountBtn: 'アカウントを作成',
     creatingAccountAdmin: 'アカウントを作成中…',
