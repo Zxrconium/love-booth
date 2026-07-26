@@ -69,17 +69,37 @@ Deno.serve(async (req) => {
   }
 
   if (payload?.action === 'list') {
-    const { data, error } = await admin
+    const { data: rows, error: rowsError } = await admin
       .from('admin_created_accounts')
-      .select('user_id, email, profiles:user_id(coins)')
+      .select('user_id, email')
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('admin-create-account: list error', error);
+    if (rowsError) {
+      console.error('admin-create-account: list error', rowsError);
       return json({ error: 'could not load accounts' }, 500);
     }
-    const accounts = (data ?? []).map((row: any) => ({
+
+    // admin_created_accounts and profiles both reference auth.users
+    // independently (no FK between the two of them), so PostgREST can't
+    // auto-embed profiles:user_id(coins) here — it fails with "could not
+    // find a relationship" instead of silently working. Look up balances
+    // as a separate query and merge in JS.
+    const userIds = (rows ?? []).map((row: any) => row.user_id);
+    let coinsById: Record<string, number> = {};
+    if (userIds.length) {
+      const { data: profileRows, error: profilesError } = await admin
+        .from('profiles')
+        .select('id, coins')
+        .in('id', userIds);
+      if (profilesError) {
+        console.error('admin-create-account: list coins lookup error', profilesError);
+        return json({ error: 'could not load account balances' }, 500);
+      }
+      for (const p of profileRows ?? []) coinsById[p.id] = p.coins;
+    }
+
+    const accounts = (rows ?? []).map((row: any) => ({
       email: row.email,
-      coins: row.profiles?.coins ?? 0,
+      coins: coinsById[row.user_id] ?? 0,
     }));
     return json({ accounts });
   }
@@ -109,7 +129,7 @@ Deno.serve(async (req) => {
     const { error: coinsError } = await admin.from('profiles').update({ coins }).eq('id', userId);
     if (coinsError) {
       console.error('admin-create-account: setting starting coins failed', coinsError);
-      return json({ error: 'account created, but setting the starting balance failed' }, 500);
+      return json({ error: `account created, but setting the starting balance failed: ${coinsError.message}` }, 500);
     }
 
     const { error: trackError } = await admin

@@ -187,17 +187,20 @@
   .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
   .logout-link:hover{ color:rgba(251,243,231,0.7); }
 
-  .admin-modal{max-width:380px; text-align:center;}
-  .admin-form{display:flex; flex-direction:column; gap:10px; text-align:left;}
-  .admin-password-row{display:flex; gap:8px; align-items:center;}
+  /* .swap-modal.admin-modal (two classes) rather than .admin-modal alone —
+     needed to outrank the later, equal-specificity base .swap-modal sizing
+     rule further down the sheet regardless of source order. */
+  .swap-modal.admin-modal{max-width:560px; width:92vw; text-align:center; padding:34px 36px;}
+  .admin-form{display:flex; flex-direction:column; gap:16px; text-align:left; margin-top:4px;}
+  .admin-password-row{display:flex; gap:10px; align-items:center;}
   .admin-password-row input{flex:1;}
-  .admin-password-row button{width:auto; flex:none; padding:11px 14px; font-size:0.78rem;}
-  .admin-accounts-list{margin-top:18px; text-align:left;}
-  .admin-accounts-title{font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 8px;}
-  .admin-account-row{display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.8rem; margin-bottom:6px;}
+  .admin-password-row button{width:auto; flex:none; padding:14px 18px; font-size:0.85rem;}
+  .admin-accounts-list{margin-top:28px; text-align:left;}
+  .admin-accounts-title{font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 10px;}
+  .admin-account-row{display:flex; justify-content:space-between; gap:10px; padding:11px 14px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.85rem; margin-bottom:8px;}
   .admin-account-email{color:var(--paper); word-break:break-all;}
   .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
-  .admin-empty-list{font-size:0.78rem; color:rgba(251,243,231,0.4); text-align:center; padding:10px 0;}
+  .admin-empty-list{font-size:0.8rem; color:rgba(251,243,231,0.4); text-align:center; padding:12px 0;}
 
   /* Soft glow-pulse originating from the exact tap point, layered on top of
      (not replacing) the existing :active press-down scale — see the
@@ -236,6 +239,7 @@
     transition:border-color .2s ease, background-color .2s ease;
   }
   .gate input:focus, .admin-modal input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
+  .admin-modal input{padding:15px 16px; font-size:1.15rem;}
   .gate input.invalid{ border-color:var(--err); animation:shake 0.4s ease; }
   @keyframes shake{
     0%,100%{ transform:translateX(0); }
@@ -1635,13 +1639,31 @@ function renderAdminAccounts(accounts){
   });
 }
 
+// supabase-js sets a generic "Edge Function returned a non-2xx status code"
+// on error.message for any failed invoke() — the function's actual
+// { error: "..." } JSON body only lives on error.context (the raw fetch
+// Response), unread. Without this, every failure reason (auth check, bad
+// email, DB error) collapses into the same uninformative string and the
+// admin panel effectively looks like it silently did nothing.
+async function resolveFunctionsErrorMessage(error){
+  if(!error) return null;
+  if(error.context && typeof error.context.json === 'function'){
+    try{
+      const body = await error.context.clone().json();
+      if(body && typeof body.error === 'string' && body.error) return body.error;
+    }catch(e){ /* body wasn't JSON (or already read) — fall through */ }
+  }
+  return error.message || null;
+}
+
 async function refreshAdminAccountsList(){
   if(!sbClient) return;
   try{
     const { data, error } = await sbClient.functions.invoke('admin-create-account', { body: { action: 'list' } });
-    if(error) throw error;
+    if(error) throw new Error(await resolveFunctionsErrorMessage(error));
     renderAdminAccounts(data && data.accounts);
   }catch(e){
+    console.error('refreshAdminAccountsList failed:', e);
     renderAdminAccounts([]);
   }
 }
@@ -1683,7 +1705,7 @@ adminCreateBtn.addEventListener('click', async ()=>{
     const { data, error } = await sbClient.functions.invoke('admin-create-account', {
       body: { action: 'create', email, password, coins },
     });
-    if(error) throw error;
+    if(error) throw new Error((await resolveFunctionsErrorMessage(error)) || t('authGenericError'));
     if(data && data.error) throw new Error(data.error);
     showAdminSuccess(t('accountCreatedSuccess', { email }));
     adminEmailInput.value = '';
