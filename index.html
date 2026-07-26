@@ -67,6 +67,16 @@
     color:var(--paper); border:1.5px solid rgba(251,243,231,0.25); border-radius:999px;
     padding:6px 30px 6px 14px; font-size:0.75rem; font-weight:600;
   }
+  /* The closed <select> picks up the palette above just fine, but its
+     dropdown <option> list is otherwise left to browser/OS defaults (often
+     light-background, blue-selected) — style those explicitly so opening
+     it doesn't clash with the dark plum/gold/cream look. */
+  .lang-switcher option{
+    background:var(--bg-deep2); color:var(--paper);
+  }
+  .lang-switcher option:checked{
+    background:var(--gold); color:var(--ink);
+  }
   @keyframes glow{
     0%,100%{ text-shadow:0 0 18px rgba(215,162,74,0.35); }
     50%{ text-shadow:0 0 28px rgba(215,162,74,0.6); }
@@ -727,7 +737,7 @@
       </div>
       <ol class="hint-list">
         <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
-        <li data-i18n="hintStep2">You pick your favorite 3 to build the strip</li>
+        <li data-i18n="hintStep2">You pick your favorite 4 to build the strip</li>
         <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
       </ol>
       <div class="leave-row">
@@ -777,7 +787,7 @@
   </div>
   <div class="picking-right">
     <div class="picking-strip-slot" id="pickingStripSlot"></div>
-    <p class="choice-label" id="selectionCounter">0 of 3 selected — tap your favorites</p>
+    <p class="choice-label" id="selectionCounter">0 of 4 selected — tap your favorites</p>
     <div class="selection-actions">
       <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
       <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
@@ -847,8 +857,9 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'choose your countdown',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 build my strip', retakeAll: 'retake all 10',
-    hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 3 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
+    hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 4 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
     leaveRoom: 'leave room', stripStyle: 'strip style',
+    themeBlack: 'Black', themeWhite: 'White',
     downloadStrip: '⬇ download strip',
     outOfCoins: "you're out of coins — message us on [YOUR SOCIAL HANDLE] to get set up",
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
@@ -917,8 +928,9 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'piliin ang countdown mo',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10',
-    hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 3 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
+    hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 4 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
+    themeBlack: 'Itim', themeWhite: 'Puti',
     downloadStrip: '⬇ i-download ang strip',
     outOfCoins: 'naubusan ka na ng coins — mag-message sa [YOUR SOCIAL HANDLE] para ma-set up',
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
@@ -987,8 +999,9 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'elige tu cuenta regresiva',
     sec: 'seg', defaultTag: 'predeterminado',
     buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos',
-    hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 3 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
+    hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 4 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
+    themeBlack: 'Negro', themeWhite: 'Blanco',
     downloadStrip: '⬇ descargar tira',
     outOfCoins: 'te quedaste sin monedas — escríbenos a [YOUR SOCIAL HANDLE] para activarlas',
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
@@ -1057,8 +1070,9 @@ const TRANSLATIONS = {
     countdownChoiceLabel: '카운트다운 선택',
     sec: '초', defaultTag: '기본',
     buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기',
-    hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 3장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
+    hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 4장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
+    themeBlack: '블랙', themeWhite: '화이트',
     downloadStrip: '⬇ 스트립 다운로드',
     outOfCoins: '코인이 부족합니다 — [YOUR SOCIAL HANDLE]으로 메시지를 보내주세요',
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
@@ -1127,8 +1141,9 @@ const TRANSLATIONS = {
     countdownChoiceLabel: 'カウントダウンを選ぼう',
     sec: '秒', defaultTag: '標準',
     buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す',
-    hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの3枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
+    hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの4枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
+    themeBlack: 'ブラック', themeWhite: 'ホワイト',
     downloadStrip: '⬇ ストリップをダウンロード',
     outOfCoins: 'コインがなくなりました — [YOUR SOCIAL HANDLE] までメッセージをお送りください',
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
@@ -2217,20 +2232,22 @@ applyLiveFilter();
 
 const PHOTO_W = 260, PHOTO_H = 146, SIDE = 20, GAP = 14, TOP = 20, BOTTOM = 20;
 const SHOOT_COUNT = 10;
-const STRIP_SLOTS = 3;
+const STRIP_SLOTS = 4;
 
 /* ---------------- Strip themes ----------------
-   Exactly 2 plain themes: "Framed" (thin black outer border + a thin
-   black divider between each photo slot) and "Frameless" (identical
-   layout, no border, no dividers). No header text, no caption/footer,
+   Exactly 2 plain themes, shown to users as "Black" and "White" (ids stay
+   framed/frameless internally — see labelKey below — so sync/saved state
+   isn't affected by the rename): "Black" (thin black outer border + a thin
+   black divider between each photo slot) and "White" (identical layout,
+   no border, no dividers). No header text, no caption/footer,
    no sprockets/textures — draw functions below read from the active
    theme's borderWidth/divider rather than branching on its id. Each
-   theme's 3 slots either show a captured photo or, until then, a shared
+   theme's slots either show a captured photo or, until then, a shared
    illustrated sky/cloud/hill placeholder. */
 const THEMES = [
   {
     id: 'framed',
-    label: 'Framed',
+    labelKey: 'themeBlack',
     background: '#ffffff',
     ink: '#000000',
     borderWidth: 3,
@@ -2238,7 +2255,7 @@ const THEMES = [
   },
   {
     id: 'frameless',
-    label: 'Frameless',
+    labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#000000',
     borderWidth: 0,
@@ -2248,10 +2265,11 @@ const THEMES = [
 let currentThemeId = THEMES[0].id;
 function getTheme(){ return THEMES.find(t=>t.id===currentThemeId) || THEMES[0]; }
 
-THEMES.forEach(t=>{
+THEMES.forEach(theme=>{
   const opt = document.createElement('option');
-  opt.value = t.id;
-  opt.textContent = t.label;
+  opt.value = theme.id;
+  opt.textContent = t(theme.labelKey);
+  opt.dataset.labelKey = theme.labelKey;
   themeSelect.appendChild(opt);
 });
 themeSelect.value = currentThemeId;
@@ -3241,6 +3259,7 @@ function refreshDynamicLabels(){
   if(!reconnectBtn.classList.contains('show')) reconnectBtn.textContent = t('reconnect');
   if(pickingScreen.classList.contains('show')) updateSelectionCounter();
   if(swapModalSlot !== null) swapModalTitle.textContent = t('chooseForSlot', { slot: swapModalSlot + 1 });
+  Array.from(themeSelect.options).forEach(opt=>{ opt.textContent = t(opt.dataset.labelKey); });
 }
 </script>
 </body>
