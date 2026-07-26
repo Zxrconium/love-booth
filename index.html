@@ -114,10 +114,6 @@
   }
   .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
   .auth-step{display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:300px; margin:0 auto;}
-  .auth-tabs{display:flex; width:100%; background:rgba(251,243,231,0.05); border:1.5px solid rgba(251,243,231,0.18); border-radius:999px; padding:4px; gap:4px;}
-  .auth-tab{flex:1; background:transparent; border:none; border-radius:999px; padding:9px 10px; font-size:0.82rem; font-weight:700; color:rgba(251,243,231,0.55); cursor:pointer; transition:background-color .2s ease, color .2s ease, box-shadow .2s ease;}
-  .auth-tab:hover:not(.is-active):not(:disabled){ color:rgba(251,243,231,0.8); }
-  .auth-tab.is-active{ background:linear-gradient(180deg, #edaabc, var(--blush)); color:var(--film-black); box-shadow:0 4px 14px rgba(232,147,168,0.3); }
   .auth-form-fields{display:flex; flex-direction:column; gap:10px; width:100%;}
   .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;}
   .auth-banner-icon{flex:none; font-size:0.95rem; line-height:1.3;}
@@ -131,7 +127,6 @@
   .auth-confirm-icon{font-size:1.8rem;}
   .auth-confirm-title{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--gold); margin:0;}
   .auth-confirm-text{font-size:0.82rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
-  #authConfirmOkBtn{margin-top:6px;}
   .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
 
   .coin-badge{
@@ -624,10 +619,6 @@
       <div class="lang-switcher-row">
         <select id="langSwitcher" class="lang-switcher" aria-label="Language"></select>
       </div>
-      <div class="auth-tabs" id="authTabs" role="tablist">
-        <button class="auth-tab is-active" id="authTabLogin" type="button" role="tab" aria-selected="true" data-i18n="logIn">log in</button>
-        <button class="auth-tab" id="authTabSignup" type="button" role="tab" aria-selected="false" data-i18n="signUp">sign up</button>
-      </div>
       <div class="auth-form-fields" id="authFormFields">
         <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
         <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
@@ -644,12 +635,6 @@
         <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
           <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
         </div>
-      </div>
-      <div class="auth-confirm-card" id="authConfirmCard" style="display:none;">
-        <span class="auth-confirm-icon" aria-hidden="true">✉</span>
-        <p class="auth-confirm-title" data-i18n="checkEmailTitle">check your email</p>
-        <p class="auth-confirm-text" id="authConfirmText" data-i18n="checkEmailConfirm">check your email to confirm your account, then log in.</p>
-        <button class="btn-primary" id="authConfirmOkBtn" type="button" data-i18n="gotIt">got it</button>
       </div>
       <div class="auth-confirm-card" id="resetPasswordCard" style="display:none;">
         <span class="auth-confirm-icon" aria-hidden="true">🔑</span>
@@ -837,11 +822,10 @@ const TRANSLATIONS = {
     logout: 'log out', createTitle: 'Create', createSub: 'a new room',
     joinTitle: 'Join', joinSub: "with your partner's code", roomInputPlaceholder: 'ENTER THEIR CODE',
     joinRoomBtn: 'join room', back: 'back',
-    authTitleLogin: 'log in to start a room', authTitleSignup: 'create an account to start a room',
+    authTitleLogin: 'log in to start a room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
-    logIn: 'log in', signUp: 'sign up',
-    checkEmailTitle: 'check your email', gotIt: 'got it',
-    loginSuccessMsg: "you're in!", signupSuccessMsg: 'account created!',
+    logIn: 'log in',
+    loginSuccessMsg: "you're in!",
     gateFootnote: 'your coins & recaps are tied to your account — nothing else is saved',
     connecting: 'connecting…', copyCode: 'copy code', waitingForThem: 'waiting for them<br>to join…',
     sayCheese: "say cheese whenever you're ready",
@@ -858,8 +842,7 @@ const TRANSLATIONS = {
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
     accountsNotAvailable: "accounts aren't available right now — try again later.",
     enterBothFields: 'enter both an email and a password.',
-    creatingAccount: 'creating your account…', loggingIn: 'logging in…',
-    checkEmailConfirm: 'check your email to confirm your account, then log in.',
+    loggingIn: 'logging in…',
     authGenericError: 'something went wrong — try again.',
     cameraBlockedBrowser: "This browser can't access the camera here — try HTTPS or a modern browser, then reload.",
     typeCode: 'Type in the code they shared with you.',
@@ -909,11 +892,10 @@ const TRANSLATIONS = {
     logout: 'mag-log out', createTitle: 'Gumawa', createSub: 'ng bagong room',
     joinTitle: 'Sumali', joinSub: 'gamit ang kanyang code', roomInputPlaceholder: 'ILAGAY ANG CODE',
     joinRoomBtn: 'sumali sa room', back: 'balik',
-    authTitleLogin: 'mag-log in para magsimula ng room', authTitleSignup: 'gumawa ng account para magsimula ng room',
+    authTitleLogin: 'mag-log in para magsimula ng room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
-    logIn: 'log in', signUp: 'mag-sign up',
-    checkEmailTitle: 'tingnan ang iyong email', gotIt: 'sige',
-    loginSuccessMsg: 'nakapasok ka na!', signupSuccessMsg: 'nagawa ang account!',
+    logIn: 'log in',
+    loginSuccessMsg: 'nakapasok ka na!',
     gateFootnote: 'nakatali ang coins at recaps mo sa account mo — wala nang ibang naise-save',
     connecting: 'kumokonekta…', copyCode: 'kopyahin ang code', waitingForThem: 'hinihintay siya<br>sumali…',
     sayCheese: 'sabihin ang cheese kapag handa ka na',
@@ -930,8 +912,7 @@ const TRANSLATIONS = {
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
     accountsNotAvailable: 'hindi pa available ang accounts ngayon — subukan ulit mamaya.',
     enterBothFields: 'ilagay ang email at password.',
-    creatingAccount: 'ginagawa ang account mo…', loggingIn: 'nagla-log in…',
-    checkEmailConfirm: 'tingnan ang email mo para kumpirmahin ang account, tapos mag-log in.',
+    loggingIn: 'nagla-log in…',
     authGenericError: 'may nangyaring mali — subukan ulit.',
     cameraBlockedBrowser: 'Hindi ma-access ng browser na ito ang camera — subukan ang HTTPS o mas bagong browser, tapos i-reload.',
     typeCode: 'I-type ang code na ibinigay niya sa iyo.',
@@ -981,11 +962,10 @@ const TRANSLATIONS = {
     logout: 'cerrar sesión', createTitle: 'Crear', createSub: 'una sala nueva',
     joinTitle: 'Unirse', joinSub: 'con su código', roomInputPlaceholder: 'ESCRIBE EL CÓDIGO',
     joinRoomBtn: 'unirse a la sala', back: 'atrás',
-    authTitleLogin: 'inicia sesión para crear una sala', authTitleSignup: 'crea una cuenta para iniciar una sala',
+    authTitleLogin: 'inicia sesión para crear una sala',
     emailPlaceholder: 'CORREO', passwordPlaceholder: 'CONTRASEÑA',
-    logIn: 'iniciar sesión', signUp: 'registrarse',
-    checkEmailTitle: 'revisa tu correo', gotIt: 'entendido',
-    loginSuccessMsg: '¡ya estás dentro!', signupSuccessMsg: '¡cuenta creada!',
+    logIn: 'iniciar sesión',
+    loginSuccessMsg: '¡ya estás dentro!',
     gateFootnote: 'tus monedas y recuerdos están ligados a tu cuenta — no se guarda nada más',
     connecting: 'conectando…', copyCode: 'copiar código', waitingForThem: 'esperando a que<br>se una…',
     sayCheese: 'di "whisky" cuando estés listo/a',
@@ -1002,8 +982,7 @@ const TRANSLATIONS = {
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
     accountsNotAvailable: 'las cuentas no están disponibles ahora mismo — intenta más tarde.',
     enterBothFields: 'ingresa tu correo y contraseña.',
-    creatingAccount: 'creando tu cuenta…', loggingIn: 'iniciando sesión…',
-    checkEmailConfirm: 'revisa tu correo para confirmar tu cuenta y luego inicia sesión.',
+    loggingIn: 'iniciando sesión…',
     authGenericError: 'algo salió mal — intenta de nuevo.',
     cameraBlockedBrowser: 'Este navegador no puede acceder a la cámara aquí — prueba con HTTPS o un navegador más reciente y recarga.',
     typeCode: 'Escribe el código que te compartió.',
@@ -1053,11 +1032,10 @@ const TRANSLATIONS = {
     logout: '로그아웃', createTitle: '만들기', createSub: '새 방 만들기',
     joinTitle: '참여하기', joinSub: '상대방 코드로', roomInputPlaceholder: '코드 입력',
     joinRoomBtn: '방 참여하기', back: '뒤로',
-    authTitleLogin: '방을 만들려면 로그인하세요', authTitleSignup: '방을 만들려면 계정을 만드세요',
+    authTitleLogin: '방을 만들려면 로그인하세요',
     emailPlaceholder: '이메일', passwordPlaceholder: '비밀번호',
-    logIn: '로그인', signUp: '회원가입',
-    checkEmailTitle: '이메일을 확인하세요', gotIt: '확인',
-    loginSuccessMsg: '로그인되었습니다!', signupSuccessMsg: '계정이 생성되었습니다!',
+    logIn: '로그인',
+    loginSuccessMsg: '로그인되었습니다!',
     gateFootnote: '코인과 리캡은 계정에 연결됩니다 — 그 외에는 저장되지 않습니다',
     connecting: '연결 중…', copyCode: '코드 복사', waitingForThem: '상대방을<br>기다리는 중…',
     sayCheese: '준비되면 활짝 웃어주세요',
@@ -1074,8 +1052,7 @@ const TRANSLATIONS = {
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
     accountsNotAvailable: '지금은 계정 기능을 사용할 수 없습니다 — 나중에 다시 시도해 주세요.',
     enterBothFields: '이메일과 비밀번호를 모두 입력해 주세요.',
-    creatingAccount: '계정을 만드는 중…', loggingIn: '로그인 중…',
-    checkEmailConfirm: '이메일을 확인하여 계정을 인증한 후 로그인해 주세요.',
+    loggingIn: '로그인 중…',
     authGenericError: '문제가 발생했습니다 — 다시 시도해 주세요.',
     cameraBlockedBrowser: '이 브라우저에서는 카메라에 접근할 수 없습니다 — HTTPS나 최신 브라우저를 사용한 후 새로고침해 주세요.',
     typeCode: '상대방이 공유한 코드를 입력하세요.',
@@ -1125,11 +1102,10 @@ const TRANSLATIONS = {
     logout: 'ログアウト', createTitle: '作成', createSub: '新しいルームを作る',
     joinTitle: '参加', joinSub: '相手のコードで', roomInputPlaceholder: 'コードを入力',
     joinRoomBtn: 'ルームに参加', back: '戻る',
-    authTitleLogin: 'ルームを作るにはログインしてください', authTitleSignup: 'ルームを作るにはアカウントを作成してください',
+    authTitleLogin: 'ルームを作るにはログインしてください',
     emailPlaceholder: 'メールアドレス', passwordPlaceholder: 'パスワード',
-    logIn: 'ログイン', signUp: '新規登録',
-    checkEmailTitle: 'メールをご確認ください', gotIt: 'わかりました',
-    loginSuccessMsg: 'ログインしました！', signupSuccessMsg: 'アカウントを作成しました！',
+    logIn: 'ログイン',
+    loginSuccessMsg: 'ログインしました！',
     gateFootnote: 'コインとリキャップはアカウントに紐づきます — それ以外は保存されません',
     connecting: '接続中…', copyCode: 'コードをコピー', waitingForThem: '相手の参加を<br>待っています…',
     sayCheese: '準備ができたら笑顔で',
@@ -1146,8 +1122,7 @@ const TRANSLATIONS = {
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
     accountsNotAvailable: '現在アカウント機能はご利用いただけません — 後でもう一度お試しください。',
     enterBothFields: 'メールアドレスとパスワードの両方を入力してください。',
-    creatingAccount: 'アカウントを作成中…', loggingIn: 'ログイン中…',
-    checkEmailConfirm: 'メールを確認してアカウントを認証してからログインしてください。',
+    loggingIn: 'ログイン中…',
     authGenericError: '問題が発生しました — もう一度お試しください。',
     cameraBlockedBrowser: 'このブラウザではカメラにアクセスできません — HTTPSまたは最新のブラウザで再読み込みしてください。',
     typeCode: '相手から共有されたコードを入力してください。',
@@ -1269,8 +1244,6 @@ const copyBtn = document.getElementById('copyBtn');
 const leaveBtn = document.getElementById('leaveBtn');
 const countdownBackBtn = document.getElementById('countdownBackBtn');
 const authStep = document.getElementById('authStep');
-const authTabLogin = document.getElementById('authTabLogin');
-const authTabSignup = document.getElementById('authTabSignup');
 const authFormFields = document.getElementById('authFormFields');
 const authStepTitle = document.getElementById('authStepTitle');
 const authEmail = document.getElementById('authEmail');
@@ -1282,9 +1255,6 @@ const authErrorBanner = document.getElementById('authErrorBanner');
 const authErrorText = document.getElementById('authErrorText');
 const authSuccessBanner = document.getElementById('authSuccessBanner');
 const authSuccessText = document.getElementById('authSuccessText');
-const authConfirmCard = document.getElementById('authConfirmCard');
-const authConfirmOkBtn = document.getElementById('authConfirmOkBtn');
-const authTabsRow = document.getElementById('authTabs');
 const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 const backToLoginLink = document.getElementById('backToLoginLink');
 const resetPasswordCard = document.getElementById('resetPasswordCard');
@@ -1385,36 +1355,22 @@ function showAuthSuccess(msg){
   authSuccessBanner.style.display = 'flex';
 }
 
-function showAuthConfirmCard(){
-  hideAuthFeedback();
-  authFormFields.style.display = 'none';
-  authConfirmCard.style.display = 'flex';
-}
-
 function setAuthLoading(loading){
   authSubmitBtn.disabled = loading;
   authSubmitBtn.classList.toggle('is-loading', loading);
-  authTabLogin.disabled = loading;
-  authTabSignup.disabled = loading;
   authSubmitLabel.textContent = loading
-    ? (authMode === 'signup' ? t('creatingAccount') : authMode === 'forgot' ? t('sendingResetLink') : t('loggingIn'))
-    : (authMode === 'signup' ? t('signUp') : authMode === 'forgot' ? t('sendResetLink') : t('logIn'));
+    ? (authMode === 'forgot' ? t('sendingResetLink') : t('loggingIn'))
+    : (authMode === 'forgot' ? t('sendResetLink') : t('logIn'));
 }
 
 function setAuthMode(mode){
   authMode = mode;
   const isForgot = mode === 'forgot';
-  authTabLogin.classList.toggle('is-active', mode === 'login');
-  authTabLogin.setAttribute('aria-selected', mode === 'login' ? 'true' : 'false');
-  authTabSignup.classList.toggle('is-active', mode === 'signup');
-  authTabSignup.setAttribute('aria-selected', mode === 'signup' ? 'true' : 'false');
-  authTabsRow.style.display = isForgot ? 'none' : 'flex';
-  authStepTitle.textContent = mode === 'signup' ? t('authTitleSignup') : isForgot ? t('forgotPasswordTitle') : t('authTitleLogin');
+  authStepTitle.textContent = isForgot ? t('forgotPasswordTitle') : t('authTitleLogin');
   authPassword.style.display = isForgot ? 'none' : 'block';
-  forgotPasswordLink.style.display = (mode === 'login') ? 'inline-block' : 'none';
+  forgotPasswordLink.style.display = isForgot ? 'none' : 'inline-block';
   backToLoginLink.style.display = isForgot ? 'inline-block' : 'none';
   authFormFields.style.display = 'flex';
-  authConfirmCard.style.display = 'none';
   resetPasswordCard.style.display = 'none';
   hideAuthFeedback();
   setAuthLoading(false);
@@ -1425,7 +1381,6 @@ function showAuthStep(show){
   gateCards.style.display = show ? 'none' : 'flex';
   authStep.style.display = show ? 'flex' : 'none';
   authFormFields.style.display = 'flex';
-  authConfirmCard.style.display = 'none';
   resetPasswordCard.style.display = 'none';
   hideAuthFeedback();
   setAuthLoading(false);
@@ -1433,9 +1388,6 @@ function showAuthStep(show){
   if(show) authEmail.focus();
 }
 
-authTabLogin.addEventListener('click', ()=>{ if(authMode !== 'login') setAuthMode('login'); });
-authTabSignup.addEventListener('click', ()=>{ if(authMode !== 'signup') setAuthMode('signup'); });
-authConfirmOkBtn.addEventListener('click', ()=> setAuthMode('login'));
 forgotPasswordLink.addEventListener('click', ()=> setAuthMode('forgot'));
 backToLoginLink.addEventListener('click', ()=> setAuthMode('login'));
 
@@ -1475,25 +1427,12 @@ authSubmitBtn.addEventListener('click', async ()=>{
   }
   setAuthLoading(true);
   try{
-    if(authMode === 'signup'){
-      const { data, error } = await sbClient.auth.signUp({ email, password, options: { emailRedirectTo: AUTH_REDIRECT_URL } });
-      if(error) throw error;
-      if(data.session){
-        showAuthSuccess(t('signupSuccessMsg'));
-        await refreshAuthState();
-        setTimeout(()=> showAuthStep(false), 900);
-        return; // keep the button in its loading/disabled state through the success transition
-      }else{
-        showAuthConfirmCard();
-      }
-    }else{
-      const { error } = await sbClient.auth.signInWithPassword({ email, password });
-      if(error) throw error;
-      showAuthSuccess(t('loginSuccessMsg'));
-      await refreshAuthState();
-      setTimeout(()=> showAuthStep(false), 900);
-      return; // keep the button in its loading/disabled state through the success transition
-    }
+    const { error } = await sbClient.auth.signInWithPassword({ email, password });
+    if(error) throw error;
+    showAuthSuccess(t('loginSuccessMsg'));
+    await refreshAuthState();
+    setTimeout(()=> showAuthStep(false), 900);
+    return; // keep the button in its loading/disabled state through the success transition
   }catch(e){
     showAuthError((e && e.message) || t('authGenericError'));
   }
@@ -1536,7 +1475,6 @@ function showResetPasswordCard(){
   gateCards.style.display = 'none';
   authStep.style.display = 'flex';
   authFormFields.style.display = 'none';
-  authConfirmCard.style.display = 'none';
   resetPasswordCard.style.display = 'flex';
   resetPasswordErrorBanner.style.display = 'none';
   resetPasswordSuccessBanner.style.display = 'none';
