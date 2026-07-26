@@ -197,9 +197,19 @@
   .admin-password-row button{width:auto; flex:none; padding:14px 18px; font-size:0.85rem;}
   .admin-accounts-list{margin-top:28px; text-align:left;}
   .admin-accounts-title{font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 10px;}
-  .admin-account-row{display:flex; justify-content:space-between; gap:10px; padding:11px 14px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.85rem; margin-bottom:8px;}
+  .admin-account-row{display:flex; flex-direction:column; gap:8px; padding:11px 14px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.85rem; margin-bottom:8px;}
+  .admin-account-info{display:flex; justify-content:space-between; gap:10px;}
   .admin-account-email{color:var(--paper); word-break:break-all;}
   .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
+  .admin-account-addcoins{display:flex; gap:8px; align-items:center;}
+  .admin-account-add-input{
+    width:100%; flex:1; min-width:0; text-align:left; letter-spacing:normal; text-transform:none;
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem;
+    padding:9px 11px; border-radius:9px; border:1.5px solid rgba(215,162,74,0.3);
+    background:rgba(251,243,231,0.05); color:var(--paper); margin:0;
+  }
+  .admin-account-add-input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
+  .admin-account-add-btn{width:auto; flex:none; padding:9px 14px; font-size:0.75rem;}
   .admin-empty-list{font-size:0.8rem; color:rgba(251,243,231,0.4); text-align:center; padding:12px 0;}
 
   /* Soft glow-pulse originating from the exact tap point, layered on top of
@@ -651,7 +661,7 @@
         <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
           <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
         </div>
-        <input id="authEmail" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="email" style="text-transform:none; letter-spacing:normal;">
+        <input id="authEmail" type="text" data-i18n-placeholder="emailOrUsernamePlaceholder" placeholder="EMAIL OR USERNAME" autocomplete="username" style="text-transform:none; letter-spacing:normal;">
         <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
         <button class="leave-link auth-forgot-link" id="forgotPasswordLink" type="button" data-i18n="forgotPasswordLink">forgot password?</button>
         <button class="leave-link auth-forgot-link" id="backToLoginLink" type="button" data-i18n="backToLogin" style="display:none;">back to log in</button>
@@ -819,7 +829,7 @@
       <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
         <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
       </div>
-      <input id="adminEmailInput" type="email" data-i18n-placeholder="emailPlaceholder" placeholder="EMAIL" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+      <input id="adminEmailInput" type="text" data-i18n-placeholder="adminUsernamePlaceholder" placeholder="USERNAME" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
       <div class="admin-password-row">
         <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
         <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
@@ -850,6 +860,7 @@ const TRANSLATIONS = {
     joinRoomBtn: 'join room', back: 'back',
     authTitleLogin: 'log in to start a room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
+    emailOrUsernamePlaceholder: 'EMAIL OR USERNAME',
     logIn: 'log in',
     loginSuccessMsg: "you're in!",
     gateFootnote: 'your coins & recaps are tied to your account — nothing else is saved',
@@ -868,7 +879,7 @@ const TRANSLATIONS = {
     outOfCoins: "you're out of coins — message us on [YOUR SOCIAL HANDLE] to get set up",
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
     accountsNotAvailable: "accounts aren't available right now — try again later.",
-    enterBothFields: 'enter both an email and a password.',
+    enterBothFields: 'enter your email or username, and a password.',
     loggingIn: 'logging in…',
     authGenericError: 'something went wrong — try again.',
     cameraBlockedBrowser: "This browser can't access the camera here — try HTTPS or a modern browser, then reload.",
@@ -898,6 +909,7 @@ const TRANSLATIONS = {
     sendResetLink: 'send reset link', sendingResetLink: 'sending reset link…',
     resetLinkSent: 'check your email for a password reset link', backToLogin: 'back to log in',
     enterEmail: 'enter your email address.',
+    forgotNotAvailableForUsername: "password reset only works with a real email — this looks like a username, so ask the admin to reset it for you.",
     enterNewPassword: 'enter a new password.',
     setNewPasswordTitle: 'set a new password', newPasswordPlaceholder: 'NEW PASSWORD',
     setNewPasswordBtn: 'set new password', settingNewPassword: 'setting your password…',
@@ -907,12 +919,17 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'recap not found', recapNotFoundText: 'this link may be incorrect or the recap may have expired',
     backToApp: 'back to luv booth',
     adminLink: 'Admin', adminCardSub: 'manage accounts', adminPanelTitle: 'create an account',
+    adminUsernamePlaceholder: 'USERNAME',
     temporaryPasswordPlaceholder: 'TEMPORARY PASSWORD', generate: 'generate',
     startingCoinsPlaceholder: 'STARTING COINS', createAccountBtn: 'create account',
     creatingAccountAdmin: 'creating account…',
+    invalidUsername: 'usernames can only contain letters, numbers, dots, underscores, and hyphens.',
     adminAccountsListTitle: "accounts you've created", adminNoAccountsYet: 'no accounts created yet',
     enterValidCoins: 'enter a valid starting coin amount.',
-    accountCreatedSuccess: 'account created for {email}',
+    accountCreatedSuccess: 'account created for {username}',
+    addCoinsPlaceholder: '+ COINS', addCoinsBtn: 'add',
+    enterValidAddCoins: 'enter a valid number of coins to add.',
+    coinsAddedSuccess: 'added {amount} coins to {username}',
   },
   fil: {
     langName: 'Filipino',
@@ -921,6 +938,7 @@ const TRANSLATIONS = {
     joinRoomBtn: 'sumali sa room', back: 'balik',
     authTitleLogin: 'mag-log in para magsimula ng room',
     emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
+    emailOrUsernamePlaceholder: 'EMAIL O USERNAME',
     logIn: 'log in',
     loginSuccessMsg: 'nakapasok ka na!',
     gateFootnote: 'nakatali ang coins at recaps mo sa account mo — wala nang ibang naise-save',
@@ -939,7 +957,7 @@ const TRANSLATIONS = {
     outOfCoins: 'naubusan ka na ng coins — mag-message sa [YOUR SOCIAL HANDLE] para ma-set up',
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
     accountsNotAvailable: 'hindi pa available ang accounts ngayon — subukan ulit mamaya.',
-    enterBothFields: 'ilagay ang email at password.',
+    enterBothFields: 'ilagay ang email o username, at password.',
     loggingIn: 'nagla-log in…',
     authGenericError: 'may nangyaring mali — subukan ulit.',
     cameraBlockedBrowser: 'Hindi ma-access ng browser na ito ang camera — subukan ang HTTPS o mas bagong browser, tapos i-reload.',
@@ -969,6 +987,7 @@ const TRANSLATIONS = {
     sendResetLink: 'magpadala ng reset link', sendingResetLink: 'nagpapadala ng reset link…',
     resetLinkSent: 'tingnan ang email mo para sa password reset link', backToLogin: 'bumalik sa log in',
     enterEmail: 'ilagay ang email mo.',
+    forgotNotAvailableForUsername: 'gumagana lang ang pag-reset ng password kung totoong email — mukhang username ito, kaya hilingin sa admin na i-reset ito para sa iyo.',
     enterNewPassword: 'maglagay ng bagong password.',
     setNewPasswordTitle: 'maglagay ng bagong password', newPasswordPlaceholder: 'BAGONG PASSWORD',
     setNewPasswordBtn: 'itakda ang bagong password', settingNewPassword: 'itinatakda ang password mo…',
@@ -978,12 +997,17 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'hindi nahanap ang recap', recapNotFoundText: 'maaaring mali ang link na ito o nag-expire na ang recap',
     backToApp: 'bumalik sa luv booth',
     adminLink: 'Admin', adminCardSub: 'pamahalaan ang mga account', adminPanelTitle: 'gumawa ng account',
+    adminUsernamePlaceholder: 'USERNAME',
     temporaryPasswordPlaceholder: 'PANSAMANTALANG PASSWORD', generate: 'gumawa',
     startingCoinsPlaceholder: 'SIMULANG COINS', createAccountBtn: 'gumawa ng account',
     creatingAccountAdmin: 'ginagawa ang account…',
+    invalidUsername: 'ang username ay dapat letra, numero, tuldok, underscore, o hyphen lang.',
     adminAccountsListTitle: 'mga account na ginawa mo', adminNoAccountsYet: 'wala pang account na ginawa',
     enterValidCoins: 'maglagay ng valid na simulang bilang ng coins.',
-    accountCreatedSuccess: 'nagawa ang account para kay {email}',
+    accountCreatedSuccess: 'nagawa ang account para kay {username}',
+    addCoinsPlaceholder: '+ COINS', addCoinsBtn: 'idagdag',
+    enterValidAddCoins: 'maglagay ng valid na bilang ng coins na idadagdag.',
+    coinsAddedSuccess: 'nadagdag ang {amount} coins kay {username}',
   },
   es: {
     langName: 'Español',
@@ -992,6 +1016,7 @@ const TRANSLATIONS = {
     joinRoomBtn: 'unirse a la sala', back: 'atrás',
     authTitleLogin: 'inicia sesión para crear una sala',
     emailPlaceholder: 'CORREO', passwordPlaceholder: 'CONTRASEÑA',
+    emailOrUsernamePlaceholder: 'CORREO O NOMBRE DE USUARIO',
     logIn: 'iniciar sesión',
     loginSuccessMsg: '¡ya estás dentro!',
     gateFootnote: 'tus monedas y recuerdos están ligados a tu cuenta — no se guarda nada más',
@@ -1010,7 +1035,7 @@ const TRANSLATIONS = {
     outOfCoins: 'te quedaste sin monedas — escríbenos a [YOUR SOCIAL HANDLE] para activarlas',
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
     accountsNotAvailable: 'las cuentas no están disponibles ahora mismo — intenta más tarde.',
-    enterBothFields: 'ingresa tu correo y contraseña.',
+    enterBothFields: 'ingresa tu correo o nombre de usuario, y tu contraseña.',
     loggingIn: 'iniciando sesión…',
     authGenericError: 'algo salió mal — intenta de nuevo.',
     cameraBlockedBrowser: 'Este navegador no puede acceder a la cámara aquí — prueba con HTTPS o un navegador más reciente y recarga.',
@@ -1040,6 +1065,7 @@ const TRANSLATIONS = {
     sendResetLink: 'enviar enlace de restablecimiento', sendingResetLink: 'enviando enlace…',
     resetLinkSent: 'revisa tu correo para el enlace de restablecimiento de contraseña', backToLogin: 'volver a iniciar sesión',
     enterEmail: 'ingresa tu correo electrónico.',
+    forgotNotAvailableForUsername: 'restablecer la contraseña solo funciona con un correo real — esto parece un nombre de usuario, así que pídele al admin que lo restablezca por ti.',
     enterNewPassword: 'ingresa una nueva contraseña.',
     setNewPasswordTitle: 'establece una nueva contraseña', newPasswordPlaceholder: 'NUEVA CONTRASEÑA',
     setNewPasswordBtn: 'establecer contraseña', settingNewPassword: 'estableciendo tu contraseña…',
@@ -1049,12 +1075,17 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'recuerdo no encontrado', recapNotFoundText: 'este enlace puede ser incorrecto o el recuerdo puede haber vencido',
     backToApp: 'volver a luv booth',
     adminLink: 'Admin', adminCardSub: 'gestionar cuentas', adminPanelTitle: 'crear una cuenta',
+    adminUsernamePlaceholder: 'NOMBRE DE USUARIO',
     temporaryPasswordPlaceholder: 'CONTRASEÑA TEMPORAL', generate: 'generar',
     startingCoinsPlaceholder: 'MONEDAS INICIALES', createAccountBtn: 'crear cuenta',
     creatingAccountAdmin: 'creando cuenta…',
+    invalidUsername: 'los nombres de usuario solo pueden tener letras, números, puntos, guiones bajos y guiones.',
     adminAccountsListTitle: 'cuentas que has creado', adminNoAccountsYet: 'aún no se han creado cuentas',
     enterValidCoins: 'ingresa una cantidad inicial de monedas válida.',
-    accountCreatedSuccess: 'cuenta creada para {email}',
+    accountCreatedSuccess: 'cuenta creada para {username}',
+    addCoinsPlaceholder: '+ MONEDAS', addCoinsBtn: 'agregar',
+    enterValidAddCoins: 'ingresa una cantidad válida de monedas para agregar.',
+    coinsAddedSuccess: 'se agregaron {amount} monedas a {username}',
   },
   ko: {
     langName: '한국어',
@@ -1063,6 +1094,7 @@ const TRANSLATIONS = {
     joinRoomBtn: '방 참여하기', back: '뒤로',
     authTitleLogin: '방을 만들려면 로그인하세요',
     emailPlaceholder: '이메일', passwordPlaceholder: '비밀번호',
+    emailOrUsernamePlaceholder: '이메일 또는 아이디',
     logIn: '로그인',
     loginSuccessMsg: '로그인되었습니다!',
     gateFootnote: '코인과 리캡은 계정에 연결됩니다 — 그 외에는 저장되지 않습니다',
@@ -1081,7 +1113,7 @@ const TRANSLATIONS = {
     outOfCoins: '코인이 부족합니다 — [YOUR SOCIAL HANDLE]으로 메시지를 보내주세요',
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
     accountsNotAvailable: '지금은 계정 기능을 사용할 수 없습니다 — 나중에 다시 시도해 주세요.',
-    enterBothFields: '이메일과 비밀번호를 모두 입력해 주세요.',
+    enterBothFields: '이메일 또는 아이디와 비밀번호를 모두 입력해 주세요.',
     loggingIn: '로그인 중…',
     authGenericError: '문제가 발생했습니다 — 다시 시도해 주세요.',
     cameraBlockedBrowser: '이 브라우저에서는 카메라에 접근할 수 없습니다 — HTTPS나 최신 브라우저를 사용한 후 새로고침해 주세요.',
@@ -1111,6 +1143,7 @@ const TRANSLATIONS = {
     sendResetLink: '재설정 링크 보내기', sendingResetLink: '재설정 링크 전송 중…',
     resetLinkSent: '비밀번호 재설정 링크를 이메일에서 확인해 주세요', backToLogin: '로그인으로 돌아가기',
     enterEmail: '이메일 주소를 입력해 주세요.',
+    forgotNotAvailableForUsername: '비밀번호 재설정은 실제 이메일에서만 가능합니다 — 이건 아이디로 보이니, 관리자에게 재설정을 요청해 주세요.',
     enterNewPassword: '새 비밀번호를 입력해 주세요.',
     setNewPasswordTitle: '새 비밀번호 설정', newPasswordPlaceholder: '새 비밀번호',
     setNewPasswordBtn: '새 비밀번호 설정하기', settingNewPassword: '비밀번호 설정 중…',
@@ -1120,12 +1153,17 @@ const TRANSLATIONS = {
     recapNotFoundTitle: '리캡을 찾을 수 없습니다', recapNotFoundText: '링크가 잘못되었거나 리캡이 만료되었을 수 있습니다',
     backToApp: 'luv booth로 돌아가기',
     adminLink: '관리자', adminCardSub: '계정 관리', adminPanelTitle: '계정 만들기',
+    adminUsernamePlaceholder: '아이디',
     temporaryPasswordPlaceholder: '임시 비밀번호', generate: '생성',
     startingCoinsPlaceholder: '시작 코인 수', createAccountBtn: '계정 만들기',
     creatingAccountAdmin: '계정을 만드는 중…',
+    invalidUsername: '아이디는 영문자, 숫자, 마침표, 밑줄, 하이픈만 사용할 수 있습니다.',
     adminAccountsListTitle: '생성한 계정 목록', adminNoAccountsYet: '아직 생성된 계정이 없습니다',
     enterValidCoins: '유효한 시작 코인 수를 입력해 주세요.',
-    accountCreatedSuccess: '{email} 계정이 생성되었습니다',
+    accountCreatedSuccess: '{username} 계정이 생성되었습니다',
+    addCoinsPlaceholder: '+ 코인', addCoinsBtn: '추가',
+    enterValidAddCoins: '추가할 유효한 코인 수를 입력해 주세요.',
+    coinsAddedSuccess: '{username}에게 코인 {amount}개를 추가했습니다',
   },
   ja: {
     langName: '日本語',
@@ -1134,6 +1172,7 @@ const TRANSLATIONS = {
     joinRoomBtn: 'ルームに参加', back: '戻る',
     authTitleLogin: 'ルームを作るにはログインしてください',
     emailPlaceholder: 'メールアドレス', passwordPlaceholder: 'パスワード',
+    emailOrUsernamePlaceholder: 'メールアドレスまたはユーザー名',
     logIn: 'ログイン',
     loginSuccessMsg: 'ログインしました！',
     gateFootnote: 'コインとリキャップはアカウントに紐づきます — それ以外は保存されません',
@@ -1152,7 +1191,7 @@ const TRANSLATIONS = {
     outOfCoins: 'コインがなくなりました — [YOUR SOCIAL HANDLE] までメッセージをお送りください',
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
     accountsNotAvailable: '現在アカウント機能はご利用いただけません — 後でもう一度お試しください。',
-    enterBothFields: 'メールアドレスとパスワードの両方を入力してください。',
+    enterBothFields: 'メールアドレスまたはユーザー名と、パスワードの両方を入力してください。',
     loggingIn: 'ログイン中…',
     authGenericError: '問題が発生しました — もう一度お試しください。',
     cameraBlockedBrowser: 'このブラウザではカメラにアクセスできません — HTTPSまたは最新のブラウザで再読み込みしてください。',
@@ -1182,6 +1221,7 @@ const TRANSLATIONS = {
     sendResetLink: '再設定リンクを送信', sendingResetLink: '再設定リンクを送信中…',
     resetLinkSent: 'パスワード再設定リンクをメールでご確認ください', backToLogin: 'ログインに戻る',
     enterEmail: 'メールアドレスを入力してください。',
+    forgotNotAvailableForUsername: 'パスワードの再設定には本物のメールアドレスが必要です — これはユーザー名のようなので、管理者に再設定を依頼してください。',
     enterNewPassword: '新しいパスワードを入力してください。',
     setNewPasswordTitle: '新しいパスワードを設定', newPasswordPlaceholder: '新しいパスワード',
     setNewPasswordBtn: '新しいパスワードを設定する', settingNewPassword: 'パスワードを設定中…',
@@ -1191,12 +1231,17 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'リキャップが見つかりません', recapNotFoundText: 'リンクが間違っているか、リキャップの期限が切れている可能性があります',
     backToApp: 'luv boothに戻る',
     adminLink: '管理者', adminCardSub: 'アカウントを管理', adminPanelTitle: 'アカウントを作成',
+    adminUsernamePlaceholder: 'ユーザー名',
     temporaryPasswordPlaceholder: '仮パスワード', generate: '生成',
     startingCoinsPlaceholder: '初期コイン数', createAccountBtn: 'アカウントを作成',
     creatingAccountAdmin: 'アカウントを作成中…',
+    invalidUsername: 'ユーザー名に使えるのは英数字、ピリオド、アンダースコア、ハイフンのみです。',
     adminAccountsListTitle: '作成したアカウント', adminNoAccountsYet: 'まだ作成されたアカウントはありません',
     enterValidCoins: '有効な初期コイン数を入力してください。',
-    accountCreatedSuccess: '{email} のアカウントを作成しました',
+    accountCreatedSuccess: '{username} のアカウントを作成しました',
+    addCoinsPlaceholder: '+ コイン', addCoinsBtn: '追加',
+    enterValidAddCoins: '追加する有効なコイン数を入力してください。',
+    coinsAddedSuccess: '{username} に {amount} コインを追加しました',
   },
 };
 
@@ -1423,12 +1468,19 @@ forgotPasswordLink.addEventListener('click', ()=> setAuthMode('forgot'));
 backToLoginLink.addEventListener('click', ()=> setAuthMode('login'));
 
 authSubmitBtn.addEventListener('click', async ()=>{
-  const email = authEmail.value.trim();
+  const rawInput = authEmail.value.trim();
   hideAuthFeedback();
 
   if(authMode === 'forgot'){
-    if(!email){
+    if(!rawInput){
       showAuthError(t('enterEmail'));
+      return;
+    }
+    // Customer accounts are created with just a username (no real inbox) —
+    // resetPasswordForEmail() can't reach those, so fail loudly here
+    // instead of silently sending a reset link nobody will ever get.
+    if(!rawInput.includes('@')){
+      showAuthError(t('forgotNotAvailableForUsername'));
       return;
     }
     if(!sbClient){
@@ -1437,7 +1489,7 @@ authSubmitBtn.addEventListener('click', async ()=>{
     }
     setAuthLoading(true);
     try{
-      const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: AUTH_REDIRECT_URL });
+      const { error } = await sbClient.auth.resetPasswordForEmail(rawInput, { redirectTo: AUTH_REDIRECT_URL });
       if(error) throw error;
       showAuthSuccess(t('resetLinkSent'));
     }catch(e){
@@ -1448,7 +1500,7 @@ authSubmitBtn.addEventListener('click', async ()=>{
   }
 
   const password = authPassword.value;
-  if(!email || !password){
+  if(!rawInput || !password){
     showAuthError(t('enterBothFields'));
     return;
   }
@@ -1456,6 +1508,11 @@ authSubmitBtn.addEventListener('click', async ()=>{
     showAuthError(t('accountsNotAvailable'));
     return;
   }
+  // A real email (the admin's own account) is used as-is; a plain username
+  // (every customer account, created via the admin panel) gets the same
+  // synthetic domain suffix the admin-create-account Edge Function used
+  // when it actually registered the account under the hood.
+  const email = rawInput.includes('@') ? rawInput : `${rawInput}@${SYNTHETIC_ACCOUNT_DOMAIN}`;
   setAuthLoading(true);
   try{
     const { error } = await sbClient.auth.signInWithPassword({ email, password });
@@ -1583,6 +1640,15 @@ logoutLink.addEventListener('click', async ()=>{
    caller's own authenticated session email rather than trusting this. */
 const ADMIN_EMAIL = 'zhanderjhan14@gmail.com';
 
+// Customer accounts only ever get a username (never a real email) — Supabase
+// Auth still requires *some* email under the hood, so both the create flow
+// (server-side, in the Edge Function) and the login flow (client-side, in
+// authSubmitBtn above) independently append this same fixed suffix to turn
+// a bare username into the address the account was actually registered
+// under. Must stay in sync with SYNTHETIC_EMAIL_DOMAIN in
+// supabase/functions/admin-create-account/index.ts.
+const SYNTHETIC_ACCOUNT_DOMAIN = 'luvbooth.local';
+
 function updateAdminLinkVisibility(){
   adminLink.classList.toggle('show', !!currentUser && currentUser.email === ADMIN_EMAIL);
 }
@@ -1627,14 +1693,59 @@ function renderAdminAccounts(accounts){
   accounts.forEach(acc=>{
     const row = document.createElement('div');
     row.className = 'admin-account-row';
-    const email = document.createElement('span');
-    email.className = 'admin-account-email';
-    email.textContent = acc.email;
+
+    const info = document.createElement('div');
+    info.className = 'admin-account-info';
+    const username = document.createElement('span');
+    username.className = 'admin-account-email';
+    username.textContent = acc.username;
     const coins = document.createElement('span');
     coins.className = 'admin-account-coins';
     coins.textContent = `🪙 ${acc.coins}`;
-    row.appendChild(email);
-    row.appendChild(coins);
+    info.appendChild(username);
+    info.appendChild(coins);
+
+    const addRow = document.createElement('div');
+    addRow.className = 'admin-account-addcoins';
+    const addInput = document.createElement('input');
+    addInput.type = 'number'; addInput.min = '1'; addInput.step = '1';
+    addInput.className = 'admin-account-add-input';
+    addInput.placeholder = t('addCoinsPlaceholder');
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost admin-account-add-btn';
+    addBtn.textContent = t('addCoinsBtn');
+    addRow.appendChild(addInput);
+    addRow.appendChild(addBtn);
+
+    addBtn.addEventListener('click', async ()=>{
+      const amount = parseInt(addInput.value, 10);
+      if(isNaN(amount) || amount <= 0){
+        showAdminError(t('enterValidAddCoins'));
+        return;
+      }
+      if(!sbClient) return;
+      addBtn.disabled = true;
+      try{
+        const { data, error } = await sbClient.functions.invoke('admin-create-account', {
+          body: { action: 'add_coins', user_id: acc.user_id, amount },
+        });
+        if(error) throw new Error((await resolveFunctionsErrorMessage(error)) || t('authGenericError'));
+        if(data && data.error) throw new Error(data.error);
+        // Patch just this row's displayed balance from the response
+        // instead of re-fetching the whole list.
+        coins.textContent = `🪙 ${data.coins}`;
+        addInput.value = '';
+        showAdminSuccess(t('coinsAddedSuccess', { username: acc.username, amount }));
+      }catch(e){
+        showAdminError((e && e.message) || t('authGenericError'));
+      }
+      addBtn.disabled = false;
+    });
+    addInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addBtn.click(); });
+
+    row.appendChild(info);
+    row.appendChild(addRow);
     adminAccountsRows.appendChild(row);
   });
 }
@@ -1683,13 +1794,23 @@ adminCloseBtn.addEventListener('click', hideAdminModal);
 adminBackdrop.addEventListener('click', (e)=>{ if(e.target === adminBackdrop) hideAdminModal(); });
 adminGeneratePasswordBtn.addEventListener('click', ()=>{ adminPasswordInput.value = generateTempPassword(); });
 
+// Customer accounts identify by username only — kept to characters that are
+// safe to drop straight into the synthetic email's local-part (see
+// SYNTHETIC_ACCOUNT_DOMAIN above / SYNTHETIC_EMAIL_DOMAIN in the Edge
+// Function), rather than any real email-format requirement.
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
+
 adminCreateBtn.addEventListener('click', async ()=>{
-  const email = adminEmailInput.value.trim();
+  const username = adminEmailInput.value.trim();
   const password = adminPasswordInput.value;
   const coins = parseInt(adminCoinsInput.value, 10);
   hideAdminFeedback();
-  if(!email || !password){
+  if(!username || !password){
     showAdminError(t('authGenericError'));
+    return;
+  }
+  if(!USERNAME_PATTERN.test(username)){
+    showAdminError(t('invalidUsername'));
     return;
   }
   if(isNaN(coins) || coins < 0){
@@ -1703,11 +1824,11 @@ adminCreateBtn.addEventListener('click', async ()=>{
   setAdminLoading(true);
   try{
     const { data, error } = await sbClient.functions.invoke('admin-create-account', {
-      body: { action: 'create', email, password, coins },
+      body: { action: 'create', username, password, coins },
     });
     if(error) throw new Error((await resolveFunctionsErrorMessage(error)) || t('authGenericError'));
     if(data && data.error) throw new Error(data.error);
-    showAdminSuccess(t('accountCreatedSuccess', { email }));
+    showAdminSuccess(t('accountCreatedSuccess', { username }));
     adminEmailInput.value = '';
     adminPasswordInput.value = '';
     adminCoinsInput.value = '';

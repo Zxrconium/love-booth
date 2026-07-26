@@ -108,6 +108,13 @@ grant execute on function public.refund_last_spend() to authenticated;
 -- the admin panel can list "accounts I've created" without exposing the
 -- full user base. No client-facing policies on purpose: only the Edge
 -- Function (service_role, bypasses RLS) ever reads or writes this table.
+--
+-- The `email` column holds the customer-facing USERNAME, not a real email —
+-- customer accounts are created and logged into by username only, with a
+-- synthetic @luvbooth.local address used behind the scenes purely to
+-- satisfy Supabase Auth (see the Edge Function). Kept as `email` rather
+-- than renamed to avoid an unnecessary migration on an already-deployed
+-- table; the column's contents (a short username) are unaffected either way.
 create table if not exists public.admin_created_accounts (
   user_id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
@@ -115,6 +122,28 @@ create table if not exists public.admin_created_accounts (
 );
 
 alter table public.admin_created_accounts enable row level security;
+
+-- Admin-only atomic top-up for an existing account's balance. Only ever
+-- called from the admin-create-account Edge Function's 'add_coins' action
+-- via the service-role client (never granted to authenticated/anon), same
+-- trust boundary as account creation above. Mirrors the spend_coin() /
+-- refund_last_spend() pattern: a single atomic UPDATE rather than a
+-- read-then-write, so two top-ups landing at once can't clobber each other.
+create or replace function public.admin_add_coins(target_user_id uuid, amount integer)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  new_balance integer;
+begin
+  update public.profiles
+    set coins = coins + amount
+    where id = target_user_id
+  returning coins into new_balance;
+  return new_balance;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 2. Session recap recordings
