@@ -172,7 +172,10 @@
   .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.68rem; text-decoration:underline; padding:4px; width:auto;}
   .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
   .logout-link:hover{ color:rgba(251,243,231,0.7); }
-  #adminLink{position:fixed; top:100px; right:14px; z-index:60;}
+  /* Lives inline in the gate screen (under the footnote) rather than the
+     fixed top-right corner — .logout-link's position:fixed is only right
+     for logoutLink itself, so override it back to normal flow here. */
+  #adminLink{position:static; margin-top:10px;}
   #adminLink.show{ animation-delay:0.16s; }
 
   .admin-modal{max-width:380px; text-align:center;}
@@ -215,7 +218,6 @@
     .coin-badge{ font-size:1.05rem; padding:8px 13px 8px 8px; gap:7px; }
     .coin-badge-icon{ width:28px; height:28px; font-size:0.95rem; }
     .logout-link{ top:68px; }
-    #adminLink{ top:92px; }
   }
   .gate input, .admin-modal input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
@@ -573,7 +575,6 @@
 <body>
 <div class="coin-badge" id="coinBadge"><span class="coin-badge-icon">🪙<span class="coin-sparkle s1" aria-hidden="true">✦</span><span class="coin-sparkle s2" aria-hidden="true">✦</span><span class="coin-sparkle s3" aria-hidden="true">✦</span></span><span id="coinBadgeCount">0</span></div>
 <button class="logout-link" id="logoutLink" type="button" data-i18n="logout">log out</button>
-<button class="logout-link" id="adminLink" type="button" data-i18n="adminLink">admin</button>
 <div class="recap-viewer" id="recapViewer">
   <div class="recap-viewer-card">
     <p class="recap-viewer-title" data-i18n="recapTitle">session recap</p>
@@ -668,6 +669,7 @@
     </div>
 
     <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
+    <button class="logout-link" id="adminLink" type="button" data-i18n="adminLink">admin</button>
     <div class="error-msg" id="gateError" role="alert"></div>
   </div>
 
@@ -1605,7 +1607,7 @@ logoutLink.addEventListener('click', async ()=>{
    the link is shown in the UI — the real gate is server-side, inside the
    admin-create-account Edge Function, which independently re-verifies the
    caller's own authenticated session email rather than trusting this. */
-const ADMIN_EMAIL = 'hnnhmanuel1224@gmail.com';
+const ADMIN_EMAIL = 'zhanderjhan14@gmail.com';
 
 function updateAdminLinkVisibility(){
   adminLink.classList.toggle('show', !!currentUser && currentUser.email === ADMIN_EMAIL);
@@ -2488,6 +2490,12 @@ function handleRemoteMessage(msg){
   }else if(msg.type === 'theme'){
     applyRemoteTheme(msg.value);
   }else if(msg.type === 'sessionStart'){
+    // Whoever starts the shoot is the authority for that shoot's look —
+    // lock onto their filter + theme before the countdown even begins, so
+    // both sides capture with the same settings regardless of whether
+    // this device's own filter/theme picks had fully propagated yet.
+    if(msg.filter) applyRemoteFilter(msg.filter);
+    if(msg.theme) applyRemoteTheme(msg.theme);
     beginSyncedSession(msg.seconds, true);
   }else if(msg.type === 'selection'){
     applyRemoteSelection(msg.indices);
@@ -3123,7 +3131,7 @@ document.querySelectorAll('.choice-card').forEach(card=>{
   card.addEventListener('click', ()=>{
     hideCountdownChoice();
     const seconds = Number(card.dataset.seconds);
-    broadcastData({ type:'sessionStart', seconds });
+    broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
     beginSyncedSession(seconds, false);
   });
 });
@@ -3236,7 +3244,7 @@ buildStripBtn.addEventListener('click', ()=>{
 
 retakeAllBtn.addEventListener('click', ()=>{
   const seconds = lastCountdownSeconds || 3;
-  broadcastData({ type:'sessionStart', seconds });
+  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
   beginSyncedSession(seconds, false);
 });
 
