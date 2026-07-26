@@ -1500,6 +1500,9 @@ authSubmitBtn.addEventListener('click', async ()=>{
   setAuthLoading(false);
 });
 
+authEmail.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') authSubmitBtn.click(); });
+authPassword.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') authSubmitBtn.click(); });
+
 function pulseCoinBadge(increased){
   coinBadge.classList.remove('pulse', 'sparkle-burst');
   void coinBadge.offsetWidth;
@@ -1589,6 +1592,8 @@ resetPasswordSubmitBtn.addEventListener('click', async ()=>{
   }
   setResetPasswordLoading(false);
 });
+
+newPasswordInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') resetPasswordSubmitBtn.click(); });
 
 logoutLink.addEventListener('click', async ()=>{
   currentUser = null;
@@ -1725,6 +1730,10 @@ adminCreateBtn.addEventListener('click', async ()=>{
   }
   setAdminLoading(false);
 });
+
+adminEmailInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') adminCreateBtn.click(); });
+adminPasswordInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') adminCreateBtn.click(); });
+adminCoinsInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') adminCreateBtn.click(); });
 
 /* Recap viewer: the QR/link shared after a session now points back at this
    same page with ?recap=<recordings row id> instead of the raw Supabase
