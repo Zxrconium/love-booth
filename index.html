@@ -93,15 +93,19 @@
     to{ opacity:1; transform:translateY(0) scale(1); }
   }
   .gate{
-    width:100%; max-width:480px; text-align:center;
+    width:100%; max-width:640px; text-align:center;
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
   }
-  .gate-cards{display:flex; gap:16px; width:100%;}
+  /* .gate is also the wrapper for #joinStep/#authStep, but both of those
+     already cap themselves narrower (280px/300px, margin:0 auto) regardless
+     of what .gate allows, so widening it here (from 480px) only actually
+     gives #gateCards more room — the other screens are unaffected. */
+  .gate-cards{display:flex; gap:20px; width:100%;}
   .gate-card{
     position:relative; overflow:hidden;
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:12px;
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:14px;
     background:rgba(251,243,231,0.03); border:1.5px solid rgba(251,243,231,0.18);
-    border-radius:18px; padding:28px 16px; cursor:pointer; text-align:center;
+    border-radius:20px; padding:36px 22px; cursor:pointer; text-align:center;
     font-family:'Poppins',sans-serif; color:var(--paper);
     transition:border-color .2s ease, background-color .2s ease, transform .15s ease, box-shadow .2s ease;
     animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;
@@ -120,16 +124,17 @@
      hidden, so Create/Join still lay out as a normal pair for everyone else. */
   #adminLink{ display:none; }
   #adminLink.show{ display:flex; }
-  .gate-icon{width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none;}
+  .gate-icon{width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none;}
   .gate-icon.blush{ background:rgba(232,147,168,0.22); }
   .gate-icon.gold{ background:rgba(215,162,74,0.22); }
   .gate-icon.paper{ background:rgba(251,243,231,0.16); }
-  .gate-icon svg{ width:22px; height:22px; }
+  .gate-icon svg{ width:24px; height:24px; }
   .gate-card-title{ font-weight:700; font-size:1.2rem; }
   .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.78rem; color:rgba(251,243,231,0.6); }
   .gate-card-sub svg{ width:12px; height:12px; }
   @media (max-width: 480px){
-    .gate-cards{ flex-direction:column; }
+    .gate-cards{ flex-direction:column; gap:14px; }
+    .gate-card{ padding:26px 20px; gap:12px; }
   }
   .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
   .auth-step{display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:300px; margin:0 auto;}
@@ -195,7 +200,9 @@
   .admin-password-row{display:flex; gap:10px; align-items:center;}
   .admin-password-row input{flex:1;}
   .admin-password-row button{width:auto; flex:none; padding:14px 18px; font-size:0.85rem;}
-  .admin-accounts-list{margin-top:28px; text-align:left;}
+  .admin-view-switch{margin-top:14px;}
+  #adminAccountsSearch{margin-bottom:18px;}
+  .admin-accounts-list{text-align:left;}
   .admin-accounts-title{font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 10px;}
   .admin-account-row{display:flex; flex-direction:column; gap:8px; padding:11px 14px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.85rem; margin-bottom:8px;}
   .admin-account-info{display:flex; justify-content:space-between; gap:10px;}
@@ -829,30 +836,39 @@
 <div class="swap-modal-backdrop" id="adminBackdrop">
   <div class="swap-modal admin-modal">
     <div class="swap-modal-header">
-      <span data-i18n="adminPanelTitle">create an account</span>
+      <span id="adminModalTitle" data-i18n="adminPanelTitle">create an account</span>
       <button class="swap-modal-close" id="adminCloseBtn" type="button" aria-label="Close">×</button>
     </div>
-    <div class="admin-form">
-      <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
-        <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
+
+    <div id="adminCreateView">
+      <div class="admin-form">
+        <div class="auth-banner auth-banner-error" id="adminErrorBanner" role="alert" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="adminErrorText"></span>
+        </div>
+        <input id="adminEmailInput" type="text" data-i18n-placeholder="adminUsernamePlaceholder" placeholder="USERNAME" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+        <div class="admin-password-row">
+          <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+          <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
+        </div>
+        <input id="adminCoinsInput" type="number" min="0" step="1" data-i18n-placeholder="startingCoinsPlaceholder" placeholder="STARTING COINS" style="text-transform:none; letter-spacing:normal;">
+        <button class="btn-primary auth-submit-btn" id="adminCreateBtn" type="button">
+          <span class="btn-spinner" id="adminCreateSpinner" aria-hidden="true"></span>
+          <span id="adminCreateLabel" data-i18n="createAccountBtn">create account</span>
+        </button>
+        <div class="auth-banner auth-banner-success" id="adminSuccessBanner" style="display:none;">
+          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="adminSuccessText"></span>
+        </div>
       </div>
-      <input id="adminEmailInput" type="text" data-i18n-placeholder="adminUsernamePlaceholder" placeholder="USERNAME" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
-      <div class="admin-password-row">
-        <input id="adminPasswordInput" type="text" data-i18n-placeholder="temporaryPasswordPlaceholder" placeholder="TEMPORARY PASSWORD" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
-        <button class="btn-ghost" id="adminGeneratePasswordBtn" type="button" data-i18n="generate">generate</button>
-      </div>
-      <input id="adminCoinsInput" type="number" min="0" step="1" data-i18n-placeholder="startingCoinsPlaceholder" placeholder="STARTING COINS" style="text-transform:none; letter-spacing:normal;">
-      <button class="btn-primary auth-submit-btn" id="adminCreateBtn" type="button">
-        <span class="btn-spinner" id="adminCreateSpinner" aria-hidden="true"></span>
-        <span id="adminCreateLabel" data-i18n="createAccountBtn">create account</span>
-      </button>
-      <div class="auth-banner auth-banner-success" id="adminSuccessBanner" style="display:none;">
-        <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="adminSuccessText"></span>
-      </div>
+      <button class="btn-ghost admin-view-switch" id="adminShowAccountsBtn" type="button" data-i18n="viewAccountsBtn">accounts</button>
     </div>
-    <div class="admin-accounts-list">
-      <p class="admin-accounts-title" data-i18n="adminAccountsListTitle">accounts you've created</p>
-      <div id="adminAccountsRows"></div>
+
+    <div id="adminAccountsView" style="display:none;">
+      <input id="adminAccountsSearch" type="text" data-i18n-placeholder="searchAccountsPlaceholder" placeholder="SEARCH USERNAME" autocomplete="off" style="text-transform:none; letter-spacing:normal;">
+      <div class="admin-accounts-list">
+        <p class="admin-accounts-title" data-i18n="adminAccountsListTitle">accounts you've created</p>
+        <div id="adminAccountsRows"></div>
+      </div>
+      <button class="btn-ghost admin-view-switch" id="adminShowCreateBtn" type="button" data-i18n="backToCreateBtn">create new account</button>
     </div>
   </div>
 </div>
@@ -926,12 +942,15 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'recap not found', recapNotFoundText: 'this link may be incorrect or the recap may have expired',
     backToApp: 'back to luv booth',
     adminLink: 'Admin', adminCardSub: 'manage accounts', adminPanelTitle: 'create an account',
+    adminAccountsViewTitle: 'your accounts',
     adminUsernamePlaceholder: 'USERNAME',
     temporaryPasswordPlaceholder: 'TEMPORARY PASSWORD', generate: 'generate',
     startingCoinsPlaceholder: 'STARTING COINS', createAccountBtn: 'create account',
     creatingAccountAdmin: 'creating account…',
     invalidUsername: 'usernames can only contain letters, numbers, dots, underscores, and hyphens.',
     enterUsernameAndPassword: 'enter a username and a password.',
+    viewAccountsBtn: 'accounts', backToCreateBtn: 'create new account',
+    searchAccountsPlaceholder: 'SEARCH USERNAME', adminNoAccountsMatch: 'no accounts match your search',
     adminAccountsListTitle: "accounts you've created", adminNoAccountsYet: 'no accounts created yet',
     enterValidCoins: 'enter a valid starting coin amount.',
     accountCreatedSuccess: 'account created for {username}',
@@ -1005,12 +1024,15 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'hindi nahanap ang recap', recapNotFoundText: 'maaaring mali ang link na ito o nag-expire na ang recap',
     backToApp: 'bumalik sa luv booth',
     adminLink: 'Admin', adminCardSub: 'pamahalaan ang mga account', adminPanelTitle: 'gumawa ng account',
+    adminAccountsViewTitle: 'mga account mo',
     adminUsernamePlaceholder: 'USERNAME',
     temporaryPasswordPlaceholder: 'PANSAMANTALANG PASSWORD', generate: 'gumawa',
     startingCoinsPlaceholder: 'SIMULANG COINS', createAccountBtn: 'gumawa ng account',
     creatingAccountAdmin: 'ginagawa ang account…',
     invalidUsername: 'ang username ay dapat letra, numero, tuldok, underscore, o hyphen lang.',
     enterUsernameAndPassword: 'maglagay ng username at password.',
+    viewAccountsBtn: 'mga account', backToCreateBtn: 'gumawa ng bagong account',
+    searchAccountsPlaceholder: 'HANAPIN ANG USERNAME', adminNoAccountsMatch: 'walang account na tumugma sa hinahanap mo',
     adminAccountsListTitle: 'mga account na ginawa mo', adminNoAccountsYet: 'wala pang account na ginawa',
     enterValidCoins: 'maglagay ng valid na simulang bilang ng coins.',
     accountCreatedSuccess: 'nagawa ang account para kay {username}',
@@ -1084,12 +1106,15 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'recuerdo no encontrado', recapNotFoundText: 'este enlace puede ser incorrecto o el recuerdo puede haber vencido',
     backToApp: 'volver a luv booth',
     adminLink: 'Admin', adminCardSub: 'gestionar cuentas', adminPanelTitle: 'crear una cuenta',
+    adminAccountsViewTitle: 'tus cuentas',
     adminUsernamePlaceholder: 'NOMBRE DE USUARIO',
     temporaryPasswordPlaceholder: 'CONTRASEÑA TEMPORAL', generate: 'generar',
     startingCoinsPlaceholder: 'MONEDAS INICIALES', createAccountBtn: 'crear cuenta',
     creatingAccountAdmin: 'creando cuenta…',
     invalidUsername: 'los nombres de usuario solo pueden tener letras, números, puntos, guiones bajos y guiones.',
     enterUsernameAndPassword: 'ingresa un nombre de usuario y una contraseña.',
+    viewAccountsBtn: 'cuentas', backToCreateBtn: 'crear una cuenta nueva',
+    searchAccountsPlaceholder: 'BUSCAR USUARIO', adminNoAccountsMatch: 'ninguna cuenta coincide con tu búsqueda',
     adminAccountsListTitle: 'cuentas que has creado', adminNoAccountsYet: 'aún no se han creado cuentas',
     enterValidCoins: 'ingresa una cantidad inicial de monedas válida.',
     accountCreatedSuccess: 'cuenta creada para {username}',
@@ -1163,12 +1188,15 @@ const TRANSLATIONS = {
     recapNotFoundTitle: '리캡을 찾을 수 없습니다', recapNotFoundText: '링크가 잘못되었거나 리캡이 만료되었을 수 있습니다',
     backToApp: 'luv booth로 돌아가기',
     adminLink: '관리자', adminCardSub: '계정 관리', adminPanelTitle: '계정 만들기',
+    adminAccountsViewTitle: '내 계정 목록',
     adminUsernamePlaceholder: '아이디',
     temporaryPasswordPlaceholder: '임시 비밀번호', generate: '생성',
     startingCoinsPlaceholder: '시작 코인 수', createAccountBtn: '계정 만들기',
     creatingAccountAdmin: '계정을 만드는 중…',
     invalidUsername: '아이디는 영문자, 숫자, 마침표, 밑줄, 하이픈만 사용할 수 있습니다.',
     enterUsernameAndPassword: '아이디와 비밀번호를 입력해 주세요.',
+    viewAccountsBtn: '계정 목록', backToCreateBtn: '새 계정 만들기',
+    searchAccountsPlaceholder: '아이디 검색', adminNoAccountsMatch: '검색 결과와 일치하는 계정이 없습니다',
     adminAccountsListTitle: '생성한 계정 목록', adminNoAccountsYet: '아직 생성된 계정이 없습니다',
     enterValidCoins: '유효한 시작 코인 수를 입력해 주세요.',
     accountCreatedSuccess: '{username} 계정이 생성되었습니다',
@@ -1242,12 +1270,15 @@ const TRANSLATIONS = {
     recapNotFoundTitle: 'リキャップが見つかりません', recapNotFoundText: 'リンクが間違っているか、リキャップの期限が切れている可能性があります',
     backToApp: 'luv boothに戻る',
     adminLink: '管理者', adminCardSub: 'アカウントを管理', adminPanelTitle: 'アカウントを作成',
+    adminAccountsViewTitle: 'あなたのアカウント一覧',
     adminUsernamePlaceholder: 'ユーザー名',
     temporaryPasswordPlaceholder: '仮パスワード', generate: '生成',
     startingCoinsPlaceholder: '初期コイン数', createAccountBtn: 'アカウントを作成',
     creatingAccountAdmin: 'アカウントを作成中…',
     invalidUsername: 'ユーザー名に使えるのは英数字、ピリオド、アンダースコア、ハイフンのみです。',
     enterUsernameAndPassword: 'ユーザー名とパスワードを入力してください。',
+    viewAccountsBtn: 'アカウント一覧', backToCreateBtn: '新しいアカウントを作成',
+    searchAccountsPlaceholder: 'ユーザー名で検索', adminNoAccountsMatch: '検索に一致するアカウントがありません',
     adminAccountsListTitle: '作成したアカウント', adminNoAccountsYet: 'まだ作成されたアカウントはありません',
     enterValidCoins: '有効な初期コイン数を入力してください。',
     accountCreatedSuccess: '{username} のアカウントを作成しました',
@@ -1371,6 +1402,12 @@ const adminErrorText = document.getElementById('adminErrorText');
 const adminSuccessBanner = document.getElementById('adminSuccessBanner');
 const adminSuccessText = document.getElementById('adminSuccessText');
 const adminAccountsRows = document.getElementById('adminAccountsRows');
+const adminCreateView = document.getElementById('adminCreateView');
+const adminAccountsView = document.getElementById('adminAccountsView');
+const adminShowAccountsBtn = document.getElementById('adminShowAccountsBtn');
+const adminShowCreateBtn = document.getElementById('adminShowCreateBtn');
+const adminAccountsSearch = document.getElementById('adminAccountsSearch');
+const adminModalTitle = document.getElementById('adminModalTitle');
 const recapPanel = document.getElementById('recapPanel');
 const recapQr = document.getElementById('recapQr');
 const recapLink = document.getElementById('recapLink');
@@ -1693,12 +1730,17 @@ function setAdminLoading(loading){
   adminCreateLabel.textContent = loading ? t('creatingAccountAdmin') : t('createAccountBtn');
 }
 
+// Full list as last fetched from the server; adminAccountsSearch filters
+// this client-side rather than re-fetching on every keystroke.
+let adminAccountsCache = [];
+
 function renderAdminAccounts(accounts){
   adminAccountsRows.innerHTML = '';
   if(!accounts || !accounts.length){
     const empty = document.createElement('p');
     empty.className = 'admin-empty-list';
-    empty.textContent = t('adminNoAccountsYet');
+    const searching = adminAccountsSearch.value.trim().length > 0;
+    empty.textContent = searching ? t('adminNoAccountsMatch') : t('adminNoAccountsYet');
     adminAccountsRows.appendChild(empty);
     return;
   }
@@ -1779,30 +1821,58 @@ async function resolveFunctionsErrorMessage(error){
   return error.message || null;
 }
 
+function renderFilteredAccounts(){
+  const term = adminAccountsSearch.value.trim().toLowerCase();
+  const filtered = term
+    ? adminAccountsCache.filter(acc => acc.username.toLowerCase().includes(term))
+    : adminAccountsCache;
+  renderAdminAccounts(filtered);
+}
+
 async function refreshAdminAccountsList(){
   if(!sbClient) return;
   try{
     const { data, error } = await sbClient.functions.invoke('admin-create-account', { body: { action: 'list' } });
     if(error) throw new Error(await resolveFunctionsErrorMessage(error));
     if(data && data.error) throw new Error(data.error);
-    renderAdminAccounts(data && data.accounts);
+    adminAccountsCache = (data && data.accounts) || [];
+    renderFilteredAccounts();
   }catch(e){
     console.error('refreshAdminAccountsList failed:', e);
     // Previously this silently rendered the same empty state as "you
     // genuinely haven't created any accounts yet" — indistinguishable from
     // a real failure to load the list. Surface it instead.
     showAdminError((e && e.message) || t('authGenericError'));
-    renderAdminAccounts([]);
+    adminAccountsCache = [];
+    renderFilteredAccounts();
   }
 }
 
-function showAdminModal(){
+// The modal always opens on the create form; the accounts list (and its
+// search box) is a separate view reached via the "accounts" button, fetched
+// lazily only when actually switched to — no need to hit the network just
+// to create one more account.
+function showAdminCreateView(){
+  adminCreateView.style.display = '';
+  adminAccountsView.style.display = 'none';
+  adminModalTitle.textContent = t('adminPanelTitle');
   hideAdminFeedback();
+}
+function showAdminAccountsView(){
+  adminCreateView.style.display = 'none';
+  adminAccountsView.style.display = '';
+  adminModalTitle.textContent = t('adminAccountsViewTitle');
+  adminAccountsSearch.value = '';
+  hideAdminFeedback();
+  refreshAdminAccountsList();
+}
+
+function showAdminModal(){
+  showAdminCreateView();
   adminEmailInput.value = '';
   adminPasswordInput.value = '';
   adminCoinsInput.value = '';
   adminBackdrop.classList.add('show');
-  refreshAdminAccountsList();
 }
 function hideAdminModal(){ adminBackdrop.classList.remove('show'); }
 
@@ -1810,6 +1880,9 @@ adminLink.addEventListener('click', showAdminModal);
 adminCloseBtn.addEventListener('click', hideAdminModal);
 adminBackdrop.addEventListener('click', (e)=>{ if(e.target === adminBackdrop) hideAdminModal(); });
 adminGeneratePasswordBtn.addEventListener('click', ()=>{ adminPasswordInput.value = generateTempPassword(); });
+adminShowAccountsBtn.addEventListener('click', showAdminAccountsView);
+adminShowCreateBtn.addEventListener('click', showAdminCreateView);
+adminAccountsSearch.addEventListener('input', renderFilteredAccounts);
 
 // Customer accounts identify by username only — kept to characters that are
 // safe to drop straight into the synthetic email's local-part (see
@@ -3428,6 +3501,9 @@ function refreshDynamicLabels(){
   if(pickingScreen.classList.contains('show')) updateSelectionCounter();
   if(swapModalSlot !== null) swapModalTitle.textContent = t('chooseForSlot', { slot: swapModalSlot + 1 });
   Array.from(themeSelect.options).forEach(opt=>{ opt.textContent = t(opt.dataset.labelKey); });
+  if(adminBackdrop.classList.contains('show')){
+    adminModalTitle.textContent = adminAccountsView.style.display === 'none' ? t('adminPanelTitle') : t('adminAccountsViewTitle');
+  }
 }
 </script>
 </body>
