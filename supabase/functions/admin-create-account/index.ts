@@ -159,8 +159,11 @@ Deno.serve(async (req) => {
       .insert({ user_id: userId, email: username });
     if (trackError) {
       console.error('admin-create-account: tracking insert failed', trackError);
-      // Not fatal to the caller — the account exists and is funded, it just
-      // won't show up in the admin list view.
+      // Not fatal to the caller — the account exists and is funded, so we
+      // still report success — but silently dropping this previously made
+      // "account created" and "never shows up in the list" indistinguishable
+      // from the admin's side. Surface the real reason as a warning instead.
+      return json({ user: { id: userId, username }, warning: `account created, but it won't show in your list yet: ${trackError.message}` });
     }
 
     return json({ user: { id: userId, username } });

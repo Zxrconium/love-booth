@@ -1772,9 +1772,14 @@ async function refreshAdminAccountsList(){
   try{
     const { data, error } = await sbClient.functions.invoke('admin-create-account', { body: { action: 'list' } });
     if(error) throw new Error(await resolveFunctionsErrorMessage(error));
+    if(data && data.error) throw new Error(data.error);
     renderAdminAccounts(data && data.accounts);
   }catch(e){
     console.error('refreshAdminAccountsList failed:', e);
+    // Previously this silently rendered the same empty state as "you
+    // genuinely haven't created any accounts yet" — indistinguishable from
+    // a real failure to load the list. Surface it instead.
+    showAdminError((e && e.message) || t('authGenericError'));
     renderAdminAccounts([]);
   }
 }
@@ -1828,7 +1833,15 @@ adminCreateBtn.addEventListener('click', async ()=>{
     });
     if(error) throw new Error((await resolveFunctionsErrorMessage(error)) || t('authGenericError'));
     if(data && data.error) throw new Error(data.error);
-    showAdminSuccess(t('accountCreatedSuccess', { username }));
+    // The account itself is real and funded even when data.warning is set
+    // (the Edge Function only warns when the separate admin_created_accounts
+    // tracking insert failed) — flag it rather than showing a plain success
+    // that would hide exactly why it's missing from the list below.
+    if(data && data.warning){
+      showAdminError(data.warning);
+    }else{
+      showAdminSuccess(t('accountCreatedSuccess', { username }));
+    }
     adminEmailInput.value = '';
     adminPasswordInput.value = '';
     adminCoinsInput.value = '';
