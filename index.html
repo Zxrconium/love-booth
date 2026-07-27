@@ -201,15 +201,22 @@
   .admin-account-info{display:flex; justify-content:space-between; gap:10px;}
   .admin-account-email{color:var(--paper); word-break:break-all;}
   .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
-  .admin-account-addcoins{display:flex; gap:8px; align-items:center;}
-  .admin-account-add-input{
-    width:100%; flex:1; min-width:0; text-align:left; letter-spacing:normal; text-transform:none;
+  .admin-account-addcoins{display:flex; gap:8px; align-items:stretch;}
+  /* Both selectors below are deliberately two classes deep (rather than a
+     single .admin-account-add-input / .admin-account-add-btn class) so they
+     reliably outrank .admin-modal input (sizing/uppercase from the bigger-
+     modal fix) and .btn-ghost (width:100%) regardless of where those rules
+     happen to sit in the sheet — the same equal-specificity/source-order
+     trap that bit .swap-modal vs .admin-modal earlier in this project. */
+  .admin-account-addcoins .admin-account-add-input{
+    flex:1 1 0; min-width:0; width:auto; text-align:left; letter-spacing:normal; text-transform:none;
     font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem;
     padding:9px 11px; border-radius:9px; border:1.5px solid rgba(215,162,74,0.3);
     background:rgba(251,243,231,0.05); color:var(--paper); margin:0;
   }
-  .admin-account-add-input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
-  .admin-account-add-btn{width:auto; flex:none; padding:9px 14px; font-size:0.75rem;}
+  .admin-account-addcoins .admin-account-add-input::placeholder{ color:rgba(251,243,231,0.4); text-transform:none; letter-spacing:normal; }
+  .admin-account-addcoins .admin-account-add-input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
+  .admin-account-addcoins .admin-account-add-btn{width:auto; flex:none; padding:0 16px; font-size:0.78rem; white-space:nowrap;}
   .admin-empty-list{font-size:0.8rem; color:rgba(251,243,231,0.4); text-align:center; padding:12px 0;}
 
   /* Soft glow-pulse originating from the exact tap point, layered on top of
@@ -924,6 +931,7 @@ const TRANSLATIONS = {
     startingCoinsPlaceholder: 'STARTING COINS', createAccountBtn: 'create account',
     creatingAccountAdmin: 'creating account…',
     invalidUsername: 'usernames can only contain letters, numbers, dots, underscores, and hyphens.',
+    enterUsernameAndPassword: 'enter a username and a password.',
     adminAccountsListTitle: "accounts you've created", adminNoAccountsYet: 'no accounts created yet',
     enterValidCoins: 'enter a valid starting coin amount.',
     accountCreatedSuccess: 'account created for {username}',
@@ -1002,6 +1010,7 @@ const TRANSLATIONS = {
     startingCoinsPlaceholder: 'SIMULANG COINS', createAccountBtn: 'gumawa ng account',
     creatingAccountAdmin: 'ginagawa ang account…',
     invalidUsername: 'ang username ay dapat letra, numero, tuldok, underscore, o hyphen lang.',
+    enterUsernameAndPassword: 'maglagay ng username at password.',
     adminAccountsListTitle: 'mga account na ginawa mo', adminNoAccountsYet: 'wala pang account na ginawa',
     enterValidCoins: 'maglagay ng valid na simulang bilang ng coins.',
     accountCreatedSuccess: 'nagawa ang account para kay {username}',
@@ -1080,6 +1089,7 @@ const TRANSLATIONS = {
     startingCoinsPlaceholder: 'MONEDAS INICIALES', createAccountBtn: 'crear cuenta',
     creatingAccountAdmin: 'creando cuenta…',
     invalidUsername: 'los nombres de usuario solo pueden tener letras, números, puntos, guiones bajos y guiones.',
+    enterUsernameAndPassword: 'ingresa un nombre de usuario y una contraseña.',
     adminAccountsListTitle: 'cuentas que has creado', adminNoAccountsYet: 'aún no se han creado cuentas',
     enterValidCoins: 'ingresa una cantidad inicial de monedas válida.',
     accountCreatedSuccess: 'cuenta creada para {username}',
@@ -1158,6 +1168,7 @@ const TRANSLATIONS = {
     startingCoinsPlaceholder: '시작 코인 수', createAccountBtn: '계정 만들기',
     creatingAccountAdmin: '계정을 만드는 중…',
     invalidUsername: '아이디는 영문자, 숫자, 마침표, 밑줄, 하이픈만 사용할 수 있습니다.',
+    enterUsernameAndPassword: '아이디와 비밀번호를 입력해 주세요.',
     adminAccountsListTitle: '생성한 계정 목록', adminNoAccountsYet: '아직 생성된 계정이 없습니다',
     enterValidCoins: '유효한 시작 코인 수를 입력해 주세요.',
     accountCreatedSuccess: '{username} 계정이 생성되었습니다',
@@ -1236,6 +1247,7 @@ const TRANSLATIONS = {
     startingCoinsPlaceholder: '初期コイン数', createAccountBtn: 'アカウントを作成',
     creatingAccountAdmin: 'アカウントを作成中…',
     invalidUsername: 'ユーザー名に使えるのは英数字、ピリオド、アンダースコア、ハイフンのみです。',
+    enterUsernameAndPassword: 'ユーザー名とパスワードを入力してください。',
     adminAccountsListTitle: '作成したアカウント', adminNoAccountsYet: 'まだ作成されたアカウントはありません',
     enterValidCoins: '有効な初期コイン数を入力してください。',
     accountCreatedSuccess: '{username} のアカウントを作成しました',
@@ -1811,7 +1823,7 @@ adminCreateBtn.addEventListener('click', async ()=>{
   const coins = parseInt(adminCoinsInput.value, 10);
   hideAdminFeedback();
   if(!username || !password){
-    showAdminError(t('authGenericError'));
+    showAdminError(t('enterUsernameAndPassword'));
     return;
   }
   if(!USERNAME_PATTERN.test(username)){
