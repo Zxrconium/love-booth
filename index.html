@@ -607,6 +607,34 @@
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
   }
+
+  /* Live cursor sharing: a partner's real-time pointer position, shown
+     anywhere in the connected session except during the countdown/shoot
+     (see fullscreenActive gating in JS). Positioned with transform only
+     (never top/left) since it updates continuously via requestAnimationFrame
+     — top/left would force layout on every frame, transform is
+     GPU-composited and doesn't. opacity/visibility toggle show/hide (also
+     cheap, no layout), and the reduced-motion media query above already
+     makes that fade instant for prefers-reduced-motion — the JS separately
+     skips the position-easing loop in that case, since that's driven by
+     rAF rather than a CSS transition this stylesheet rule could catch. */
+  .remote-cursor-live{
+    position:fixed; top:0; left:0; z-index:400;
+    pointer-events:none; opacity:0; visibility:hidden;
+    transform:translate(-9999px,-9999px);
+    transition:opacity .2s ease;
+    will-change:transform;
+  }
+  .remote-cursor-live.show{ opacity:1; visibility:visible; }
+  .remote-cursor-live-dot{
+    position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px 0 0 -7px;
+    border-radius:50%; background:var(--remote-cursor-color, var(--gold));
+    box-shadow:0 0 14px 2px var(--remote-cursor-color, var(--gold)), 0 0 0 2px rgba(251,243,231,0.55);
+  }
+  .remote-cursor-live-heart{
+    position:absolute; top:-21px; left:6px; font-size:0.85rem; line-height:1;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+  }
 </style>
 </head>
 <body>
@@ -871,6 +899,11 @@
       <button class="btn-ghost admin-view-switch" id="adminShowCreateBtn" type="button" data-i18n="backToCreateBtn">create new account</button>
     </div>
   </div>
+</div>
+
+<div class="remote-cursor-live" id="remoteCursorLive" aria-hidden="true">
+  <span class="remote-cursor-live-dot"></span>
+  <span class="remote-cursor-live-heart">💛</span>
 </div>
 
 <script>
@@ -2610,6 +2643,114 @@ stripCanvas.addEventListener('pointerleave', ()=>{
   broadcastData({ type:'cursorHide' });
 });
 
+/* ---------------- Live cursor sharing ----------------
+   Broadcasts this device's real mouse position to the partner — only from
+   devices with an actual mouse-like pointer (pointer:fine), since a
+   touch-only phone has nothing meaningful to send — anywhere in the
+   connected session except during the countdown/10-shot capture sequence
+   (fullscreenActive), where the screen should stay focused on the shoot
+   itself. Position travels as a 0–1 fraction of viewport width/height
+   rather than raw pixels so it maps correctly even when the two devices
+   have different screen sizes. Distinct liveCursor/liveCursorHide message
+   types from the plain cursor/cursorHide pair above, which is a narrower,
+   pre-existing feature scoped to hovering over the built strip itself
+   during a photo swap. */
+const HAS_FINE_POINTER = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches);
+
+function prefersReducedMotion(){
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function canShareLiveCursor(){
+  return connected && !fullscreenActive;
+}
+
+const remoteCursorLiveEl = document.getElementById('remoteCursorLive');
+let remoteLiveCursorTarget = null;   // last received {x,y}, as a 0–1 fraction
+let remoteLiveCursorCurrent = null;  // eased on-screen {x,y} in px
+let remoteLiveCursorRafId = null;
+let remoteLiveCursorHideTimer = null;
+// Self-heals if an explicit hide message never arrives (partner's tab
+// killed outright, connection dropped mid-message, etc.) — same pattern as
+// CURSOR_HIDE_MS on the narrower strip-hover cursor above.
+const LIVE_CURSOR_HIDE_MS = 2500;
+
+function applyLiveCursorTransform(){
+  // transform only — never top/left, which would force a layout recalc on
+  // every one of these updates. This is the one property this whole
+  // feature is allowed to touch every frame.
+  remoteCursorLiveEl.style.transform = `translate(${remoteLiveCursorCurrent.x}px, ${remoteLiveCursorCurrent.y}px)`;
+}
+
+function stepLiveCursorEasing(){
+  if(!remoteLiveCursorTarget){ remoteLiveCursorRafId = null; return; }
+  const targetPx = { x: remoteLiveCursorTarget.x * window.innerWidth, y: remoteLiveCursorTarget.y * window.innerHeight };
+  const ease = 0.25;
+  remoteLiveCursorCurrent = {
+    x: remoteLiveCursorCurrent.x + (targetPx.x - remoteLiveCursorCurrent.x) * ease,
+    y: remoteLiveCursorCurrent.y + (targetPx.y - remoteLiveCursorCurrent.y) * ease,
+  };
+  applyLiveCursorTransform();
+  remoteLiveCursorRafId = requestAnimationFrame(stepLiveCursorEasing);
+}
+
+function applyRemoteLiveCursor(x, y){
+  // Dropped entirely — not just hidden — the moment the shoot is active,
+  // so a flurry of incoming updates during that window costs nothing
+  // rather than being processed and only suppressed visually.
+  if(typeof x !== 'number' || typeof y !== 'number' || !canShareLiveCursor()) return;
+  remoteLiveCursorTarget = { x, y };
+  if(!remoteCursorLiveEl.classList.contains('show')){
+    remoteCursorLiveEl.style.setProperty('--remote-cursor-color', remoteColor());
+    remoteCursorLiveEl.classList.add('show');
+  }
+  clearTimeout(remoteLiveCursorHideTimer);
+  remoteLiveCursorHideTimer = setTimeout(hideRemoteLiveCursor, LIVE_CURSOR_HIDE_MS);
+  if(prefersReducedMotion()){
+    // Instant position updates instead of the eased trail, per user
+    // preference — no per-frame rAF loop needed at all in this mode.
+    remoteLiveCursorCurrent = { x: x * window.innerWidth, y: y * window.innerHeight };
+    applyLiveCursorTransform();
+  }else if(remoteLiveCursorRafId === null){
+    if(!remoteLiveCursorCurrent) remoteLiveCursorCurrent = { x: x * window.innerWidth, y: y * window.innerHeight };
+    remoteLiveCursorRafId = requestAnimationFrame(stepLiveCursorEasing);
+  }
+}
+
+function hideRemoteLiveCursor(){
+  clearTimeout(remoteLiveCursorHideTimer);
+  remoteLiveCursorTarget = null;
+  remoteLiveCursorCurrent = null;
+  if(remoteLiveCursorRafId !== null){ cancelAnimationFrame(remoteLiveCursorRafId); remoteLiveCursorRafId = null; }
+  remoteCursorLiveEl.classList.remove('show');
+}
+
+if(HAS_FINE_POINTER){
+  let lastLiveCursorBroadcastAt = 0;
+  const LIVE_CURSOR_BROADCAST_THROTTLE_MS = 40;
+
+  document.addEventListener('mousemove', (e)=>{
+    if(!canShareLiveCursor()) return;
+    const now = Date.now();
+    if(now - lastLiveCursorBroadcastAt < LIVE_CURSOR_BROADCAST_THROTTLE_MS) return;
+    lastLiveCursorBroadcastAt = now;
+    broadcastData({
+      type: 'liveCursor',
+      x: e.clientX / window.innerWidth,
+      y: e.clientY / window.innerHeight,
+    });
+  }, { passive:true });
+
+  // Fires when the pointer actually leaves the browser viewport (not just
+  // moving over a child element within the page) — tell the partner to
+  // hide it rather than leaving a stale cursor frozen near the edge.
+  // Re-entering needs no explicit "resume" message: the next throttled
+  // mousemove naturally starts broadcasting positions again.
+  document.documentElement.addEventListener('mouseleave', ()=>{
+    if(connected) broadcastData({ type:'liveCursorHide' });
+  });
+}
+
 let shots = [];
 let tenShots = [];
 let selectedIndices = [];
@@ -2723,6 +2864,10 @@ function handleRemoteMessage(msg){
     applyRemoteCursor(msg.x, msg.y);
   }else if(msg.type === 'cursorHide'){
     hideRemoteCursor();
+  }else if(msg.type === 'liveCursor'){
+    applyRemoteLiveCursor(msg.x, msg.y);
+  }else if(msg.type === 'liveCursorHide'){
+    hideRemoteLiveCursor();
   }else if(msg.type === 'photoSwap'){
     applyPhotoSwap(msg.slot, msg.photoIndex);
   }else if(msg.type === 'shootCancelled'){
@@ -2738,6 +2883,7 @@ function markSyncLost(){
   dataConn = null;
   clearTimeout(dataConnTimeout);
   syncNote.style.display = 'block';
+  hideRemoteLiveCursor();
 }
 
 function markSyncRestored(){
@@ -2869,6 +3015,7 @@ async function attemptReconnect(){
     clearTimeout(dataConnTimeout);
     dataConn = null;
     connected = false;
+    hideRemoteLiveCursor();
     await wait(400);
     if(isHost) await startAsHost(currentRoomCode);
     else await startAsGuest(currentRoomCode);
@@ -2892,6 +3039,7 @@ function teardownAndReturnToGate(){
   dataConn = null;
   syncNote.style.display = 'none';
   connected = false;
+  hideRemoteLiveCursor();
   shootSessionId++;
   shots = [];
   tenShots = [];
