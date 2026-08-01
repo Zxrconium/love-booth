@@ -765,7 +765,7 @@
         <p class="camera-permission-text" id="cameraPermissionText" data-i18n="cameraPermissionDenied">camera access is required to use Luv Booth — please allow camera access in your browser settings and refresh the page.</p>
       </div>
       <div class="status-line" id="statusLine" aria-live="polite" data-i18n="sayCheese">say cheese whenever you're ready</div>
-      <p class="sync-note" id="syncNote" role="status" style="display:none;" data-i18n="syncLost">live sync lost — filter, theme, and countdown changes won't update for both of you until it's back</p>
+      <p class="sync-note" id="syncNote" role="status" style="display:none;">live sync lost — filter, theme, and countdown changes won't update for both of you until it's back</p>
       <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">📸 start strip</button>
         <select id="filterSelect">
@@ -923,6 +923,7 @@ const TRANSLATIONS = {
     connecting: 'connecting…', copyCode: 'copy code', waitingForThem: 'waiting for them<br>to join…',
     sayCheese: "say cheese whenever you're ready",
     syncLost: "live sync lost — filter, theme, and countdown changes won't update for both of you until it's back",
+    syncReconnecting: 'reconnecting live sync…',
     startStrip: '📸 start strip', filterBwVintage: 'black and white vintage', filterWarmVintage: 'warm vintage', filterBwGlow: 'black and white vintage + glow',
     reset: 'reset', reconnect: 'reconnect',
     countdownChoiceLabel: 'choose your countdown',
@@ -1005,6 +1006,7 @@ const TRANSLATIONS = {
     connecting: 'kumokonekta…', copyCode: 'kopyahin ang code', waitingForThem: 'hinihintay siya<br>sumali…',
     sayCheese: 'sabihin ang cheese kapag handa ka na',
     syncLost: 'nawala ang live sync — hindi mag-a-update ang filter, theme, at countdown para sa inyong dalawa hanggang bumalik ito',
+    syncReconnecting: 'kinokonekta ulit ang live sync…',
     startStrip: '📸 simulan ang strip', filterBwVintage: 'itim at puti na vintage', filterWarmVintage: 'mainit na vintage', filterBwGlow: 'itim at puti na vintage na may glow',
     reset: 'i-reset', reconnect: 'kumonekta ulit',
     countdownChoiceLabel: 'piliin ang countdown mo',
@@ -1087,6 +1089,7 @@ const TRANSLATIONS = {
     connecting: 'conectando…', copyCode: 'copiar código', waitingForThem: 'esperando a que<br>se una…',
     sayCheese: 'di "whisky" cuando estés listo/a',
     syncLost: 'se perdió la sincronización en vivo — los cambios de filtro, tema y cuenta regresiva no se actualizarán para ambos hasta que vuelva',
+    syncReconnecting: 'reconectando la sincronización en vivo…',
     startStrip: '📸 iniciar la tira', filterBwVintage: 'blanco y negro vintage', filterWarmVintage: 'cálido vintage', filterBwGlow: 'blanco y negro vintage con brillo',
     reset: 'reiniciar', reconnect: 'reconectar',
     countdownChoiceLabel: 'elige tu cuenta regresiva',
@@ -1169,6 +1172,7 @@ const TRANSLATIONS = {
     connecting: '연결 중…', copyCode: '코드 복사', waitingForThem: '상대방을<br>기다리는 중…',
     sayCheese: '준비되면 활짝 웃어주세요',
     syncLost: '실시간 동기화가 끊겼습니다 — 필터, 테마, 카운트다운 변경 사항이 복구될 때까지 서로에게 반영되지 않습니다',
+    syncReconnecting: '실시간 동기화를 다시 연결하는 중…',
     startStrip: '📸 스트립 시작', filterBwVintage: '빈티지 흑백', filterWarmVintage: '빈티지 웜톤', filterBwGlow: '빈티지 흑백 + 글로우',
     reset: '초기화', reconnect: '재연결',
     countdownChoiceLabel: '카운트다운 선택',
@@ -1251,6 +1255,7 @@ const TRANSLATIONS = {
     connecting: '接続中…', copyCode: 'コードをコピー', waitingForThem: '相手の参加を<br>待っています…',
     sayCheese: '準備ができたら笑顔で',
     syncLost: 'ライブ同期が切れました — フィルター、テーマ、カウントダウンの変更は復旧するまでお互いに反映されません',
+    syncReconnecting: 'ライブ同期を再接続中…',
     startStrip: '📸 撮影開始', filterBwVintage: 'ヴィンテージ白黒', filterWarmVintage: 'ヴィンテージウォーム', filterBwGlow: 'ヴィンテージ白黒＋グロー',
     reset: 'リセット', reconnect: '再接続',
     countdownChoiceLabel: 'カウントダウンを選ぼう',
@@ -2879,25 +2884,133 @@ function handleRemoteMessage(msg){
 
 let dataConnTimeout = null;
 
-function markSyncLost(){
-  dataConn = null;
-  clearTimeout(dataConnTimeout);
+/* ---------------- Connection diagnostics ----------------
+   PeerJS gives no visibility into WHY a data channel or media call drops
+   (ICE hiccup vs. a real peer-connection failure vs. the far side just
+   closing the tab) — every failure path used to collapse into the same
+   generic markSyncLost() with nothing logged anywhere. These log every
+   state transition PeerJS/WebRTC actually exposes, with a timestamp, so
+   the browser console tells the real story next time this happens rather
+   than just showing the aftermath. User-facing text stays simple; this is
+   for DevTools only. */
+function logConnEvent(...args){
+  console.log(`[luvbooth sync ${new Date().toISOString()}]`, ...args);
+}
+
+function wireIceDiagnostics(rtcConn, label){
+  // rtcConn (the underlying native RTCPeerConnection) is created inside
+  // PeerJS's Negotiator synchronously when a DataConnection/MediaConnection
+  // is constructed, but guard anyway in case a future PeerJS version defers
+  // it — this is best-effort diagnostics, nothing behavioral depends on it.
+  if(!rtcConn) return;
+  rtcConn.addEventListener('iceconnectionstatechange', ()=>{
+    logConnEvent(`${label} ICE state ->`, rtcConn.iceConnectionState);
+  });
+  if('connectionState' in rtcConn){
+    rtcConn.addEventListener('connectionstatechange', ()=>{
+      logConnEvent(`${label} RTCPeerConnection state ->`, rtcConn.connectionState);
+    });
+  }
+}
+
+// Remembers who the data channel was last connected to, and whether we've
+// already tried a one-shot silent recovery for the current drop — so a
+// transient blip gets exactly one automatic retry (never a loop that could
+// fight a manual "reconnect" click), and only escalates to the full
+// "live sync lost" banner if that retry also fails.
+let remoteDataPeerId = null;
+let dataReconnectAttempted = false;
+let syncNoteState = null; // 'lost' | 'reconnecting' | null (hidden)
+
+function showSyncLostBanner(){
+  syncNoteState = 'lost';
+  syncNote.textContent = t('syncLost');
   syncNote.style.display = 'block';
-  hideRemoteLiveCursor();
+}
+
+function showSyncReconnectingBanner(){
+  syncNoteState = 'reconnecting';
+  syncNote.textContent = t('syncReconnecting');
+  syncNote.style.display = 'block';
 }
 
 function markSyncRestored(){
   clearTimeout(dataConnTimeout);
+  syncNoteState = null;
   syncNote.style.display = 'none';
+}
+
+function attemptDataChannelRecovery(){
+  // Only worth trying when the actual peer connection and video call are
+  // still healthy — i.e. this really is "just the data channel" dropping,
+  // matching what a fixable transient ICE/data-channel hiccup looks like,
+  // not a total connection collapse (which a silent retry can't fix and
+  // the user's own "reconnect" button already handles by rebuilding
+  // everything). One shot only, per drop.
+  if(dataReconnectAttempted || !peer || peer.destroyed || !connected || !remoteDataPeerId){
+    showSyncLostBanner();
+    return;
+  }
+  dataReconnectAttempted = true;
+  showSyncReconnectingBanner();
+  if(isHost){
+    // The data connection is always guest-initiated (guest calls
+    // peer.connect(), host only ever receives it via peer.on('connection')).
+    // If host ALSO called peer.connect() here, both sides would race to
+    // create a brand-new data connection at once — confirmed with a real
+    // two-browser WebRTC test: it produced two independent connections,
+    // and whichever one lost that race left its side listening on a
+    // channel the other end never wired up, so messages silently stopped
+    // arriving even though "recovery" looked like it had succeeded. Host
+    // just waits for the guest's reconnect to land on the existing
+    // peer.on('connection') listener, with its own timeout in case the
+    // guest's attempt never comes (e.g. guest's peer object also died).
+    logConnEvent('host waiting for guest to re-establish the data channel…');
+    setTimeout(()=>{ if(!dataConn) showSyncLostBanner(); }, 6000);
+    return;
+  }
+  logConnEvent(`attempting one-shot automatic data-channel recovery with ${remoteDataPeerId} in 2s…`);
+  setTimeout(()=>{
+    if(dataConn) return; // already recovered some other way (e.g. a manual reconnect) in the meantime
+    if(!peer || peer.destroyed){ showSyncLostBanner(); return; }
+    try{
+      wireDataChannel(peer.connect(remoteDataPeerId));
+    }catch(e){
+      logConnEvent('automatic data-channel recovery attempt threw', e);
+      showSyncLostBanner();
+    }
+  }, 2000);
+}
+
+function markSyncLost(){
+  const hadConn = dataConn;
+  dataConn = null;
+  clearTimeout(dataConnTimeout);
+  // hadConn.open is already false by the time a 'close'/'error' handler
+  // runs (the transport has already flipped state) — reading it here would
+  // always print false, even for a connection that worked fine for
+  // minutes. The connection's own 'open' handler stamps __everOpened on it
+  // the moment it actually opens, so this reports the real history instead.
+  logConnEvent('data channel lost — was ever open:', !!(hadConn && hadConn.__everOpened));
+  hideRemoteLiveCursor();
+  attemptDataChannelRecovery();
 }
 
 function wireDataChannel(conn){
   dataConn = conn;
+  remoteDataPeerId = conn.peer;
+  logConnEvent('data channel connecting to', conn.peer);
   clearTimeout(dataConnTimeout);
   dataConnTimeout = setTimeout(()=>{
-    if(!conn.open && dataConn === conn) markSyncLost();
+    if(!conn.open && dataConn === conn){
+      logConnEvent('data channel never reached open within 8s');
+      markSyncLost();
+    }
   }, 8000);
   conn.on('open', ()=>{
+    conn.__everOpened = true;
+    dataReconnectAttempted = false; // a fresh success earns a fresh retry chance if it drops again later
+    logConnEvent('data channel open');
     markSyncRestored();
     if(isHost){
       broadcastData({ type:'filter', value: filterSelect.value });
@@ -2905,13 +3018,16 @@ function wireDataChannel(conn){
     }
   });
   conn.on('data', handleRemoteMessage);
-  conn.on('close', ()=>{ if(dataConn === conn) markSyncLost(); });
-  conn.on('error', ()=>{ if(dataConn === conn) markSyncLost(); });
+  conn.on('close', ()=>{ if(dataConn === conn){ logConnEvent('data channel closed'); markSyncLost(); } });
+  conn.on('error', (err)=>{ if(dataConn === conn){ logConnEvent('data channel error', err); markSyncLost(); } });
+  wireIceDiagnostics(conn.peerConnection, 'data channel');
 }
 
 function wireCall(call){
   activeCall = call;
+  logConnEvent('media call connecting to', call.peer);
   call.on('stream', (remoteStream)=>{
+    logConnEvent('media call stream received');
     remoteVideo.srcObject = remoteStream;
     remoteVideoGlow.srcObject = remoteStream;
     waitingLabel.style.display = 'none';
@@ -2922,6 +3038,7 @@ function wireCall(call){
     showReconnect(false);
   });
   call.on('close', ()=>{
+    logConnEvent('media call closed');
     connected = false;
     setStatus(t('theyLeft'), false);
     startBtn.disabled = true;
@@ -2930,11 +3047,13 @@ function wireCall(call){
     statusLine.textContent = t('tapReconnectComingBack');
     showReconnect(true);
   });
-  call.on('error', ()=>{
+  call.on('error', (err)=>{
+    logConnEvent('media call error', err);
     setStatus(t('connectionHiccup'), false);
     statusLine.textContent = t('tapReconnectTryAgain');
     showReconnect(true);
   });
+  wireIceDiagnostics(call.peerConnection, 'media call');
 }
 
 async function startAsHost(code){
@@ -2943,7 +3062,9 @@ async function startAsHost(code){
   if(!ok) return;
 
   peer = new Peer('booth-' + code + '-host');
+  logConnEvent('starting as host, room', code);
   peer.on('open', ()=>{
+    logConnEvent('peer signaling open, id=', peer.id);
     setCodeBadge(code);
     setStatus(t('waitingForThemToJoin'), false, true);
   });
@@ -2955,10 +3076,12 @@ async function startAsHost(code){
     wireDataChannel(conn);
   });
   peer.on('disconnected', ()=>{
+    logConnEvent('peer signaling disconnected from broker — calling peer.reconnect()');
     setStatus(t('reconnecting'), false, true);
     if(peer && !peer.destroyed) peer.reconnect();
   });
   peer.on('error', (err)=>{
+    logConnEvent('peer error', err && err.type, err);
     if(err.type === 'unavailable-id'){
       setStatus(t('roomCodeTaken'), false);
       statusLine.textContent = t('codeInUse');
@@ -2976,7 +3099,9 @@ async function startAsGuest(code){
   if(!ok) return;
 
   peer = new Peer();
+  logConnEvent('starting as guest, room', code);
   peer.on('open', ()=>{
+    logConnEvent('peer signaling open, id=', peer.id);
     const call = peer.call('booth-' + code + '-host', localStream);
     if(!call){
       setStatus(t('roomNotFound'), false);
@@ -2987,10 +3112,12 @@ async function startAsGuest(code){
     wireDataChannel(peer.connect('booth-' + code + '-host'));
   });
   peer.on('disconnected', ()=>{
+    logConnEvent('peer signaling disconnected from broker — calling peer.reconnect()');
     setStatus(t('reconnecting'), false, true);
     if(peer && !peer.destroyed) peer.reconnect();
   });
   peer.on('error', (err)=>{
+    logConnEvent('peer error', err && err.type, err);
     // PeerJS signals a nonexistent/expired room code via 'peer-unavailable'
     // (calling/connecting to a peer id nobody registered) — that's the
     // specific, actionable "wrong code" case, distinct from a real network
@@ -3015,6 +3142,8 @@ async function attemptReconnect(){
     clearTimeout(dataConnTimeout);
     dataConn = null;
     connected = false;
+    remoteDataPeerId = null;
+    dataReconnectAttempted = false;
     hideRemoteLiveCursor();
     await wait(400);
     if(isHost) await startAsHost(currentRoomCode);
@@ -3037,8 +3166,11 @@ function teardownAndReturnToGate(){
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
   clearTimeout(dataConnTimeout);
   dataConn = null;
+  syncNoteState = null;
   syncNote.style.display = 'none';
   connected = false;
+  remoteDataPeerId = null;
+  dataReconnectAttempted = false;
   hideRemoteLiveCursor();
   shootSessionId++;
   shots = [];
@@ -3652,6 +3784,8 @@ function refreshDynamicLabels(){
   if(adminBackdrop.classList.contains('show')){
     adminModalTitle.textContent = adminAccountsView.style.display === 'none' ? t('adminPanelTitle') : t('adminAccountsViewTitle');
   }
+  if(syncNoteState === 'lost') syncNote.textContent = t('syncLost');
+  else if(syncNoteState === 'reconnecting') syncNote.textContent = t('syncReconnecting');
 }
 </script>
 </body>
