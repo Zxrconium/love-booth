@@ -3021,21 +3021,62 @@ function wireDataChannel(conn){
   conn.on('close', ()=>{ if(dataConn === conn){ logConnEvent('data channel closed'); markSyncLost(); } });
   conn.on('error', (err)=>{ if(dataConn === conn){ logConnEvent('data channel error', err); markSyncLost(); } });
   wireIceDiagnostics(conn.peerConnection, 'data channel');
+  if(conn.peerConnection){
+    // Same false-positive risk as the media call: PeerJS doesn't always fire
+    // 'close'/'error' on the DataConnection just because the underlying ICE
+    // path failed to connect (no TURN, NAT traversal dead end) — without
+    // this, the data channel could sit "open" in name while never actually
+    // carrying data. Treat a genuine ICE failure as a real drop.
+    conn.peerConnection.addEventListener('iceconnectionstatechange', ()=>{
+      if(conn.peerConnection.iceConnectionState === 'failed' && dataConn === conn){
+        logConnEvent('data channel ICE failed — no working network path found (no TURN server configured, STUN-only)');
+        markSyncLost();
+      }
+    });
+  }
 }
 
 function wireCall(call){
   activeCall = call;
   logConnEvent('media call connecting to', call.peer);
-  call.on('stream', (remoteStream)=>{
-    logConnEvent('media call stream received');
-    remoteVideo.srcObject = remoteStream;
-    remoteVideoGlow.srcObject = remoteStream;
-    waitingLabel.style.display = 'none';
+  // call.on('stream') fires the moment the remote MediaStreamTrack object
+  // exists (SDP negotiated a transceiver) — confirmed with a real WebRTC
+  // connection that this happens BEFORE ice reaches even 'checking', let
+  // alone 'connected'. Marking the UI "connected" on that event alone is a
+  // false positive: with no TURN server, if ICE can't find a working path
+  // (symmetric NAT, some mobile/corporate networks), the UI would say
+  // "connected" forever with a stream object attached that never actually
+  // carries a frame — exactly the "own camera fine, partner's is black"
+  // symptom. Gate the UI-visible "connected" state on ICE genuinely
+  // reaching connected/completed, in addition to the stream existing.
+  let streamReceived = false;
+  let iceReallyConnected = false;
+  let mediaFailed = false;
+  function markMediaConnected(){
+    if(!streamReceived || !iceReallyConnected || connected) return;
     connected = true;
+    waitingLabel.style.display = 'none';
     setStatus(t('connectedStatus'), true);
     startBtn.disabled = false;
     statusLine.textContent = t('inFrame');
     showReconnect(false);
+  }
+  function markMediaFailed(){
+    if(mediaFailed) return;
+    mediaFailed = true;
+    logConnEvent('media call ICE failed — no working network path found (no TURN server configured, STUN-only)');
+    connected = false;
+    setStatus(t('connectionHiccup'), false);
+    startBtn.disabled = true;
+    statusLine.textContent = t('tapReconnectTryAgain');
+    showReconnect(true);
+  }
+  call.on('stream', (remoteStream)=>{
+    logConnEvent('media call stream received');
+    remoteVideo.srcObject = remoteStream;
+    remoteVideoGlow.srcObject = remoteStream;
+    streamReceived = true;
+    markMediaConnected();
   });
   call.on('close', ()=>{
     logConnEvent('media call closed');
@@ -3054,6 +3095,19 @@ function wireCall(call){
     showReconnect(true);
   });
   wireIceDiagnostics(call.peerConnection, 'media call');
+  if(call.peerConnection){
+    call.peerConnection.addEventListener('iceconnectionstatechange', ()=>{
+      const state = call.peerConnection.iceConnectionState;
+      if(state === 'connected' || state === 'completed'){
+        iceReallyConnected = true;
+        mediaFailed = false;
+        markMediaConnected();
+      }else if(state === 'failed'){
+        iceReallyConnected = false;
+        markMediaFailed();
+      }
+    });
+  }
 }
 
 async function startAsHost(code){
