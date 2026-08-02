@@ -254,6 +254,14 @@
     .coin-badge{ font-size:1.05rem; padding:8px 13px 8px 8px; gap:7px; }
     .coin-badge-icon{ width:28px; height:28px; font-size:0.95rem; }
     .logout-link{ top:68px; }
+    /* The generate button eating horizontal space left the "TEMPORARY
+       PASSWORD" placeholder (already widened a lot by the uppercase
+       4px letter-spacing every .admin-modal input uses) truncated mid-word
+       on a real phone-width screen. Stack instead of squeezing both into
+       one row. */
+    .admin-password-row{ flex-wrap:wrap; }
+    .admin-password-row input{ flex:1 1 100%; }
+    .admin-password-row button{ flex:1 1 100%; }
   }
   .gate input, .admin-modal input{
     width:100%; text-align:center; letter-spacing:4px; text-transform:uppercase;
@@ -915,7 +923,7 @@ const TRANSLATIONS = {
     joinTitle: 'Join', joinSub: "with your partner's code", roomInputPlaceholder: 'ENTER THEIR CODE',
     joinRoomBtn: 'join room', back: 'back',
     authTitleLogin: 'log in to start a room',
-    emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
+    passwordPlaceholder: 'PASSWORD',
     emailOrUsernamePlaceholder: 'EMAIL OR USERNAME',
     logIn: 'log in',
     loginSuccessMsg: "you're in!",
@@ -998,7 +1006,7 @@ const TRANSLATIONS = {
     joinTitle: 'Sumali', joinSub: 'gamit ang kanyang code', roomInputPlaceholder: 'ILAGAY ANG CODE',
     joinRoomBtn: 'sumali sa room', back: 'balik',
     authTitleLogin: 'mag-log in para magsimula ng room',
-    emailPlaceholder: 'EMAIL', passwordPlaceholder: 'PASSWORD',
+    passwordPlaceholder: 'PASSWORD',
     emailOrUsernamePlaceholder: 'EMAIL O USERNAME',
     logIn: 'log in',
     loginSuccessMsg: 'nakapasok ka na!',
@@ -1081,7 +1089,7 @@ const TRANSLATIONS = {
     joinTitle: 'Unirse', joinSub: 'con su código', roomInputPlaceholder: 'ESCRIBE EL CÓDIGO',
     joinRoomBtn: 'unirse a la sala', back: 'atrás',
     authTitleLogin: 'inicia sesión para crear una sala',
-    emailPlaceholder: 'CORREO', passwordPlaceholder: 'CONTRASEÑA',
+    passwordPlaceholder: 'CONTRASEÑA',
     emailOrUsernamePlaceholder: 'CORREO O NOMBRE DE USUARIO',
     logIn: 'iniciar sesión',
     loginSuccessMsg: '¡ya estás dentro!',
@@ -1164,7 +1172,7 @@ const TRANSLATIONS = {
     joinTitle: '참여하기', joinSub: '상대방 코드로', roomInputPlaceholder: '코드 입력',
     joinRoomBtn: '방 참여하기', back: '뒤로',
     authTitleLogin: '방을 만들려면 로그인하세요',
-    emailPlaceholder: '이메일', passwordPlaceholder: '비밀번호',
+    passwordPlaceholder: '비밀번호',
     emailOrUsernamePlaceholder: '이메일 또는 아이디',
     logIn: '로그인',
     loginSuccessMsg: '로그인되었습니다!',
@@ -1247,7 +1255,7 @@ const TRANSLATIONS = {
     joinTitle: '参加', joinSub: '相手のコードで', roomInputPlaceholder: 'コードを入力',
     joinRoomBtn: 'ルームに参加', back: '戻る',
     authTitleLogin: 'ルームを作るにはログインしてください',
-    emailPlaceholder: 'メールアドレス', passwordPlaceholder: 'パスワード',
+    passwordPlaceholder: 'パスワード',
     emailOrUsernamePlaceholder: 'メールアドレスまたはユーザー名',
     logIn: 'ログイン',
     loginSuccessMsg: 'ログインしました！',
@@ -1352,6 +1360,11 @@ function setLanguage(lang){
   if(!TRANSLATIONS[lang]) return;
   currentLang = lang;
   localStorage.setItem('luvBoothLang', lang);
+  // Currently only ever called from the switcher's own 'change' listener,
+  // where the native <select> has already synced its displayed value — but
+  // that makes this function's correctness depend on how it's invoked. Set
+  // it here too so setLanguage() is correct on its own, regardless of caller.
+  langSwitcher.value = lang;
   applyStaticTranslations();
   if(typeof refreshDynamicLabels === 'function') refreshDynamicLabels();
 }
@@ -2187,6 +2200,11 @@ let fullscreenActive = false;
 function enterFullscreenShoot(){
   if(fullscreenActive) return;
   fullscreenActive = true;
+  // A cursor already mid-animation right as the shoot starts would otherwise
+  // keep easing/rendering for up to LIVE_CURSOR_HIDE_MS more — live cursor
+  // sharing is supposed to be fully dropped during the shoot, not just have
+  // new updates ignored.
+  hideRemoteLiveCursor();
   fullscreenShoot.appendChild(viewfinderEl);
   fullscreenShoot.appendChild(statusLine);
   fsThumbRail.innerHTML = '';
@@ -2375,9 +2393,9 @@ async function uploadRecapRecording(){
   const blob = new Blob(recordedChunks, { type: 'video/webm' });
   const path = `${crypto.randomUUID()}.webm`;
   const { error: uploadError } = await sbClient.storage.from('session-recaps').upload(path, blob, { contentType: 'video/webm' });
-  if(uploadError) return;
+  if(uploadError){ console.error('recap upload failed (best-effort, strip flow unaffected):', uploadError); return; }
   const { data: inserted, error: insertError } = await sbClient.from('recordings').insert({ room_code: currentRoomCode, storage_path: path }).select('id').single();
-  if(insertError || !inserted) return;
+  if(insertError || !inserted){ console.error('recap DB insert failed (best-effort, strip flow unaffected):', insertError); return; }
   // Shared link points at this app's own recap viewer (?recap=<id>), not the
   // raw storage file directly, so a graceful "still processing"/expired
   // state can be shown instead of a broken page if it's opened too early.
