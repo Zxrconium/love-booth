@@ -1,6 +1,6 @@
 // Lets the site owner manually provision a coin-loaded account for someone
 // who paid through an outside channel (social-media DM, etc), instead of
-// the old self-serve Lemon Squeezy checkout. Three actions, all gated on the
+// the old self-serve Lemon Squeezy checkout. Four actions, all gated on the
 // caller being the site owner's own account:
 //   { action: 'create', username, password, coins } -> creates the auth
 //     user under a synthetic internal email (customers only ever see/use
@@ -12,6 +12,12 @@
 //     their current coin balance, for the admin panel's list view.
 //   { action: 'add_coins', user_id, amount } -> tops up an existing
 //     account's balance by `amount` (adds to, never overwrites).
+//   { action: 'delete', user_id } -> permanently deletes an account this
+//     panel created. Only ever targets rows already tracked in
+//     admin_created_accounts (never an arbitrary auth user id), then
+//     deletes the underlying auth user — profiles and
+//     admin_created_accounts both cascade-delete automatically via their
+//     FK to auth.users (see schema.sql), so nothing else needs cleanup.
 //
 // Deploy WITHOUT --no-verify-jwt (unlike the old webhook): the caller here
 // really is a logged-in Supabase user, so Supabase's platform-level JWT
@@ -190,6 +196,33 @@ Deno.serve(async (req) => {
       return json({ error: `could not add coins: ${addError.message}` }, 500);
     }
     return json({ coins: newBalance });
+  }
+
+  if (payload?.action === 'delete') {
+    const userId = String(payload?.user_id ?? '').trim();
+    if (!userId) return json({ error: 'user_id is required' }, 400);
+
+    // Only ever delete a row this panel actually created — refuses to
+    // touch an arbitrary auth user id even if one somehow reached this
+    // action (bad client state, tampered request), same trust boundary as
+    // 'add_coins' but checked explicitly since deletion is irreversible.
+    const { data: tracked, error: trackedError } = await admin
+      .from('admin_created_accounts')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (trackedError) {
+      console.error('admin-create-account: delete lookup failed', trackedError);
+      return json({ error: 'could not verify account' }, 500);
+    }
+    if (!tracked) return json({ error: 'account not found' }, 404);
+
+    const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      console.error('admin-create-account: delete failed', deleteError);
+      return json({ error: `could not delete account: ${deleteError.message}` }, 500);
+    }
+    return json({ ok: true });
   }
 
   return json({ error: 'unknown action' }, 400);

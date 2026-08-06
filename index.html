@@ -269,8 +269,39 @@
 
   /* .swap-modal.admin-modal (two classes) rather than .admin-modal alone —
      needed to outrank the later, equal-specificity base .swap-modal sizing
-     rule further down the sheet regardless of source order. */
-  .swap-modal.admin-modal{max-width:560px; width:92vw; text-align:center; padding:34px 36px;}
+     rule further down the sheet regardless of source order. .swap-modal
+     itself (the photo-swap-during-picking modal) keeps its original dark
+     styling — every color/font override below is scoped through
+     .admin-modal specifically so the two don't drag each other along. */
+  .swap-modal.admin-modal{
+    max-width:560px; width:92vw; text-align:center; padding:30px 30px 26px;
+    background:var(--machine-tan); border:3px solid var(--ink-warm);
+    box-shadow:0 8px 0 rgba(49,49,49,0.18), 0 16px 34px rgba(49,49,49,0.2);
+  }
+  .admin-modal .swap-modal-header span{ font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--coral-deep); }
+  .admin-modal .swap-modal-close{ background:var(--cream); border:2px solid var(--ink-warm); color:var(--ink-warm); }
+  .admin-modal .swap-modal-close:hover{ background:#fff; }
+  .admin-modal input{
+    width:100%; text-align:center; letter-spacing:1px;
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem;
+    padding:13px; border-radius:12px; border:2.5px solid var(--ink-warm);
+    background:var(--cream); color:var(--ink-warm); margin:0;
+    transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+  }
+  .admin-modal input::placeholder{ color:rgba(49,49,49,0.4); }
+  .admin-modal input:focus{ outline:none; border-color:var(--coral-deep); box-shadow:0 0 0 3px rgba(239,101,98,0.2); }
+  .admin-modal .auth-banner-error{ background:rgba(224,105,126,0.16); border:2px solid var(--err); color:#7a2029; }
+  .admin-modal .auth-banner-success{ background:rgba(143,209,158,0.28); border:2px solid var(--ok); color:#1f5c37; }
+  .admin-modal .btn-primary{
+    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
+    font-size:1.05rem; letter-spacing:0.5px;
+  }
+  .admin-modal .btn-primary:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .admin-modal .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
+  .admin-modal .btn-primary .btn-spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
+  .admin-modal .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
+  .admin-modal .btn-ghost:hover:not(:disabled){ background:#fff; }
   .admin-form{display:flex; flex-direction:column; gap:16px; text-align:left; margin-top:4px;}
   .admin-password-row{display:flex; gap:10px; align-items:center;}
   .admin-password-row input{flex:1;}
@@ -278,12 +309,15 @@
   .admin-view-switch{margin-top:14px;}
   #adminAccountsSearch{margin-bottom:18px;}
   .admin-accounts-list{text-align:left;}
-  .admin-accounts-title{font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(251,243,231,0.45); margin:0 0 10px;}
-  .admin-account-row{display:flex; flex-direction:column; gap:8px; padding:11px 14px; border-radius:10px; background:rgba(251,243,231,0.04); font-size:0.85rem; margin-bottom:8px;}
+  .admin-accounts-title{font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:rgba(49,49,49,0.55); margin:0 0 10px; font-weight:700;}
+  .admin-account-row{display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:10px; background:var(--cream); border:2px solid var(--ink-warm); font-size:0.85rem; margin-bottom:10px;}
   .admin-account-info{display:flex; justify-content:space-between; gap:10px;}
-  .admin-account-email{color:var(--paper); word-break:break-all;}
-  .admin-account-coins{color:var(--gold); font-weight:700; flex:none;}
-  .admin-account-addcoins{display:flex; gap:8px; align-items:stretch;}
+  .admin-account-email{color:var(--ink-warm); font-weight:600; word-break:break-all;}
+  .admin-account-coins{color:var(--coral-deep); font-weight:700; flex:none;}
+  /* Add-coins and delete sit side by side as two related row-actions, each
+     keeping its own internal layout below. */
+  .admin-account-actions{display:flex; gap:8px; align-items:stretch;}
+  .admin-account-addcoins{display:flex; gap:8px; align-items:stretch; flex:1; min-width:0;}
   /* Both selectors below are deliberately two classes deep (rather than a
      single .admin-account-add-input / .admin-account-add-btn class) so they
      reliably outrank .admin-modal input (sizing/uppercase from the bigger-
@@ -293,13 +327,25 @@
   .admin-account-addcoins .admin-account-add-input{
     flex:1 1 0; min-width:0; width:auto; text-align:left; letter-spacing:normal; text-transform:none;
     font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem;
-    padding:9px 11px; border-radius:9px; border:1.5px solid rgba(215,162,74,0.3);
-    background:rgba(251,243,231,0.05); color:var(--paper); margin:0;
+    padding:9px 11px; border-radius:9px; border:2px solid var(--ink-warm);
+    background:#fff; color:var(--ink-warm); margin:0;
   }
-  .admin-account-addcoins .admin-account-add-input::placeholder{ color:rgba(251,243,231,0.4); text-transform:none; letter-spacing:normal; }
-  .admin-account-addcoins .admin-account-add-input:focus{ outline:none; border-color:var(--gold); background:rgba(251,243,231,0.09); }
-  .admin-account-addcoins .admin-account-add-btn{width:auto; flex:none; padding:0 16px; font-size:0.78rem; white-space:nowrap;}
-  .admin-empty-list{font-size:0.8rem; color:rgba(251,243,231,0.4); text-align:center; padding:12px 0;}
+  .admin-account-addcoins .admin-account-add-input::placeholder{ color:rgba(49,49,49,0.4); text-transform:none; letter-spacing:normal; }
+  .admin-account-addcoins .admin-account-add-input:focus{ outline:none; border-color:var(--coral-deep); }
+  .admin-account-addcoins .admin-account-add-btn{
+    width:auto; flex:none; padding:0 16px; font-size:0.78rem; white-space:nowrap;
+    background:var(--mint); border:2px solid var(--ink-warm); color:var(--ink-warm);
+  }
+  .admin-account-addcoins .admin-account-add-btn:hover:not(:disabled){ background:#d5f2e6; }
+  .admin-account-delete-btn{
+    width:auto; flex:none; padding:0 14px; font-size:0.78rem; white-space:nowrap;
+    background:#fff; border:2px solid var(--ink-warm); color:var(--ink-warm);
+  }
+  .admin-account-delete-btn:hover:not(:disabled){ border-color:var(--err); color:var(--err); }
+  /* Armed by the first click — a visibly different, more alarming state so
+     the second click (the one that actually deletes) is never an accident. */
+  .admin-account-delete-btn.is-confirming{ background:var(--err); border-color:var(--ink-warm); color:#fff; }
+  .admin-empty-list{font-size:0.8rem; color:rgba(49,49,49,0.5); text-align:center; padding:12px 0;}
 
   /* Soft glow-pulse originating from the exact tap point, layered on top of
      (not replacing) the existing :active press-down scale — see the
@@ -1243,6 +1289,7 @@ const TRANSLATIONS = {
     addCoinsPlaceholder: '+ COINS', addCoinsBtn: 'add',
     enterValidAddCoins: 'enter a valid number of coins to add.',
     coinsAddedSuccess: 'added {amount} coins to {username}',
+    deleteAccountBtn: 'delete', confirmDeleteBtn: 'confirm?', accountDeletedSuccess: 'deleted {username}’s account',
   },
   fil: {
     langName: 'Filipino',
@@ -1327,6 +1374,7 @@ const TRANSLATIONS = {
     addCoinsPlaceholder: '+ COINS', addCoinsBtn: 'idagdag',
     enterValidAddCoins: 'maglagay ng valid na bilang ng coins na idadagdag.',
     coinsAddedSuccess: 'nadagdag ang {amount} coins kay {username}',
+    deleteAccountBtn: 'burahin', confirmDeleteBtn: 'sigurado?', accountDeletedSuccess: 'nabura ang account ni {username}',
   },
   es: {
     langName: 'Español',
@@ -1411,6 +1459,7 @@ const TRANSLATIONS = {
     addCoinsPlaceholder: '+ MONEDAS', addCoinsBtn: 'agregar',
     enterValidAddCoins: 'ingresa una cantidad válida de monedas para agregar.',
     coinsAddedSuccess: 'se agregaron {amount} monedas a {username}',
+    deleteAccountBtn: 'eliminar', confirmDeleteBtn: '¿confirmar?', accountDeletedSuccess: 'se eliminó la cuenta de {username}',
   },
   ko: {
     langName: '한국어',
@@ -1495,6 +1544,7 @@ const TRANSLATIONS = {
     addCoinsPlaceholder: '+ 코인', addCoinsBtn: '추가',
     enterValidAddCoins: '추가할 유효한 코인 수를 입력해 주세요.',
     coinsAddedSuccess: '{username}에게 코인 {amount}개를 추가했습니다',
+    deleteAccountBtn: '삭제', confirmDeleteBtn: '확인?', accountDeletedSuccess: '{username} 계정을 삭제했습니다',
   },
   ja: {
     langName: '日本語',
@@ -1579,6 +1629,7 @@ const TRANSLATIONS = {
     addCoinsPlaceholder: '+ コイン', addCoinsBtn: '追加',
     enterValidAddCoins: '追加する有効なコイン数を入力してください。',
     coinsAddedSuccess: '{username} に {amount} コインを追加しました',
+    deleteAccountBtn: '削除', confirmDeleteBtn: '本当に？', accountDeletedSuccess: '{username} のアカウントを削除しました',
   },
 };
 
@@ -2097,8 +2148,54 @@ function renderAdminAccounts(accounts){
     });
     addInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addBtn.click(); });
 
+    // Deletion is irreversible, so it's a deliberate two-click confirm
+    // (click once to arm, click again within a few seconds to actually
+    // delete) rather than a native confirm() popup or an instant action.
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'admin-account-delete-btn';
+    deleteBtn.textContent = t('deleteAccountBtn');
+    let confirmTimer = null;
+    function resetDeleteBtn(){
+      clearTimeout(confirmTimer);
+      confirmTimer = null;
+      deleteBtn.classList.remove('is-confirming');
+      deleteBtn.textContent = t('deleteAccountBtn');
+    }
+    deleteBtn.addEventListener('click', async ()=>{
+      if(!confirmTimer){
+        deleteBtn.classList.add('is-confirming');
+        deleteBtn.textContent = t('confirmDeleteBtn');
+        confirmTimer = setTimeout(resetDeleteBtn, 4000);
+        return;
+      }
+      resetDeleteBtn();
+      if(!sbClient) return;
+      deleteBtn.disabled = true;
+      addBtn.disabled = true;
+      try{
+        const { data, error } = await sbClient.functions.invoke('admin-create-account', {
+          body: { action: 'delete', user_id: acc.user_id },
+        });
+        if(error) throw new Error((await resolveFunctionsErrorMessage(error)) || t('authGenericError'));
+        if(data && data.error) throw new Error(data.error);
+        adminAccountsCache = adminAccountsCache.filter(a => a.user_id !== acc.user_id);
+        row.remove();
+        showAdminSuccess(t('accountDeletedSuccess', { username: acc.username }));
+      }catch(e){
+        showAdminError((e && e.message) || t('authGenericError'));
+        deleteBtn.disabled = false;
+        addBtn.disabled = false;
+      }
+    });
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'admin-account-actions';
+    actionsRow.appendChild(addRow);
+    actionsRow.appendChild(deleteBtn);
+
     row.appendChild(info);
-    row.appendChild(addRow);
+    row.appendChild(actionsRow);
     adminAccountsRows.appendChild(row);
   });
 }
