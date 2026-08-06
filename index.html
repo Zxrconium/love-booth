@@ -36,12 +36,20 @@
     background:
       linear-gradient(180deg, rgba(255,232,194,0.4), rgba(255,217,153,0.45)),
       url('assets/street-bg.png');
-    background-size:auto, min(1100px, 100%) auto;
+    background-size:auto, min(1400px, 100%) auto;
     background-repeat:no-repeat, repeat-x;
     background-position:center, left bottom;
     font-family:'Poppins',sans-serif; color:var(--paper);
     display:flex; align-items:center; justify-content:center;
     padding:clamp(20px,4vw,40px) 16px;
+  }
+  /* Height-based sizing fills the viewport with no gap at the top, but on
+     a narrow/portrait phone it forces a tile so wide relative to the
+     screen that you only ever see a heavily zoomed-in sliver of one shop
+     — worse than the gap it fixes. Width-based sizing above keeps the
+     whole illustration recognizable there instead. */
+  @media (min-width:700px){
+    body{ background-size:auto, auto 100vh; }
   }
   /* The street illustration is a literal background asset (not a mood
      board) — the peach gradient layered over it via background-image
@@ -962,7 +970,7 @@
         </defs>
         <path class="curtain-shape"
           d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
-          fill="url(#ginghamPattern)" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
+          fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     </div>
   </div>
