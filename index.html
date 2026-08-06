@@ -263,9 +263,9 @@
     35%{ opacity:1; }
     100%{ opacity:0; transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); }
   }
-  .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:rgba(49,49,49,0.55); font-family:'Kalam',cursive; font-weight:700; font-size:0.85rem; text-decoration:underline; padding:4px; width:auto;}
+  .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:var(--ink-warm); font-family:'Kalam',cursive; font-weight:700; font-size:0.85rem; text-decoration:underline; padding:4px; width:auto;}
   .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
-  .logout-link:hover{ color:var(--ink-warm); }
+  .logout-link:hover{ color:var(--coral-deep); }
 
   /* .swap-modal.admin-modal (two classes) rather than .admin-modal alone —
      needed to outrank the later, equal-specificity base .swap-modal sizing
