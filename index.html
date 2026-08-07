@@ -575,6 +575,20 @@
   .booth-card{
     width:100%; max-width:400px; position:relative;
   }
+  /* Leaving the room, restyled as the mockup's small open-door + arrow
+     icon instead of a text link — same #leaveBtn element/click handler as
+     before (teardownAndReturnToGate), just a different presentation, so it
+     sits consistently in the same spot across all four booth states
+     (connected/disconnected/picking/aftermath) rather than needing its own
+     per-state placement. */
+  .door-icon-btn{
+    position:absolute; top:-38px; left:-6px; z-index:5;
+    width:38px; height:30px; padding:0; background:none; border:none;
+    display:flex; align-items:center; justify-content:flex-start; cursor:pointer;
+  }
+  .door-icon-btn svg{ width:100%; height:100%; overflow:visible; }
+  .door-icon-btn:hover svg{ transform:translateX(-2px); }
+  .door-icon-btn svg{ transition:transform .15s ease; }
   /* Purely decorative, flanks the whole two-column booth layout — hidden
      below 900px where there's no longer room beside both columns without
      cramping them (the shooting/picking screens are already the widest,
@@ -701,7 +715,7 @@
   }
   .booth-card .btn-reconnect:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
   .booth-card .btn-reconnect:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
-  .booth-card select, .picking-right select{
+  .booth-card select{
     background-color:var(--cream); color:var(--ink-warm);
     background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23313131%22/></svg>');
     border:2.5px solid var(--ink-warm); font-family:'Poppins',sans-serif;
@@ -769,7 +783,7 @@
   .leave-link{background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.7rem; text-decoration:underline; padding:4px; width:auto;}
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
 
-  .output-column{display:flex; flex-direction:row; align-items:flex-start; justify-content:center; gap:16px; flex-wrap:wrap;}
+  .output-column{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px;}
   .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px;}
   /* The mockup's "your photo will appear here" sign, permanently visible
      above the output slot — the app doesn't have a signal for "the strip
@@ -866,46 +880,24 @@
   }
   .fs-thumb img{ width:100%; height:100%; object-fit:cover; display:block; animation:thumbPopIn 0.3s cubic-bezier(.34,1.56,.64,1) both; }
 
-  .picking-screen{
-    display:none; position:fixed; inset:0; z-index:190;
-    background:var(--peach-bg);
-    flex-direction:row; align-items:flex-start; justify-content:center;
-    padding:clamp(14px,2.5vw,32px); gap:24px; overflow-y:auto;
+  /* Photo-picking now happens in place of the live camera view, inside the
+     exact same picture-frame position/size/border as .viewfinder (instead
+     of a separate full-viewport overlay screen) — so the barber-poles,
+     door icon, hint note, and the output-slot's live strip preview all
+     stay visible and in the same spot the whole time, across connected,
+     disconnected, picking, and aftermath alike. */
+  .picking-frame{
+    display:none; position:relative; width:100%; box-sizing:border-box;
+    border-radius:14px; background:#000; border:8px solid var(--machine-tan);
+    box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3);
+    padding:8px;
   }
-  .picking-screen.show{ display:flex; animation:fsIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
-  .picking-screen.hide{ display:flex; animation:fsOut 0.25s ease both; }
-  .picking-left{ flex:1 1 auto; min-width:0; max-width:900px; padding:4px; border:8px solid var(--machine-tan); box-shadow:0 0 0 3px var(--ink-warm); border-radius:14px; background:#000; }
-  .picking-grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr));
-    gap:16px; align-content:start; max-height:none; margin:0; width:100%;
-  }
-  .picking-right{
-    flex:0 0 240px; display:flex; flex-direction:column; align-items:center;
-    gap:12px; padding:4px;
-  }
-  .picking-screen .choice-label{ font-family:'Kalam',cursive; color:var(--coral-deep); }
-  /* Plain rectangle box (not the arched output-slot) — the picking-screen
-     mockup specifically shows a simple bordered rectangle here, unlike the
-     arch used everywhere else the strip preview appears. */
-  .picking-strip-slot{
-    display:flex; flex-direction:column; align-items:center; gap:10px; width:100%;
-    background:var(--cream); border:3px solid var(--ink-warm); border-radius:10px; padding:14px 10px;
-  }
-  .picking-right .selection-actions{ width:100%; max-width:230px; }
-  .picking-right .btn-gold{
-    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
-    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
-  }
-  .picking-right .btn-gold:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
-  .picking-right .btn-gold:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
-  .picking-right .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
-  .picking-right .btn-ghost:hover{ background:#fff; }
-  @media (max-width:500px){
-    .picking-screen{ flex-direction:column; justify-content:flex-start; padding:14px; }
-    .picking-left{ max-width:100%; width:100%; flex:none; }
-    .picking-grid{ grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); }
-    .picking-right{ flex:none; width:100%; max-width:340px; }
-  }
+  .picking-frame.show{ display:block; }
+  .picking-frame .thumb-grid{ margin:0; max-height:none; padding:0; }
+  .picking-controls{ display:none; flex-direction:column; align-items:center; gap:10px; margin-top:14px; }
+  .picking-controls.show{ display:flex; }
+  .picking-controls .choice-label{ font-family:'Kalam',cursive; color:var(--coral-deep); margin:0; text-align:center; }
+  .picking-controls .selection-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
   @keyframes modalBackdropIn{
     from{ opacity:0; }
@@ -923,10 +915,10 @@
     100%{ transform:scale(1); }
   }
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
-  /* Sits beside the strip (as a row item in .output-column) rather than
-     below it, so the QR is visible without scrolling — sized as a slim
-     sidebar instead of matching the strip's own width. */
-  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:140px; flex:none; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:12px 10px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
+  /* Stacked directly under the output slot (as a column item in
+     .output-column) rather than requiring a scroll further down the page —
+     matches the strip's own width instead of being a separate sidebar. */
+  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:230px; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:12px 10px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .recap-panel.show{display:flex;}
   .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1rem; color:var(--coral-deep); margin:0; text-align:center;}
   #recapQr{border-radius:8px; background:#fff; padding:6px; border:2px solid var(--ink-warm); width:110px; height:110px;}
@@ -945,16 +937,16 @@
   .output-column .btn-ghost:hover{ background:#fff; }
   .recap-watch-btn{width:100%; font-size:0.7rem; padding:8px 6px;}
   .recap-expiry{font-size:0.6rem; color:rgba(49,49,49,0.5); margin:0; text-align:center;}
-  /* Strip and recap QR both shrink so they still fit side by side on a
-     phone-width screen instead of the QR wrapping below and needing a
-     scroll to reach. Placed after the base rules above so it wins at
-     matching widths regardless of source order. */
+  /* Strip and recap panel both shrink a bit on phone-width screens to
+     leave more room for the picture-frame/grid above them. Placed after
+     the base rules above so it wins at matching widths regardless of
+     source order. */
   @media (max-width:500px){
     .output-column{ gap:10px; }
     .strip-wrap{ max-width:180px; }
     .strip-wrap .btn-gold{ max-width:180px; font-size:0.78rem; padding:11px 8px; }
     .output-slot, .strip-print-frame, #stripCanvas, .theme-picker{ max-width:180px; }
-    .recap-panel{ width:112px; padding:10px 7px; }
+    .recap-panel{ max-width:180px; padding:10px 7px; }
     .recap-title{ font-size:0.82rem; }
     #recapQr{ width:88px; height:88px; padding:4px; }
   }
@@ -971,7 +963,7 @@
   .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
   .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(49,49,49,0.6); font-weight:600;}
   .theme-select{width:100%;}
-  .output-column select, .picking-right select{
+  .output-column select{
     background-color:var(--cream); color:var(--ink-warm);
     background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23313131%22/></svg>');
     border:2.5px solid var(--ink-warm); font-family:'Poppins',sans-serif;
@@ -1157,6 +1149,13 @@
   <div class="layout" id="boothLayout" style="display:none;">
     <div class="barber-pole" aria-hidden="true"></div>
     <div class="booth-card">
+      <button class="door-icon-btn" id="leaveBtn" type="button" data-i18n-aria="leaveRoom" aria-label="leave room">
+        <svg viewBox="0 0 44 32" aria-hidden="true">
+          <path d="M27 4 L27 28 L15 25 L15 7 Z" fill="#313131"/>
+          <circle cx="19" cy="16" r="1.4" fill="#fff8ec"/>
+          <path d="M10 16 L1 16 M1 16 L6 11 M1 16 L6 21" stroke="#313131" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </button>
       <div class="room-tag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
       <div class="code-row" id="codeRow" style="display:none;">
         <button class="copy-btn" id="copyBtn" type="button" data-i18n="copyCode">copy code</button>
@@ -1178,6 +1177,9 @@
         </div>
         <div id="countdown" class="countdown">3</div>
         <div id="flash" class="flash"></div>
+      </div>
+      <div class="picking-frame" id="pickingFrame">
+        <div class="thumb-grid" id="thumbGrid"></div>
       </div>
       <div class="camera-permission-banner" id="cameraPermissionBanner" role="alert">
         <span class="camera-permission-icon" aria-hidden="true">🚫🎥</span>
@@ -1210,13 +1212,19 @@
           </button>
         </div>
       </div>
+      <div class="picking-controls" id="pickingControls">
+        <p class="choice-label" id="selectionCounter">0 of 4 selected — tap your favorites</p>
+        <div class="selection-actions">
+          <button class="btn-primary" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
+          <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
+        </div>
+      </div>
       <ol class="hint-list">
         <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
         <li data-i18n="hintStep2">You pick your favorite 4 to build the strip</li>
         <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
       </ol>
       <div class="leave-row">
-        <button class="btn-ghost btn-small" id="leaveBtn" type="button" data-i18n="leaveRoom">leave room</button>
         <button class="leave-link" id="countdownBackBtn" type="button" data-i18n="back" style="display:none;">back</button>
       </div>
     </div>
@@ -1254,30 +1262,13 @@
   </div>
 </div>
 
-<!-- These full-viewport overlays are deliberately siblings of .scene (not
-     nested inside it) so their z-index actually wins against the coin
-     badge/log-out/admin links: .scene has its own z-index:1 (to sit above
-     the decorative body::before glow), which would otherwise trap any
-     z-index set on a descendant inside that same stacking context,
-     regardless of how high it's set. -->
+<!-- Deliberately a sibling of .scene (not nested inside it) so its z-index
+     actually wins against the coin badge/log-out/admin links: .scene has
+     its own z-index:1 (to sit above the decorative body::before glow),
+     which would otherwise trap any z-index set on a descendant inside
+     that same stacking context, regardless of how high it's set. -->
 <div class="fullscreen-shoot" id="fullscreenShoot">
   <div class="fs-thumb-rail" id="fsThumbRail"></div>
-</div>
-
-<div class="picking-screen" id="pickingScreen">
-  <div class="barber-pole" aria-hidden="true"></div>
-  <div class="picking-left">
-    <div class="thumb-grid picking-grid" id="thumbGrid"></div>
-  </div>
-  <div class="picking-right">
-    <div class="picking-strip-slot" id="pickingStripSlot"></div>
-    <p class="choice-label" id="selectionCounter">0 of 4 selected — tap your favorites</p>
-    <div class="selection-actions">
-      <button class="btn-gold" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
-      <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
-    </div>
-  </div>
-  <div class="barber-pole" aria-hidden="true"></div>
 </div>
 
 <div class="swap-modal-backdrop" id="swapModalBackdrop">
@@ -2660,8 +2651,8 @@ const reconnectBtn = document.getElementById('reconnectBtn');
 const filterSelect = document.getElementById('filterSelect');
 const mainControls = document.getElementById('mainControls');
 const countdownChoice = document.getElementById('countdownChoice');
-const pickingScreen = document.getElementById('pickingScreen');
-const pickingStripSlot = document.getElementById('pickingStripSlot');
+const pickingFrame = document.getElementById('pickingFrame');
+const pickingControls = document.getElementById('pickingControls');
 const themePicker = document.getElementById('themePicker');
 const selectionCounter = document.getElementById('selectionCounter');
 const thumbGrid = document.getElementById('thumbGrid');
@@ -2698,6 +2689,10 @@ function enterFullscreenShoot(){
   // sharing is supposed to be fully dropped during the shoot, not just have
   // new updates ignored.
   hideRemoteLiveCursor();
+  // Always visible inside the fullscreen overlay, even on a retake started
+  // straight out of picking mode — where it would otherwise still carry
+  // the display:none picking mode leaves on it once a shoot ends.
+  viewfinderEl.style.display = '';
   fullscreenShoot.appendChild(viewfinderEl);
   fullscreenShoot.appendChild(statusLine);
   fsThumbRail.innerHTML = '';
@@ -2735,6 +2730,10 @@ function exitFullscreenShoot(){
     fullscreenShoot.classList.remove('hide');
     statusLineHome.parent.insertBefore(statusLine, statusLineHome.next);
     viewfinderHome.parent.insertBefore(viewfinderEl, viewfinderHome.next);
+    // Only now — back in .booth-card, not still visible inside the overlay
+    // that just closed — is it safe to hide it in favor of the picking
+    // grid that's already been rendering underneath since showSelectionPanel().
+    if(pickingActive) viewfinderEl.style.display = 'none';
     fsThumbRail.innerHTML = '';
   };
   fullscreenShoot.addEventListener('animationend', restore);
@@ -2751,22 +2750,28 @@ function forceExitFullscreenShoot(){
   stopRecapRecording(false);
 }
 
-/* ---------------- Full-screen picking screen ----------------
-   Same reparenting trick as the shoot overlay above: the theme picker and
-   strip canvas are the same live nodes used by the boxed final-result
-   screen, moved into the full-viewport picking overlay for the duration of
-   photo selection (so the strip preview updates live as photos are picked)
-   and moved back to their original spot afterward. */
-const themePickerHome = { parent: themePicker.parentNode, next: themePicker.nextSibling };
-const stripCanvasHome = { parent: stripCanvas.parentNode, next: stripCanvas.nextSibling };
+/* ---------------- Photo-picking mode ----------------
+   The picking grid swaps in for .viewfinder, and its own control row swaps
+   in for .mainControls, in place — no more full-viewport overlay, so the
+   theme picker/output-slot/strip canvas just stay where they always live
+   and keep updating live as photos are picked, and the barber-poles/door
+   icon/hint note never have to disappear and reappear. */
 let pickingActive = false;
-/* Set by buildStripFrom() right before hiding the picking screen, so the
-   "print out" reveal plays only once the strip is back in its boxed home
-   and actually visible — not while still hidden behind the still-fading
-   picking overlay. Left false for every other way the picking screen can
-   close (cancel, reset, teardown), so it never plays for those. */
+/* Set by buildStripFrom() right before leaving picking mode, so the
+   "print out" reveal plays once the strip is actually visible in the
+   output slot — not while the grid is still covering it. Left false for
+   every other way picking mode can end (cancel, reset, teardown), so it
+   never plays for those. */
 let pendingPrintAnimation = false;
 
+/* Called right as a shoot starts (before enterFullscreenShoot reparents
+   viewfinderEl into the fullscreen overlay) so the grid is already
+   rendering — with pending placeholders filling in live via fillThumbSlot
+   as each shot lands — underneath that higher-z-index overlay the whole
+   time. It deliberately does NOT touch viewfinderEl's own display here:
+   that has to wait until exitFullscreenShoot() actually moves the node
+   back into .booth-card, or hiding it now would hide the live camera
+   feed inside the fullscreen shoot too, since it's still the same node. */
 function showSelectionPanel(){
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'none';
@@ -2774,10 +2779,8 @@ function showSelectionPanel(){
   pickingActive = true;
   pendingPrintAnimation = false;
   cancelStripPrintSequence();
-  pickingStripSlot.appendChild(themePicker);
-  pickingStripSlot.appendChild(stripCanvas);
-  pickingScreen.classList.remove('hide');
-  pickingScreen.classList.add('show');
+  pickingFrame.classList.add('show');
+  pickingControls.classList.add('show');
   renderThumbGrid();
 }
 
@@ -2785,30 +2788,20 @@ function hideSelectionPanel(){
   mainControls.style.display = 'flex';
   if(!pickingActive) return;
   pickingActive = false;
-  pickingScreen.classList.remove('show');
-  pickingScreen.classList.add('hide');
-  const restore = (e)=>{
-    if(e && e.target !== pickingScreen) return;
-    pickingScreen.removeEventListener('animationend', restore);
-    pickingScreen.classList.remove('hide');
-    themePickerHome.parent.insertBefore(themePicker, themePickerHome.next);
-    stripCanvasHome.parent.insertBefore(stripCanvas, stripCanvasHome.next);
-    if(pendingPrintAnimation){
-      pendingPrintAnimation = false;
-      beginStripPrintSequence();
-    }
-  };
-  pickingScreen.addEventListener('animationend', restore);
+  viewfinderEl.style.display = '';
+  pickingFrame.classList.remove('show');
+  pickingControls.classList.remove('show');
+  if(pendingPrintAnimation){
+    pendingPrintAnimation = false;
+    beginStripPrintSequence();
+  }
 }
 
-/* Instant version (no fade-out) for full teardown/reset scenarios */
+/* Instant version — same as hideSelectionPanel now that there's no fade
+   animation to skip, kept as a separate name so call sites (teardown/reset)
+   still read the same as before. */
 function forceHideSelectionPanel(){
-  mainControls.style.display = 'flex';
-  if(!pickingActive) return;
-  pickingActive = false;
-  pickingScreen.classList.remove('show', 'hide');
-  themePickerHome.parent.insertBefore(themePicker, themePickerHome.next);
-  stripCanvasHome.parent.insertBefore(stripCanvas, stripCanvasHome.next);
+  hideSelectionPanel();
 }
 
 /* ---------------- Session recap recording ----------------
@@ -4372,7 +4365,7 @@ redrawStrip();
 function refreshDynamicLabels(){
   setAuthMode(authMode);
   if(!reconnectBtn.classList.contains('show')) reconnectBtn.textContent = t('reconnect');
-  if(pickingScreen.classList.contains('show')) updateSelectionCounter();
+  if(pickingActive) updateSelectionCounter();
   if(swapModalSlot !== null) swapModalTitle.textContent = t('chooseForSlot', { slot: swapModalSlot + 1 });
   Array.from(themeSelect.options).forEach(opt=>{ opt.textContent = t(opt.dataset.labelKey); });
   if(adminBackdrop.classList.contains('show')){
