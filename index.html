@@ -28,6 +28,11 @@
     --mint:#c0ecdf; --mint-deep:#7eb3bb;
     --coral:#ef6562; --coral-deep:#d1514e; --coral-soft:#ffaea8;
     --cream:#fff8ec; --ink-warm:#313131;
+    /* Film-strip window on the gate/login machine only — a warmer, more
+       saturated orange than anything else in the palette, so the little
+       instant-photo window reads as its own recessed nook rather than
+       blending into the surrounding peach body. */
+    --film-frame:#f2a765; --film-window:#d97f45;
   }
   *{box-sizing:border-box;}
   html{-webkit-text-size-adjust:100%; overflow-x:hidden;}
@@ -76,19 +81,20 @@
     100%{ transform:translate(2%,-1.5%) scale(1.03); }
   }
   .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
-  /* The "LUV BOOTH" plaque sign — every reference mockup shows this as a
-     small mint sign hanging above the machine, hand-lettered in coral. Kept
-     as the same persistent top-of-page element it always was (rather than a
-     separate sign only on the gate screen) so every screen — including
-     ones not yet reskinned in later stages — gets a consistent, correctly
-     translated title immediately. */
+  /* The "LUV BOOTH" plaque sign started as a floating pill shown on every
+     screen. The gate/login machine now grows its own sign, physically
+     mounted on a post as part of that illustration (see .gate-sign), so
+     this floating version is hidden whenever the gate is showing and only
+     shown for the screens that don't have their own sign yet (booth,
+     picking, etc.) — toggled via .show alongside gate.style.display in JS. */
   .marquee{
-    display:inline-flex; align-items:center; gap:10px;
+    display:none; align-items:center; gap:10px;
     font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
     font-size:clamp(1.5rem,5vw,2.1rem); text-align:center; letter-spacing:0.5px;
     background:var(--mint); border:2.5px solid var(--ink-warm); border-radius:14px;
     padding:10px 26px; box-shadow:0 4px 0 rgba(49,49,49,0.25);
   }
+  .marquee.show{ display:inline-flex; }
   .marquee .sparkle{
     display:inline-block; animation:sparkleTwinkle 3.4s ease-in-out infinite;
   }
@@ -129,32 +135,98 @@
     from{ opacity:0; transform:translateY(14px) scale(0.98); }
     to{ opacity:1; transform:translateY(0) scale(1); }
   }
-  /* The gate is the illustrated machine's front panel: a tan body with a
-     mint roofline trim, and — on wide enough screens where there's room
-     beside the buttons — a decorative gingham curtain over a small recessed
-     window, pulled open once on load. .gate-content wraps the real
-     interactive children (gate-cards/join-step/auth-step/footnote/error) so
-     the curtain can sit beside them as a proper flex column instead of
-     absolutely-positioned guesswork that risked overlapping the form. */
-  .gate{
-    width:100%; max-width:560px; position:relative;
-    background:var(--machine-tan); border:3px solid var(--ink-warm);
-    border-radius:8px 8px 26px 26px; padding:34px 22px 30px;
-    box-shadow:0 8px 0 rgba(49,49,49,0.18), 0 16px 34px rgba(49,49,49,0.2);
+  /* The gate is the illustrated machine's front panel — a stepped two-block
+     body (a wide content panel plus a narrower, taller door panel with a
+     "LUV BOOTH" sign mounted on a post above it) rather than a plain
+     rectangular card. Both panels are ordinary flex children sized by their
+     own content (so dynamic i18n text / error banners never overflow a
+     fixed shape) — the "step" itself is a purely decorative absolutely
+     positioned collar on the door panel that always pokes a fixed distance
+     above whatever height the row ends up being, so it stays correct
+     regardless of content height. */
+  /* Reserves room above .gate-machine for the sign, which pokes above its
+     own box via negative positioning — sized to clear the sign at each of
+     its own breakpoints (see .gate-sign below) so it's never clipped by
+     the viewport/page edge above. */
+  .gate{ width:100%; max-width:620px; padding-top:112px; }
+  @media (max-width:560px){ .gate{ padding-top:88px; } }
+  @media (max-width:400px){ .gate{ padding-top:40px; } }
+  .gate-machine{
+    display:flex; align-items:stretch; width:100%; position:relative;
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
-    display:flex; align-items:stretch; gap:16px;
+    filter:drop-shadow(0 8px 0 rgba(49,49,49,0.18)) drop-shadow(0 14px 26px rgba(49,49,49,0.22));
   }
-  .gate-content{ flex:1; min-width:0; text-align:center; }
-  .gate::before{
-    content:''; position:absolute; top:-3px; left:-3px; right:-3px; height:22px;
-    background:var(--mint); border:3px solid var(--ink-warm); border-bottom:none;
-    border-radius:8px 8px 0 0;
+  .gate-panel-left{
+    flex:1 1 auto; min-width:0; position:relative;
+    background:var(--machine-tan); border:3px solid var(--ink-warm); border-right:1.5px solid rgba(49,49,49,0.3);
+    border-radius:8px 0 0 24px; padding:44px 20px 26px;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
   }
+  .gate-panel-left::before{
+    content:''; position:absolute; top:-3px; left:-3px; right:0; height:20px;
+    background:var(--mint); border:3px solid var(--ink-warm); border-right:none; border-bottom:none;
+    border-radius:8px 0 0 0;
+  }
+  .gate-content{ width:100%; min-width:0; text-align:center; position:relative; z-index:1; }
+  .gate-panel-right{
+    flex:none; width:118px; position:relative;
+    background:var(--machine-tan); border:3px solid var(--ink-warm); border-left:none;
+    border-radius:0 10px 24px 4px; padding:24px 8px 8px;
+    display:flex; flex-direction:column;
+  }
+  /* The raised "collar": same body color, sitting a fixed distance above
+     the panel's real top edge so the door column always reads as taller
+     than the content column, however tall either one's content grows. */
+  .gate-panel-right::before{
+    content:''; position:absolute; top:-50px; left:-3px; right:-3px; height:70px;
+    background:var(--machine-tan); border:3px solid var(--ink-warm); border-bottom:none; border-left:none;
+    border-radius:0 10px 0 0; z-index:0;
+  }
+  .gate-panel-right::after{
+    content:''; position:absolute; top:-50px; left:-3px; right:-3px; height:20px;
+    background:var(--mint); border:3px solid var(--ink-warm); border-bottom:none; border-left:none;
+    border-radius:0 10px 0 0; z-index:1;
+  }
+  @media (max-width:560px){
+    .gate-panel-right{ width:84px; padding-top:20px; }
+    .gate-panel-right::before{ top:-38px; height:54px; }
+    .gate-panel-right::after{ top:-38px; height:16px; }
+  }
+  /* Little peg feet at the base corners — purely decorative, absolutely
+     positioned off .gate-machine so they never affect layout height. */
+  .gate-foot{ position:absolute; bottom:-14px; width:20px; height:16px; background:var(--coral-soft); border:2.5px solid var(--ink-warm); border-top:none; border-radius:0 0 6px 6px; z-index:2; }
+  .gate-foot.fl{ left:22px; }
+  .gate-foot.fr{ right:26px; }
+
+  /* ---- Film-strip preview window (top of the left panel) ---- */
+  .gate-film-window{
+    width:100%; max-width:230px; height:78px; margin:0 0 14px; position:relative;
+    background:var(--film-frame); border:3px solid var(--ink-warm); border-radius:10px;
+    overflow:hidden; flex:none;
+  }
+  .gate-film-window-inner{ position:absolute; inset:6px; background:var(--film-window); border-radius:5px; overflow:visible; }
+  .film-strip{
+    position:absolute; top:50%; width:17%; height:150%;
+    border:2px solid var(--ink-warm); border-radius:5px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7%;
+    padding:8% 0;
+  }
+  .film-strip::before{
+    content:''; position:absolute; top:-6%; width:34%; height:10%;
+    background:var(--cream); border:1.5px solid var(--ink-warm); border-radius:2px;
+    transform:rotate(18deg);
+  }
+  .film-strip span{ display:block; width:64%; height:22%; background:var(--cream); border:1.5px solid var(--ink-warm); border-radius:2px; }
+  .film-strip.s1{ left:16%; background:var(--mint); transform:translateY(-50%) rotate(-10deg); z-index:1; }
+  .film-strip.s2{ left:41%; background:var(--machine-tan); transform:translateY(-50%) rotate(3deg); z-index:2; }
+  .film-strip.s3{ left:66%; background:var(--coral-soft); transform:translateY(-50%) rotate(12deg); z-index:1; }
+
+  /* ---- Door / curtain (inside .gate-panel-right) ---- */
   .gate-curtain-window{
-    display:none; position:relative; flex:none; width:120px; border-radius:10px; overflow:hidden;
-    border:3px solid var(--ink-warm); background:var(--mint-deep);
+    position:relative; flex:1; width:100%; min-height:130px; border-radius:8px 8px 3px 3px; overflow:hidden;
+    border:2.5px solid var(--ink-warm); background:var(--mint-deep);
   }
-  @media (min-width:640px){ .gate-curtain-window{ display:block; } }
+  .gate-curtain-sill{ position:absolute; left:0; right:0; bottom:0; height:9%; background:var(--cream); border-top:2px solid var(--ink-warm); z-index:1; }
   .gate-curtain-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .gate-curtain-svg .curtain-shape{
     transform-origin:top right;
@@ -167,16 +239,40 @@
     0%{ transform:translateX(0) rotate(0deg); }
     100%{ transform:translateX(60%) rotate(10deg); }
   }
+
+  /* ---- Sign, mounted on a post above the door panel's raised collar ---- */
+  .gate-sign{
+    position:absolute; top:-98px; right:-10px; width:150px; z-index:3;
+    transform:rotate(-3deg); transform-origin:bottom center;
+  }
+  .gate-sign-plaque{
+    background:var(--mint); border:3px solid var(--ink-warm); border-radius:8px;
+    padding:8px 10px; text-align:center; box-shadow:0 3px 0 rgba(49,49,49,0.25);
+    font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
+    font-size:clamp(0.95rem,3.2vw,1.15rem); letter-spacing:0.5px; white-space:nowrap;
+  }
+  .gate-sign-post{
+    width:16px; height:34px; margin:0 auto; background:var(--mint); border:3px solid var(--ink-warm); border-top:none;
+  }
+  @media (max-width:560px){
+    .gate-sign{ top:-78px; right:-8px; width:112px; }
+    .gate-sign-plaque{ padding:6px 8px; }
+    .gate-sign-post{ height:26px; }
+  }
+  @media (max-width:400px){
+    .gate-sign{ display:none; }
+  }
+
   /* .gate is also the wrapper for #joinStep/#authStep, but both of those
      already cap themselves narrower (280px/300px, margin:0 auto) regardless
      of what .gate allows, so widening it here only actually gives
      #gateCards more room — the other screens are unaffected. */
-  .gate-cards{display:flex; gap:16px; width:100%; position:relative; z-index:1;}
+  .gate-cards{display:flex; flex-direction:column; gap:12px; width:100%; max-width:230px; margin:0 auto; position:relative; z-index:1;}
   .gate-card{
     position:relative; overflow:hidden;
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
     background:var(--coral); border:3px solid var(--ink-warm);
-    border-radius:16px; padding:24px 14px; cursor:pointer; text-align:center;
+    border-radius:14px; padding:16px 14px; cursor:pointer; text-align:center;
     font-family:'Poppins',sans-serif; color:#fff;
     box-shadow:0 4px 0 var(--ink-warm);
     transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease;
@@ -194,24 +290,26 @@
      account. Being an ID selector, this wins over .gate-card's own
      display:flex when not .show, and flex layout skips it entirely when
      hidden, so Create/Join still lay out as a normal pair for everyone else. */
-  #adminLink{ display:none; }
+  #adminLink{ display:none; background:var(--cream); color:var(--ink-warm); padding:10px 14px; }
   #adminLink.show{ display:flex; }
+  #adminLink .gate-card-title{ color:var(--ink-warm); font-size:1rem; }
+  #adminLink .gate-card-sub{ color:rgba(49,49,49,0.6); }
   /* The reference mockup's buttons are plain hand-lettered pills with no
      icon — dropping the icon circle here rather than trying to restyle it
      to fit a hand-drawn look it wasn't designed for. */
   .gate-icon{ display:none; }
   .gate-card-title{
-    font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:#fff;
+    font-family:'Kalam',cursive; font-weight:700; font-size:1.15rem; color:#fff;
     text-transform:uppercase; letter-spacing:0.5px;
   }
-  .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.72rem; color:rgba(255,255,255,0.85); }
-  .gate-card-sub svg{ width:11px; height:11px; stroke:rgba(255,255,255,0.85); }
-  @media (max-width: 480px){
-    .gate-cards{ flex-direction:column; gap:14px; }
-    .gate-card{ padding:20px 20px; gap:8px; }
-  }
-  .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:0 auto;}
-  .auth-step{display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:300px; margin:0 auto;}
+  .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.68rem; color:rgba(255,255,255,0.85); }
+  .gate-card-sub svg{ width:10px; height:10px; stroke:rgba(255,255,255,0.85); }
+  /* Coin slot beneath the Create/Join buttons — pure decoration, no
+     function (payment happens via the account's coin balance, not this
+     slit), but the reference mockup shows it as part of the machine face. */
+  .gate-coin-slot{ width:10px; height:26px; margin:14px auto 0; background:var(--film-window); border:2px solid var(--ink-warm); border-radius:3px; }
+  .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px; margin:0 auto;}
+  .auth-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px; margin:0 auto;}
   .auth-form-fields{display:flex; flex-direction:column; gap:10px; width:100%;}
   .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;}
   .auth-banner-icon{flex:none; font-size:0.95rem; line-height:1.3;}
@@ -941,98 +1039,119 @@
   <div class="marquee"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
 
   <div class="gate" id="gate">
-    <div class="gate-content">
-    <div class="gate-cards" id="gateCards" style="display:none;">
-      <button class="gate-card" id="createCard" type="button">
-        <span class="gate-icon blush" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#7a4456" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>
-        </span>
-        <span class="gate-card-title" data-i18n="createTitle">Create</span>
-        <span class="gate-card-sub"><span data-i18n="createSub">a new room</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-        </span>
-      </button>
-      <button class="gate-card" id="joinCard" type="button">
-        <span class="gate-icon gold" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#5c4111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 5l3 3M18 3l3 3"/></svg>
-        </span>
-        <span class="gate-card-title" data-i18n="joinTitle">Join</span>
-        <span class="gate-card-sub"><span data-i18n="joinSub">with your partner's code</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-        </span>
-      </button>
-      <button class="gate-card" id="adminLink" type="button">
-        <span class="gate-icon paper" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#2b1b2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3L5.6 5.6"/></svg>
-        </span>
-        <span class="gate-card-title" data-i18n="adminLink">Admin</span>
-        <span class="gate-card-sub"><span data-i18n="adminCardSub">manage accounts</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-        </span>
-      </button>
-    </div>
-
-    <div class="join-step" id="joinStep" style="display:none;">
-      <input id="roomInput" data-i18n-placeholder="roomInputPlaceholder" placeholder="ENTER THEIR CODE" maxlength="8" autocomplete="off" autocapitalize="characters">
-      <button class="btn-primary" id="joinConfirmBtn" data-i18n="joinRoomBtn">join room</button>
-      <button class="leave-link" id="joinBackBtn" type="button" data-i18n="back">back</button>
-    </div>
-
-    <div class="auth-step" id="authStep" style="display:none;">
-      <div class="lang-switcher-row">
-        <select id="langSwitcher" class="lang-switcher" aria-label="Language"></select>
-      </div>
-      <div class="auth-form-fields" id="authFormFields">
-        <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
-        <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
+   <div class="gate-machine">
+    <div class="gate-panel-left">
+      <div class="gate-film-window" aria-hidden="true">
+        <div class="gate-film-window-inner">
+          <div class="film-strip s1"><span></span><span></span><span></span></div>
+          <div class="film-strip s2"><span></span><span></span><span></span></div>
+          <div class="film-strip s3"><span></span><span></span><span></span></div>
         </div>
-        <input id="authEmail" type="text" data-i18n-placeholder="emailOrUsernamePlaceholder" placeholder="EMAIL OR USERNAME" autocomplete="username" style="text-transform:none; letter-spacing:normal;">
-        <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
-        <button class="leave-link auth-forgot-link" id="forgotPasswordLink" type="button" data-i18n="forgotPasswordLink">forgot password?</button>
-        <button class="leave-link auth-forgot-link" id="backToLoginLink" type="button" data-i18n="backToLogin" style="display:none;">back to log in</button>
-        <button class="btn-primary auth-submit-btn" id="authSubmitBtn" type="button">
-          <span class="btn-spinner" id="authSpinner" aria-hidden="true"></span>
-          <span id="authSubmitLabel" data-i18n="logIn">log in</span>
+      </div>
+      <div class="gate-content">
+      <div class="gate-cards" id="gateCards" style="display:none;">
+        <button class="gate-card" id="createCard" type="button">
+          <span class="gate-icon blush" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7a4456" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>
+          </span>
+          <span class="gate-card-title" data-i18n="createTitle">Create</span>
+          <span class="gate-card-sub"><span data-i18n="createSub">a new room</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </span>
         </button>
-        <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
-        </div>
-      </div>
-      <div class="auth-confirm-card" id="resetPasswordCard" style="display:none;">
-        <span class="auth-confirm-icon" aria-hidden="true">🔑</span>
-        <p class="auth-confirm-title" data-i18n="setNewPasswordTitle">set a new password</p>
-        <div class="auth-banner auth-banner-error" id="resetPasswordErrorBanner" role="alert" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="resetPasswordErrorText"></span>
-        </div>
-        <input id="newPasswordInput" type="password" data-i18n-placeholder="newPasswordPlaceholder" placeholder="NEW PASSWORD" autocomplete="new-password" style="text-transform:none; letter-spacing:normal; width:100%;">
-        <button class="btn-primary auth-submit-btn" id="resetPasswordSubmitBtn" type="button">
-          <span class="btn-spinner" id="resetPasswordSpinner" aria-hidden="true"></span>
-          <span id="resetPasswordSubmitLabel" data-i18n="setNewPasswordBtn">set new password</span>
+        <button class="gate-card" id="joinCard" type="button">
+          <span class="gate-icon gold" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#5c4111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 5l3 3M18 3l3 3"/></svg>
+          </span>
+          <span class="gate-card-title" data-i18n="joinTitle">Join</span>
+          <span class="gate-card-sub"><span data-i18n="joinSub">with your partner's code</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </span>
         </button>
-        <div class="auth-banner auth-banner-success" id="resetPasswordSuccessBanner" style="display:none;">
-          <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="resetPasswordSuccessText"></span>
+        <button class="gate-card" id="adminLink" type="button">
+          <span class="gate-icon paper" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2b1b2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3L5.6 5.6"/></svg>
+          </span>
+          <span class="gate-card-title" data-i18n="adminLink">Admin</span>
+          <span class="gate-card-sub"><span data-i18n="adminCardSub">manage accounts</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </span>
+        </button>
+        <div class="gate-coin-slot" aria-hidden="true"></div>
+      </div>
+
+      <div class="join-step" id="joinStep" style="display:none;">
+        <input id="roomInput" data-i18n-placeholder="roomInputPlaceholder" placeholder="ENTER THEIR CODE" maxlength="8" autocomplete="off" autocapitalize="characters">
+        <button class="btn-primary" id="joinConfirmBtn" data-i18n="joinRoomBtn">join room</button>
+        <button class="leave-link" id="joinBackBtn" type="button" data-i18n="back">back</button>
+      </div>
+
+      <div class="auth-step" id="authStep" style="display:none;">
+        <div class="lang-switcher-row">
+          <select id="langSwitcher" class="lang-switcher" aria-label="Language"></select>
+        </div>
+        <div class="auth-form-fields" id="authFormFields">
+          <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
+          <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
+            <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
+          </div>
+          <input id="authEmail" type="text" data-i18n-placeholder="emailOrUsernamePlaceholder" placeholder="EMAIL OR USERNAME" autocomplete="username" style="text-transform:none; letter-spacing:normal;">
+          <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
+          <button class="leave-link auth-forgot-link" id="forgotPasswordLink" type="button" data-i18n="forgotPasswordLink">forgot password?</button>
+          <button class="leave-link auth-forgot-link" id="backToLoginLink" type="button" data-i18n="backToLogin" style="display:none;">back to log in</button>
+          <button class="btn-primary auth-submit-btn" id="authSubmitBtn" type="button">
+            <span class="btn-spinner" id="authSpinner" aria-hidden="true"></span>
+            <span id="authSubmitLabel" data-i18n="logIn">log in</span>
+          </button>
+          <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
+            <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
+          </div>
+        </div>
+        <div class="auth-confirm-card" id="resetPasswordCard" style="display:none;">
+          <span class="auth-confirm-icon" aria-hidden="true">🔑</span>
+          <p class="auth-confirm-title" data-i18n="setNewPasswordTitle">set a new password</p>
+          <div class="auth-banner auth-banner-error" id="resetPasswordErrorBanner" role="alert" style="display:none;">
+            <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="resetPasswordErrorText"></span>
+          </div>
+          <input id="newPasswordInput" type="password" data-i18n-placeholder="newPasswordPlaceholder" placeholder="NEW PASSWORD" autocomplete="new-password" style="text-transform:none; letter-spacing:normal; width:100%;">
+          <button class="btn-primary auth-submit-btn" id="resetPasswordSubmitBtn" type="button">
+            <span class="btn-spinner" id="resetPasswordSpinner" aria-hidden="true"></span>
+            <span id="resetPasswordSubmitLabel" data-i18n="setNewPasswordBtn">set new password</span>
+          </button>
+          <div class="auth-banner auth-banner-success" id="resetPasswordSuccessBanner" style="display:none;">
+            <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="resetPasswordSuccessText"></span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
-    <div class="error-msg" id="gateError" role="alert"></div>
+      <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
+      <div class="error-msg" id="gateError" role="alert"></div>
+      </div>
     </div>
-    <div class="gate-curtain-window" aria-hidden="true">
-      <svg class="gate-curtain-svg" viewBox="0 0 100 130" preserveAspectRatio="none">
-        <defs>
-          <pattern id="ginghamPattern" width="16" height="16" patternUnits="userSpaceOnUse">
-            <rect width="16" height="16" fill="#fff8ec"/>
-            <rect width="16" height="6" fill="#ef6562" opacity="0.6"/>
-            <rect width="6" height="16" fill="#ef6562" opacity="0.6"/>
-          </pattern>
-        </defs>
-        <path class="curtain-shape"
-          d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
-          fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
-      </svg>
+    <div class="gate-panel-right">
+      <div class="gate-sign" aria-hidden="true">
+        <div class="gate-sign-plaque"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
+        <div class="gate-sign-post"></div>
+      </div>
+      <div class="gate-curtain-window" aria-hidden="true">
+        <svg class="gate-curtain-svg" viewBox="0 0 100 130" preserveAspectRatio="none">
+          <defs>
+            <pattern id="ginghamPattern" width="16" height="16" patternUnits="userSpaceOnUse">
+              <rect width="16" height="16" fill="#fff8ec"/>
+              <rect width="16" height="6" fill="#ef6562" opacity="0.6"/>
+              <rect width="6" height="16" fill="#ef6562" opacity="0.6"/>
+            </pattern>
+          </defs>
+          <path class="curtain-shape"
+            d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
+            fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <div class="gate-curtain-sill"></div>
+      </div>
     </div>
+    <div class="gate-foot fl" aria-hidden="true"></div>
+    <div class="gate-foot fr" aria-hidden="true"></div>
+   </div>
   </div>
 
   <div class="layout" id="boothLayout" style="display:none;">
@@ -1717,6 +1836,7 @@ document.addEventListener('pointerdown', (e)=>{
 
 /* ---------------- Room gate ---------------- */
 const gate = document.getElementById('gate');
+const marquee = document.querySelector('.marquee');
 const gateCards = document.getElementById('gateCards');
 const joinStep = document.getElementById('joinStep');
 const roomInput = document.getElementById('roomInput');
@@ -2051,6 +2171,7 @@ logoutLink.addEventListener('click', async ()=>{
   logoutLink.classList.remove('show');
   updateAdminLinkVisibility();
   gate.style.display = 'block';
+  marquee.classList.remove('show');
   setAuthMode('login');
   showAuthStep(true);
   if(sbClient){
@@ -2475,6 +2596,7 @@ createCard.addEventListener('click', async ()=>{
   isHost = true;
   photosStartedThisRoom = false;
   gate.style.display = 'none';
+  marquee.classList.add('show');
   boothLayout.style.display = 'flex';
   startAsHost(code);
 });
@@ -2505,6 +2627,7 @@ joinConfirmBtn.addEventListener('click', ()=>{
   isHost = false;
   photosStartedThisRoom = false;
   gate.style.display = 'none';
+  marquee.classList.add('show');
   boothLayout.style.display = 'flex';
   startAsGuest(code);
 });
@@ -3645,6 +3768,7 @@ function teardownAndReturnToGate(){
   isHost = null;
   boothLayout.style.display = 'none';
   gate.style.display = 'block';
+  marquee.classList.remove('show');
   roomInput.value = '';
   showJoinStep(false);
   codeRow.style.display = 'none';
