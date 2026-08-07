@@ -40,7 +40,7 @@
     background-repeat:no-repeat, repeat-x;
     background-position:center, left bottom;
     font-family:'Poppins',sans-serif; color:var(--paper);
-    display:flex; align-items:center; justify-content:center;
+    display:flex; align-items:flex-start; justify-content:center;
     padding:clamp(20px,4vw,40px) 16px;
   }
   /* Height-based sizing fills the viewport with no gap at the top, but on
@@ -622,6 +622,11 @@
   .choice-card:hover{ background:#fff; transform:translateY(-2px); box-shadow:0 4px 0 var(--ink-warm); }
   .choice-card:active{ transform:scale(0.96) translateY(0); transition-duration:.08s; }
   .choice-card.is-default{ border-color:var(--coral); box-shadow:0 0 0 2px rgba(239,101,98,0.3); }
+  /* Brief tap confirmation before the countdown actually starts — see the
+     .choice-card click handler in JS, which holds this class for a beat
+     so the tap doesn't feel ignored right before the screen changes. */
+  .choice-card.is-chosen{ background:var(--coral); border-color:var(--coral-deep); color:#fff; transform:scale(1.08); box-shadow:0 5px 0 var(--ink-warm); }
+  .choice-card.is-chosen .choice-unit{ color:rgba(255,255,255,0.85); }
   .choice-num{font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; line-height:1;}
   .choice-unit{font-family:'Poppins',sans-serif; font-size:0.7rem; color:rgba(49,49,49,0.55);}
   .choice-tag{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--coral); color:#fff; font-size:0.6rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:2px 8px; border-radius:999px;}
@@ -666,8 +671,8 @@
   .leave-link{background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.7rem; text-decoration:underline; padding:4px; width:auto;}
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
 
-  .output-column{display:flex; flex-direction:column; align-items:center; gap:14px;}
-  .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:260px;}
+  .output-column{display:flex; flex-direction:row; align-items:flex-start; justify-content:center; gap:16px; flex-wrap:wrap;}
+  .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px;}
   /* The mockup's "your photo will appear here" sign, permanently visible
      above the output slot — the app doesn't have a signal for "the strip
      genuinely has content yet" available in pure CSS other than the
@@ -762,13 +767,6 @@
     font-weight:700; font-size:0.72rem; font-family:'Poppins',sans-serif;
   }
   .fs-thumb img{ width:100%; height:100%; object-fit:cover; display:block; animation:thumbPopIn 0.3s cubic-bezier(.34,1.56,.64,1) both; }
-  .fs-cancel-btn{
-    position:absolute; top:14px; right:14px;
-    background:var(--cream); border:2.5px solid var(--ink-warm); color:var(--ink-warm); width:38px; height:38px; min-width:38px;
-    padding:0; border-radius:50%; font-size:1.2rem; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .fs-cancel-btn:hover{ background:#fff; }
 
   .picking-screen{
     display:none; position:fixed; inset:0; z-index:190;
@@ -827,10 +825,13 @@
     100%{ transform:scale(1); }
   }
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
-  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:230px; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:14px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
+  /* Sits beside the strip (as a row item in .output-column) rather than
+     below it, so the QR is visible without scrolling — sized as a slim
+     sidebar instead of matching the strip's own width. */
+  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:140px; flex:none; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:12px 10px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .recap-panel.show{display:flex;}
-  .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1.2rem; color:var(--coral-deep); margin:0;}
-  #recapQr{border-radius:8px; background:#fff; padding:6px; border:2px solid var(--ink-warm);}
+  .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1rem; color:var(--coral-deep); margin:0; text-align:center;}
+  #recapQr{border-radius:8px; background:#fff; padding:6px; border:2px solid var(--ink-warm); width:110px; height:110px;}
   a.btn-ghost, a.btn-gold, a.btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:600; border-radius:999px; padding:11px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease, border-color .2s ease;}
   a.btn-ghost:hover, a.btn-gold:hover, a.btn-primary:hover{ filter:brightness(1.08); transform:translateY(-1px); }
   a.btn-ghost:active, a.btn-gold:active, a.btn-primary:active{ transform:scale(0.96) translateY(0); transition-duration:.08s; }
@@ -844,8 +845,21 @@
   .output-column .btn-gold:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   .output-column .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
   .output-column .btn-ghost:hover{ background:#fff; }
-  .recap-watch-btn{width:100%; font-size:0.78rem; padding:10px 16px;}
-  .recap-expiry{font-size:0.65rem; color:rgba(49,49,49,0.5); margin:0;}
+  .recap-watch-btn{width:100%; font-size:0.7rem; padding:8px 6px;}
+  .recap-expiry{font-size:0.6rem; color:rgba(49,49,49,0.5); margin:0; text-align:center;}
+  /* Strip and recap QR both shrink so they still fit side by side on a
+     phone-width screen instead of the QR wrapping below and needing a
+     scroll to reach. Placed after the base rules above so it wins at
+     matching widths regardless of source order. */
+  @media (max-width:500px){
+    .output-column{ gap:10px; }
+    .strip-wrap{ max-width:180px; }
+    .strip-wrap .btn-gold{ max-width:180px; font-size:0.78rem; padding:11px 8px; }
+    .output-slot, .strip-print-frame, #stripCanvas, .theme-picker{ max-width:180px; }
+    .recap-panel{ width:112px; padding:10px 7px; }
+    .recap-title{ font-size:0.82rem; }
+    #recapQr{ width:88px; height:88px; padding:4px; }
+  }
   .recap-viewer{display:none; position:fixed; inset:0; z-index:300; background:radial-gradient(circle at 50% 42%, var(--bg-deep2), var(--bg-deep) 68%); align-items:center; justify-content:center; padding:20px;}
   .recap-viewer.show{display:flex;}
   .recap-viewer-card{width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;}
@@ -1128,7 +1142,6 @@
      z-index set on a descendant inside that same stacking context,
      regardless of how high it's set. -->
 <div class="fullscreen-shoot" id="fullscreenShoot">
-  <button class="fs-cancel-btn" id="fsCancelBtn" type="button" aria-label="Cancel and return to setup">×</button>
   <div class="fs-thumb-rail" id="fsThumbRail"></div>
 </div>
 
@@ -1225,7 +1238,7 @@ const TRANSLATIONS = {
     reset: 'reset', reconnect: 'reconnect',
     countdownChoiceLabel: 'choose your countdown',
     sec: 'sec', defaultTag: 'default',
-    buildStrip: '🖤 build my strip', retakeAll: 'retake all 10',
+    buildStrip: '🖤 build my strip', retakeAll: 'retake all 10 (costs 1 coin)',
     hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 4 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
     leaveRoom: 'leave room', stripStyle: 'strip style',
     themeBlack: 'Black', themeWhite: 'White',
@@ -1247,6 +1260,7 @@ const TRANSLATIONS = {
     roomCodeTaken: 'room code taken', codeInUse: 'that code is already in use — tap leave room and start a fresh one',
     connectionError: 'connection error', connectingToRoom: 'connecting to room {code}…',
     roomNotFound: 'room not found', doubleCheckCode: 'double-check the code with them, or tap leave room to try again',
+    roomEndedByHost: 'the room was ended — you\'re back here to start fresh',
     checkCodeReconnect: 'check the code with them, or tap reconnect to try again',
     reconnecting: 'reconnecting…', waitingToConnect: 'waiting to connect…',
     photoOfGetReady: 'photo {i} of {n} — get ready!', photoCaptured: 'photo {i} captured 🤍',
@@ -1310,7 +1324,7 @@ const TRANSLATIONS = {
     reset: 'i-reset', reconnect: 'kumonekta ulit',
     countdownChoiceLabel: 'piliin ang countdown mo',
     sec: 'sec', defaultTag: 'default',
-    buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10',
+    buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10 (1 coin)',
     hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 4 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
     themeBlack: 'Itim', themeWhite: 'Puti',
@@ -1332,6 +1346,7 @@ const TRANSLATIONS = {
     roomCodeTaken: 'nagamit na ang room code', codeInUse: 'ginagamit na ang code na iyan — umalis sa room at magsimula ng bago',
     connectionError: 'error sa koneksyon', connectingToRoom: 'kumokonekta sa room {code}…',
     roomNotFound: 'hindi nahanap ang room', doubleCheckCode: 'i-check ulit ang code sa kanya, o umalis sa room at subukan ulit',
+    roomEndedByHost: 'natapos na ang room — nandito ka na para magsimula ulit',
     checkCodeReconnect: 'i-check ang code sa kanya, o pindutin ang reconnect para subukan ulit',
     reconnecting: 'kumokonekta ulit…', waitingToConnect: 'hinihintay kumonekta…',
     photoOfGetReady: 'larawan {i} ng {n} — humanda ka!', photoCaptured: 'nakuha ang larawan {i} 🤍',
@@ -1395,7 +1410,7 @@ const TRANSLATIONS = {
     reset: 'reiniciar', reconnect: 'reconectar',
     countdownChoiceLabel: 'elige tu cuenta regresiva',
     sec: 'seg', defaultTag: 'predeterminado',
-    buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos',
+    buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos (1 moneda)',
     hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 4 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
     themeBlack: 'Negro', themeWhite: 'Blanco',
@@ -1417,6 +1432,7 @@ const TRANSLATIONS = {
     roomCodeTaken: 'código de sala ya en uso', codeInUse: 'ese código ya está en uso — sal de la sala y empieza una nueva',
     connectionError: 'error de conexión', connectingToRoom: 'conectando a la sala {code}…',
     roomNotFound: 'sala no encontrada', doubleCheckCode: 'confirma el código con tu pareja, o sal de la sala e intenta de nuevo',
+    roomEndedByHost: 'la sala terminó — puedes empezar de nuevo desde aquí',
     checkCodeReconnect: 'confirma el código con tu pareja, o toca reconectar para intentar de nuevo',
     reconnecting: 'reconectando…', waitingToConnect: 'esperando conexión…',
     photoOfGetReady: 'foto {i} de {n} — ¡prepárate!', photoCaptured: 'foto {i} capturada 🤍',
@@ -1480,7 +1496,7 @@ const TRANSLATIONS = {
     reset: '초기화', reconnect: '재연결',
     countdownChoiceLabel: '카운트다운 선택',
     sec: '초', defaultTag: '기본',
-    buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기',
+    buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기 (1코인)',
     hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 4장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
     themeBlack: '블랙', themeWhite: '화이트',
@@ -1502,6 +1518,7 @@ const TRANSLATIONS = {
     roomCodeTaken: '이미 사용 중인 방 코드입니다', codeInUse: '이미 사용 중인 코드입니다 — 방을 나가서 새로 시작해 주세요',
     connectionError: '연결 오류', connectingToRoom: '{code} 방에 연결하는 중…',
     roomNotFound: '방을 찾을 수 없습니다', doubleCheckCode: '상대방과 코드를 다시 확인하거나, 방을 나가서 다시 시도해 주세요',
+    roomEndedByHost: '방이 종료되었습니다 — 여기서 다시 시작할 수 있어요',
     checkCodeReconnect: '상대방과 코드를 확인하거나 재연결을 눌러 다시 시도해 주세요',
     reconnecting: '재연결 중…', waitingToConnect: '연결을 기다리는 중…',
     photoOfGetReady: '{n}장 중 {i}번째 사진 — 준비하세요!', photoCaptured: '{i}번째 사진 촬영 완료 🤍',
@@ -1565,7 +1582,7 @@ const TRANSLATIONS = {
     reset: 'リセット', reconnect: '再接続',
     countdownChoiceLabel: 'カウントダウンを選ぼう',
     sec: '秒', defaultTag: '標準',
-    buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す',
+    buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す（1コイン）',
     hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの4枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
     themeBlack: 'ブラック', themeWhite: 'ホワイト',
@@ -1587,6 +1604,7 @@ const TRANSLATIONS = {
     roomCodeTaken: 'このルームコードは使用済みです', codeInUse: 'そのコードはすでに使用されています — ルームを退出して新しく作成してください',
     connectionError: '接続エラー', connectingToRoom: 'ルーム{code}に接続中…',
     roomNotFound: 'ルームが見つかりません', doubleCheckCode: '相手とコードを確認するか、ルームを退出してやり直してください',
+    roomEndedByHost: 'ルームは終了しました — ここから新しく始められます',
     checkCodeReconnect: '相手とコードを確認するか、再接続をタップしてやり直してください',
     reconnecting: '再接続中…', waitingToConnect: '接続を待っています…',
     photoOfGetReady: '{n}枚中{i}枚目 — 準備してください！', photoCaptured: '{i}枚目を撮影しました 🤍',
@@ -2021,10 +2039,18 @@ resetPasswordSubmitBtn.addEventListener('click', async ()=>{
 newPasswordInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') resetPasswordSubmitBtn.click(); });
 
 logoutLink.addEventListener('click', async ()=>{
+  // log out is visible (and clickable) from inside a room too, not just the
+  // gate — without this, clicking it mid-room cleared the session but left
+  // boothLayout on screen with the gate still hidden underneath, so nothing
+  // ever appeared to happen.
+  if(currentRoomCode){
+    teardownAndReturnToGate();
+  }
   currentUser = null;
   coinBadge.classList.remove('show');
   logoutLink.classList.remove('show');
   updateAdminLinkVisibility();
+  gate.style.display = 'block';
   setAuthMode('login');
   showAuthStep(true);
   if(sbClient){
@@ -2530,7 +2556,6 @@ const swapModalClose = document.getElementById('swapModalClose');
 const swapThumbGrid = document.getElementById('swapThumbGrid');
 const fullscreenShoot = document.getElementById('fullscreenShoot');
 const fsThumbRail = document.getElementById('fsThumbRail');
-const fsCancelBtn = document.getElementById('fsCancelBtn');
 const viewfinderEl = document.querySelector('.viewfinder');
 
 /* ---------------- Full-screen shoot mode ----------------
@@ -3241,11 +3266,19 @@ function handleRemoteMessage(msg){
     hideRemoteLiveCursor();
   }else if(msg.type === 'photoSwap'){
     applyPhotoSwap(msg.slot, msg.photoIndex);
-  }else if(msg.type === 'shootCancelled'){
-    applyShootCancel();
   }else if(msg.type === 'recapReady'){
     applyRecapReady(msg.url);
+  }else if(msg.type === 'roomEnded'){
+    applyRemoteRoomEnded();
   }
+}
+
+/* The host deliberately leaving (or logging out mid-room) ends the room for
+   good — rather than leave the other partner sitting on a "reconnect"
+   prompt that can never succeed, send them straight back to the gate. */
+function applyRemoteRoomEnded(){
+  teardownAndReturnToGate();
+  showGateError(t('roomEndedByHost'));
 }
 
 let dataConnTimeout = null;
@@ -3579,6 +3612,11 @@ async function attemptReconnect(){
 reconnectBtn.addEventListener('click', attemptReconnect);
 
 function teardownAndReturnToGate(){
+  // Only the host leaving actually ends the room (the guest leaving just
+  // drops them — the host's room stays open, waiting) — tell the other
+  // side before the data channel closes under it, so they don't get stuck
+  // on a "reconnect" prompt for a room nobody's coming back to.
+  if(isHost) broadcastData({ type:'roomEnded' });
   refundCoinIfUnused(); // fire-and-forget, before isHost/photosStartedThisRoom reset below
   cameraPermissionBanner.classList.remove('show');
   if(activeCall){ try{ activeCall.close(); }catch(e){} activeCall = null; }
@@ -4002,27 +4040,6 @@ async function runCaptureSequence(seconds){
   exitFullscreenShoot();
 }
 
-function applyShootCancel(){
-  shootSessionId++;
-  busy = false;
-  selecting = false;
-  shots = [];
-  tenShots = [];
-  selectedIndices = [];
-  hideSelectionPanel();
-  stopRecapRecording(false);
-  exitFullscreenShoot();
-  redrawStrip();
-  downloadBtn.disabled = true;
-  startBtn.disabled = !connected;
-  statusLine.textContent = connected ? t('inFrame') : t('waitingToConnect');
-}
-
-fsCancelBtn.addEventListener('click', ()=>{
-  broadcastData({ type:'shootCancelled' });
-  applyShootCancel();
-});
-
 function beginSyncedSession(seconds, isRemoteTriggered){
   statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown');
   runCaptureSequence(seconds || 3);
@@ -4045,10 +4062,36 @@ function hideCountdownChoice(){
 
 countdownBackBtn.addEventListener('click', hideCountdownChoice);
 
+/* The very first 10-shot round in a room is already paid for by the coin
+   spent creating the room — every round after that (retaking from either
+   the picking screen's "retake all" or starting again from the finished
+   screen) is a fresh reshoot and gets its own charge, billed to whichever
+   account's client actually taps the button (same rpc as room creation). */
+async function trySpendRetakeCoin(){
+  if(!photosStartedThisRoom) return { ok:true };
+  if(!sbClient || !currentUser) return { ok:true };
+  const { data: newBalance, error } = await sbClient.rpc('spend_coin');
+  if(error) return { ok:false, reason:'error' };
+  if(newBalance === null) return { ok:false, reason:'outOfCoins' };
+  coinBadgeCount.textContent = newBalance;
+  pulseCoinBadge();
+  return { ok:true };
+}
+
 document.querySelectorAll('.choice-card').forEach(card=>{
-  card.addEventListener('click', ()=>{
-    hideCountdownChoice();
+  card.addEventListener('click', async ()=>{
+    if(document.querySelector('.choice-card.is-chosen')) return;
+    document.querySelectorAll('.choice-card').forEach(c=> c.classList.toggle('is-chosen', c === card));
     const seconds = Number(card.dataset.seconds);
+    await wait(380);
+    document.querySelectorAll('.choice-card').forEach(c=> c.classList.remove('is-chosen'));
+    const charge = await trySpendRetakeCoin();
+    if(!charge.ok){
+      hideCountdownChoice();
+      statusLine.textContent = charge.reason === 'outOfCoins' ? t('outOfCoins') : t('couldNotCheckBalance');
+      return;
+    }
+    hideCountdownChoice();
     broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
     beginSyncedSession(seconds, false);
   });
@@ -4160,8 +4203,15 @@ buildStripBtn.addEventListener('click', ()=>{
   buildStripFrom(selectedIndices);
 });
 
-retakeAllBtn.addEventListener('click', ()=>{
+retakeAllBtn.addEventListener('click', async ()=>{
   const seconds = lastCountdownSeconds || 3;
+  retakeAllBtn.disabled = true;
+  const charge = await trySpendRetakeCoin();
+  retakeAllBtn.disabled = false;
+  if(!charge.ok){
+    selectionCounter.textContent = charge.reason === 'outOfCoins' ? t('outOfCoins') : t('couldNotCheckBalance');
+    return;
+  }
   broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
   beginSyncedSession(seconds, false);
 });
