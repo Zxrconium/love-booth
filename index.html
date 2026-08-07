@@ -135,70 +135,57 @@
     from{ opacity:0; transform:translateY(14px) scale(0.98); }
     to{ opacity:1; transform:translateY(0) scale(1); }
   }
-  /* The gate is the illustrated machine's front panel — a stepped two-block
-     body (a wide content panel plus a narrower, taller door panel with a
-     "LUV BOOTH" sign mounted on a post above it) rather than a plain
-     rectangular card. Both panels are ordinary flex children sized by their
-     own content (so dynamic i18n text / error banners never overflow a
-     fixed shape) — the "step" itself is a purely decorative absolutely
-     positioned collar on the door panel that always pokes a fixed distance
-     above whatever height the row ends up being, so it stays correct
-     regardless of content height. */
-  /* Reserves room above .gate-machine for the sign, which pokes above its
-     own box via negative positioning — sized to clear the sign at each of
-     its own breakpoints (see .gate-sign below) so it's never clipped by
-     the viewport/page edge above. */
-  .gate{ width:100%; max-width:620px; padding-top:112px; }
-  @media (max-width:560px){ .gate{ padding-top:88px; } }
-  @media (max-width:400px){ .gate{ padding-top:40px; } }
+  /* The gate is one continuous illustrated machine silhouette — main body,
+     stepped roofline, door column and the sign-on-a-post — traced as a
+     single unbroken SVG outline (.gm-outline) rather than separate boxes
+     placed near each other. All the fills (.gm-body, .gm-trim-main,
+     .gm-trim-door, .gm-post, .gm-plaque) share exact coordinates with
+     portions of that same outline path, so there are no seams; the
+     outline is drawn last, on top of every
+     fill, so it always reads as one connected line. HTML content (login
+     form, curtain, sign text) is layered above the SVG and positioned by
+     percentage against its 600x760 viewBox, so it stays locked to the
+     artwork at any container size — the container's aspect-ratio is fixed
+     to match (600/760) so the percentages and the SVG never drift apart. */
+  .gate{ width:100%; max-width:460px; }
   .gate-machine{
-    display:flex; align-items:stretch; width:100%; position:relative;
+    position:relative; width:100%; aspect-ratio:600/700;
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
     filter:drop-shadow(0 8px 0 rgba(49,49,49,0.18)) drop-shadow(0 14px 26px rgba(49,49,49,0.22));
   }
-  .gate-panel-left{
-    flex:1 1 auto; min-width:0; position:relative;
-    background:var(--machine-tan); border:3px solid var(--ink-warm); border-right:1.5px solid rgba(49,49,49,0.3);
-    border-radius:8px 0 0 24px; padding:44px 20px 26px;
+  .gate-machine-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .gm-body{ fill:var(--machine-tan); }
+  .gm-trim-main, .gm-trim-door, .gm-post, .gm-plaque{ fill:var(--mint); }
+  .gm-dividers{ fill:none; stroke:var(--ink-warm); stroke-width:3; stroke-linecap:round; }
+  .gm-outline{ fill:none; stroke:var(--ink-warm); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; }
+
+  /* ---- Sign text, laid over the mint plaque the SVG already drew ---- */
+  .gate-sign-text{
+    position:absolute; left:76.7%; width:23.3%; top:1.2%; height:6.6%; z-index:2;
+    display:flex; align-items:center; justify-content:center; gap:2px;
+    transform:rotate(-3deg); pointer-events:none; text-align:center; line-height:1;
+    font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
+    font-size:clamp(0.4rem,1.9vw,0.62rem); letter-spacing:0.2px; white-space:nowrap;
+  }
+  .gate-sign-text .sparkle{ font-size:0.8em; }
+
+  /* ---- Main content, positioned inside the body's SVG-drawn silhouette ---- */
+  .gate-body{
+    position:absolute; left:0; right:26.7%; top:12.9%; bottom:2.9%; z-index:1;
+    padding:22px 18px 14px; box-sizing:border-box; overflow:visible;
     display:flex; flex-direction:column; align-items:center; text-align:center;
   }
-  .gate-panel-left::before{
-    content:''; position:absolute; top:-3px; left:-3px; right:0; height:20px;
-    background:var(--mint); border:3px solid var(--ink-warm); border-right:none; border-bottom:none;
-    border-radius:8px 0 0 0;
-  }
   .gate-content{ width:100%; min-width:0; text-align:center; position:relative; z-index:1; }
-  .gate-panel-right{
-    flex:none; width:118px; position:relative;
-    background:var(--machine-tan); border:3px solid var(--ink-warm); border-left:none;
-    border-radius:0 10px 24px 4px; padding:24px 8px 8px;
-    display:flex; flex-direction:column;
+  @media (max-width:400px){
+    .gate-body{ padding:14px 12px 8px; }
   }
-  /* The raised "collar": same body color, sitting a fixed distance above
-     the panel's real top edge so the door column always reads as taller
-     than the content column, however tall either one's content grows. */
-  .gate-panel-right::before{
-    content:''; position:absolute; top:-50px; left:-3px; right:-3px; height:70px;
-    background:var(--machine-tan); border:3px solid var(--ink-warm); border-bottom:none; border-left:none;
-    border-radius:0 10px 0 0; z-index:0;
-  }
-  .gate-panel-right::after{
-    content:''; position:absolute; top:-50px; left:-3px; right:-3px; height:20px;
-    background:var(--mint); border:3px solid var(--ink-warm); border-bottom:none; border-left:none;
-    border-radius:0 10px 0 0; z-index:1;
-  }
-  @media (max-width:560px){
-    .gate-panel-right{ width:84px; padding-top:20px; }
-    .gate-panel-right::before{ top:-38px; height:54px; }
-    .gate-panel-right::after{ top:-38px; height:16px; }
-  }
-  /* Little peg feet at the base corners — purely decorative, absolutely
-     positioned off .gate-machine so they never affect layout height. */
-  .gate-foot{ position:absolute; bottom:-14px; width:20px; height:16px; background:var(--coral-soft); border:2.5px solid var(--ink-warm); border-top:none; border-radius:0 0 6px 6px; z-index:2; }
-  .gate-foot.fl{ left:22px; }
-  .gate-foot.fr{ right:26px; }
 
-  /* ---- Film-strip preview window (top of the left panel) ---- */
+  /* Little peg feet at the base corners — purely decorative. */
+  .gate-foot{ position:absolute; bottom:-14px; width:20px; height:16px; background:var(--coral-soft); border:2.5px solid var(--ink-warm); border-top:none; border-radius:0 0 6px 6px; z-index:2; }
+  .gate-foot.fl{ left:4%; }
+  .gate-foot.fr{ right:7%; }
+
+  /* ---- Film-strip preview window (top of the body content) ---- */
   .gate-film-window{
     width:100%; max-width:230px; height:78px; margin:0 0 14px; position:relative;
     background:var(--film-frame); border:3px solid var(--ink-warm); border-radius:10px;
@@ -221,9 +208,12 @@
   .film-strip.s2{ left:41%; background:var(--machine-tan); transform:translateY(-50%) rotate(3deg); z-index:2; }
   .film-strip.s3{ left:66%; background:var(--coral-soft); transform:translateY(-50%) rotate(12deg); z-index:1; }
 
-  /* ---- Door / curtain (inside .gate-panel-right) ---- */
-  .gate-curtain-window{
-    position:relative; flex:1; width:100%; min-height:130px; border-radius:8px 8px 3px 3px; overflow:hidden;
+  /* ---- Door / curtain window — sits inside the door column the SVG
+     already drew, sized to read as a proportionally wide arched doorway
+     rather than a cramped sliver. ---- */
+  .gate-door{
+    position:absolute; left:76.7%; right:3.3%; top:28.6%; bottom:5.7%; z-index:1;
+    border-radius:50% 50% 6px 6px; overflow:hidden;
     border:2.5px solid var(--ink-warm); background:var(--mint-deep);
   }
   .gate-curtain-sill{ position:absolute; left:0; right:0; bottom:0; height:9%; background:var(--cream); border-top:2px solid var(--ink-warm); z-index:1; }
@@ -238,29 +228,6 @@
   @keyframes curtainOpen{
     0%{ transform:translateX(0) rotate(0deg); }
     100%{ transform:translateX(60%) rotate(10deg); }
-  }
-
-  /* ---- Sign, mounted on a post above the door panel's raised collar ---- */
-  .gate-sign{
-    position:absolute; top:-98px; right:-10px; width:150px; z-index:3;
-    transform:rotate(-3deg); transform-origin:bottom center;
-  }
-  .gate-sign-plaque{
-    background:var(--mint); border:3px solid var(--ink-warm); border-radius:8px;
-    padding:8px 10px; text-align:center; box-shadow:0 3px 0 rgba(49,49,49,0.25);
-    font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
-    font-size:clamp(0.95rem,3.2vw,1.15rem); letter-spacing:0.5px; white-space:nowrap;
-  }
-  .gate-sign-post{
-    width:16px; height:34px; margin:0 auto; background:var(--mint); border:3px solid var(--ink-warm); border-top:none;
-  }
-  @media (max-width:560px){
-    .gate-sign{ top:-78px; right:-8px; width:112px; }
-    .gate-sign-plaque{ padding:6px 8px; }
-    .gate-sign-post{ height:26px; }
-  }
-  @media (max-width:400px){
-    .gate-sign{ display:none; }
   }
 
   /* .gate is also the wrapper for #joinStep/#authStep, but both of those
@@ -566,6 +533,26 @@
   .gate .btn-primary:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
   .gate .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   .gate .btn-primary .btn-spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
+
+  /* Narrow phones can't fit the full-height artwork's fixed-px content
+     (film window, form fields, footnote) inside the same proportional
+     zone that works at wider sizes, so this breakpoint both shrinks that
+     content and gives the silhouette itself extra relative height — safe
+     because .gate-machine-svg uses preserveAspectRatio="none", so the
+     artwork always stretches to exactly fill the container regardless of
+     its ratio, and every overlay position below is a percentage of that
+     same box. Placed after every rule it overrides so it wins the
+     cascade on specificity ties regardless of being inside @media. */
+  @media (max-width:400px){
+    .gate-machine{ aspect-ratio:600/860; }
+    .gate-film-window{ height:52px; margin-bottom:8px; }
+    .gate .choice-label{ margin:0 0 6px; }
+    .gate-cards{ gap:8px; }
+    .join-step, .auth-step{ gap:7px; }
+    .gate input{ padding:10px; font-size:0.95rem; }
+    .gate .btn-primary{ padding:9px 16px; font-size:0.95rem; }
+    .gate-footnote{ margin-top:8px; font-size:0.66rem; }
+  }
 
   .layout{width:100%; display:flex; gap:28px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
   /* The reference mockup has no boxed "card" at all here — the camera view
@@ -1032,7 +1019,17 @@
 
   <div class="gate" id="gate">
    <div class="gate-machine">
-    <div class="gate-panel-left">
+    <svg class="gate-machine-svg" viewBox="0 0 600 700" preserveAspectRatio="none" aria-hidden="true">
+      <path class="gm-body" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,150 L475,150 L475,53 L460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 L525,53 L525,150 L580,150 A20,20 0 0 1 600,170 L600,668 A12,12 0 0 1 588,680 L14,680 A14,14 0 0 1 0,666 Z"/>
+      <path class="gm-trim-main" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,118 Z"/>
+      <path class="gm-trim-door" d="M440,170 L440,150 L580,150 A20,20 0 0 1 600,170 Z"/>
+      <rect class="gm-post" x="475" y="53" width="50" height="97"/>
+      <path class="gm-plaque" d="M460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 Z"/>
+      <path class="gm-dividers" d="M28,118 L440,118 M440,170 L580,170"/>
+      <path class="gm-outline" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,150 L475,150 L475,53 L460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 L525,53 L525,150 L580,150 A20,20 0 0 1 600,170 L600,668 A12,12 0 0 1 588,680 L14,680 A14,14 0 0 1 0,666 Z"/>
+    </svg>
+    <div class="gate-sign-text" aria-hidden="true"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
+    <div class="gate-body">
       <div class="gate-film-window" aria-hidden="true">
         <div class="gate-film-window-inner">
           <div class="film-strip s1"><span></span><span></span><span></span></div>
@@ -1120,26 +1117,20 @@
       <div class="error-msg" id="gateError" role="alert"></div>
       </div>
     </div>
-    <div class="gate-panel-right">
-      <div class="gate-sign" aria-hidden="true">
-        <div class="gate-sign-plaque"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
-        <div class="gate-sign-post"></div>
-      </div>
-      <div class="gate-curtain-window" aria-hidden="true">
-        <svg class="gate-curtain-svg" viewBox="0 0 100 130" preserveAspectRatio="none">
-          <defs>
-            <pattern id="ginghamPattern" width="16" height="16" patternUnits="userSpaceOnUse">
-              <rect width="16" height="16" fill="#fff8ec"/>
-              <rect width="16" height="6" fill="#ef6562" opacity="0.6"/>
-              <rect width="6" height="16" fill="#ef6562" opacity="0.6"/>
-            </pattern>
-          </defs>
-          <path class="curtain-shape"
-            d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
-            fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        <div class="gate-curtain-sill"></div>
-      </div>
+    <div class="gate-door" aria-hidden="true">
+      <svg class="gate-curtain-svg" viewBox="0 0 100 130" preserveAspectRatio="none">
+        <defs>
+          <pattern id="ginghamPattern" width="16" height="16" patternUnits="userSpaceOnUse">
+            <rect width="16" height="16" fill="#fff8ec"/>
+            <rect width="16" height="6" fill="#ef6562" opacity="0.6"/>
+            <rect width="6" height="16" fill="#ef6562" opacity="0.6"/>
+          </pattern>
+        </defs>
+        <path class="curtain-shape"
+          d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
+          fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="gate-curtain-sill"></div>
     </div>
     <div class="gate-foot fl" aria-hidden="true"></div>
     <div class="gate-foot fr" aria-hidden="true"></div>
@@ -1238,7 +1229,7 @@
         <p class="output-slot-tag" aria-hidden="true" data-i18n="photoWillAppear">Your photo will appear here in a few seconds.</p>
         <div class="output-slot">
           <svg class="output-slot-frame" aria-hidden="true" viewBox="0 0 100 168" preserveAspectRatio="none">
-            <path d="M4 164 L4 46 A46 46 0 0 1 96 46 L96 164 Z" fill="#7eb3bb" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M4 164 L4 9 A46 9 0 0 1 96 9 L96 164 Z" fill="#7eb3bb" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
           </svg>
           <div class="strip-print-frame">
             <div class="print-slot" id="printSlot"></div>
