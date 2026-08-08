@@ -771,25 +771,31 @@
      mechanics and z-indexing as before) in the illustrated arched "output
      slot" window from the mockups, purely as an outer decorative layer so
      none of the existing print-out-animation positioning math changes. */
-  /* aspect-ratio pinned to the arch SVG's own viewBox (100:168) so the
+  /* aspect-ratio pinned to the arch SVG's own viewBox (100:170) so the
      frame's shape stays constant regardless of how big the strip inside it
      is — without this, shrinking the strip below also shrinks .output-slot
      itself (its height is otherwise just content-driven), which squashes
      the arch flatter since output-slot-frame stretches to fill whatever
-     box it's given (preserveAspectRatio="none"). Centering the (now
-     smaller) strip-print-frame inside via flex handles both axes at once. */
+     box it's given (preserveAspectRatio="none"). strip-print-frame is
+     positioned absolutely at the exact percentage bounds of the inner
+     "glass" rect drawn in the SVG (window x:22–78, y:34–118 of the
+     100x170 viewBox → left 50%/top 44.7% center, since the viewBox's
+     aspect ratio matches .output-slot's own box exactly, so viewBox units
+     translate 1:1 to CSS percentages of width/height). */
   .output-slot{
-    position:relative; width:100%; max-width:230px; margin-top:14px; padding:20px 16px 14px;
-    box-sizing:border-box; aspect-ratio:100/168; display:flex; align-items:center; justify-content:center;
+    position:relative; width:100%; max-width:230px; margin-top:14px;
+    box-sizing:border-box; aspect-ratio:100/170;
   }
   .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-  /* A percentage of .output-slot's own (post-padding) width, not a fixed
-     px cap — .output-slot doesn't always actually render at its 230px max
-     (narrower when the booth layout is tight on horizontal room), and a
-     fixed px value stayed the same size regardless, so the strip ended up
-     filling most of a smaller arch just like before the fix. 65% keeps it
-     sitting well inset with real margin on every side at any size. */
-  .strip-print-frame{position:relative; width:65%; display:flex; flex-direction:column; align-items:center;}
+  /* width is a percentage of .output-slot's own width, sized so the strip
+     (a tall, narrow 4-photo canvas) fills most of the inner window rect's
+     height (window is 40 wide x 92 tall of the 100x170 viewBox) with a
+     clean margin on every side, at any size (mobile included, since both
+     scale off the same .output-slot percentages). */
+  .strip-print-frame{
+    position:absolute; left:50%; top:44.7%; width:27%; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center;
+  }
   .print-slot{
     width:86%; height:9px; border-radius:5px 5px 2px 2px; background:#1a1a1a;
     box-shadow:inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08);
@@ -1227,8 +1233,9 @@
         </div>
         <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
         <div class="output-slot">
-          <svg class="output-slot-frame" aria-hidden="true" viewBox="0 0 100 168" preserveAspectRatio="none">
-            <path d="M4 164 L4 9 A46 9 0 0 1 96 9 L96 164 Z" fill="#7eb3bb" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
+          <svg class="output-slot-frame" aria-hidden="true" viewBox="0 0 100 170" preserveAspectRatio="none">
+            <path d="M2 168 L14 126 L14 26 A36 26 0 0 1 86 26 L86 126 L98 168 Z" fill="#ffd999" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
+            <rect x="30" y="30" width="40" height="92" rx="8" fill="#7eb3bb" stroke="#313131" stroke-width="3"/>
           </svg>
           <div class="strip-print-frame">
             <div class="print-slot" id="printSlot"></div>
