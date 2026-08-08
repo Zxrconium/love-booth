@@ -9,8 +9,19 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   coins integer not null default 0 check (coins >= 0),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Tracks the most recent spend_coin() call so refund_last_spend() can
+  -- safely give back a coin if the room creation it paid for never got off
+  -- the ground (camera denied, left before any photo) — see that function
+  -- below for the abuse-resistant refund window.
+  last_spend_at timestamptz,
+  last_spend_refunded boolean not null default true
 );
+
+-- Safe to re-run against an already-deployed profiles table too (create
+-- table if not exists skips the columns above if the table already exists).
+alter table public.profiles add column if not exists last_spend_at timestamptz;
+alter table public.profiles add column if not exists last_spend_refunded boolean not null default true;
 
 alter table public.profiles enable row level security;
 
@@ -44,6 +55,8 @@ create trigger on_auth_user_created
 
 -- Atomic spend: only succeeds if balance > 0. Returns the new balance,
 -- or NULL if the user had no coins (caller should show "you're out of coins").
+-- Also stamps last_spend_at and clears last_spend_refunded, opening a
+-- one-shot refund window for refund_last_spend() below.
 create or replace function public.spend_coin()
 returns integer
 language plpgsql
@@ -53,7 +66,7 @@ declare
   new_balance integer;
 begin
   update public.profiles
-    set coins = coins - 1
+    set coins = coins - 1, last_spend_at = now(), last_spend_refunded = false
     where id = auth.uid() and coins > 0
   returning coins into new_balance;
   return new_balance;
@@ -62,26 +75,13 @@ $$;
 
 grant execute on function public.spend_coin() to authenticated;
 
--- Atomic, idempotent credit: intended to be called ONLY by the Lemon
--- Squeezy webhook (Supabase Edge Function, using the service_role key),
--- never from client code — that's why authenticated/anon are explicitly
--- denied execute below.
---
--- Takes the Lemon Squeezy order id and records it in processed_ls_orders
--- inside the same transaction as the credit, so a retried webhook delivery
--- for an order we've already credited is a safe no-op (the insert conflicts
--- and the exception branch just returns the current balance) rather than
--- double-crediting.
-create table if not exists public.processed_ls_orders (
-  order_id text primary key,
-  created_at timestamptz not null default now()
-);
-
-alter table public.processed_ls_orders enable row level security;
--- No policies at all: only service_role (which bypasses RLS entirely) ever
--- touches this table, via credit_coins_for_order() below.
-
-create or replace function public.credit_coins_for_order(p_order_id text, p_user uuid, p_amount integer)
+-- Gives back the most recent spend, but only if: (a) it hasn't already been
+-- refunded (one-shot — flips last_spend_refunded to true so this can't be
+-- called twice for the same spend), and (b) it happened within the last 10
+-- minutes (caps how long a room-creation stays "refundable", so this can't
+-- be used to farm coins on old spends). Returns the new balance, or NULL if
+-- there was no eligible un-refunded recent spend (safe no-op).
+create or replace function public.refund_last_spend()
 returns integer
 language plpgsql
 security definer set search_path = public
@@ -89,21 +89,61 @@ as $$
 declare
   new_balance integer;
 begin
-  insert into public.processed_ls_orders (order_id) values (p_order_id);
   update public.profiles
-    set coins = coins + p_amount
-    where id = p_user
+    set coins = coins + 1, last_spend_refunded = true
+    where id = auth.uid()
+      and last_spend_refunded = false
+      and last_spend_at > now() - interval '10 minutes'
   returning coins into new_balance;
   return new_balance;
-exception
-  when unique_violation then
-    select coins into new_balance from public.profiles where id = p_user;
-    return new_balance;
 end;
 $$;
 
-revoke execute on function public.credit_coins_for_order(text, uuid, integer) from public, anon, authenticated;
--- service_role bypasses grants entirely, so no explicit grant is needed for the webhook.
+grant execute on function public.refund_last_spend() to authenticated;
+
+-- Manual coin provisioning: coins are no longer sold through a self-serve
+-- checkout. Instead, the admin-create-account Edge Function (service_role,
+-- gated on the site owner's own authenticated session) creates accounts
+-- with a starting coin balance already loaded, and records them here so
+-- the admin panel can list "accounts I've created" without exposing the
+-- full user base. No client-facing policies on purpose: only the Edge
+-- Function (service_role, bypasses RLS) ever reads or writes this table.
+--
+-- The `email` column holds the customer-facing USERNAME, not a real email —
+-- customer accounts are created and logged into by username only, with a
+-- synthetic @luvbooth.local address used behind the scenes purely to
+-- satisfy Supabase Auth (see the Edge Function). Kept as `email` rather
+-- than renamed to avoid an unnecessary migration on an already-deployed
+-- table; the column's contents (a short username) are unaffected either way.
+create table if not exists public.admin_created_accounts (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_created_accounts enable row level security;
+
+-- Admin-only atomic top-up for an existing account's balance. Only ever
+-- called from the admin-create-account Edge Function's 'add_coins' action
+-- via the service-role client (never granted to authenticated/anon), same
+-- trust boundary as account creation above. Mirrors the spend_coin() /
+-- refund_last_spend() pattern: a single atomic UPDATE rather than a
+-- read-then-write, so two top-ups landing at once can't clobber each other.
+create or replace function public.admin_add_coins(target_user_id uuid, amount integer)
+returns integer
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  new_balance integer;
+begin
+  update public.profiles
+    set coins = coins + amount
+    where id = target_user_id
+  returning coins into new_balance;
+  return new_balance;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 2. Session recap recordings
