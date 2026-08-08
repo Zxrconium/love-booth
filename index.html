@@ -45,7 +45,7 @@
     background-repeat:no-repeat, repeat-x;
     background-position:center, left bottom;
     font-family:'Poppins',sans-serif; color:var(--paper);
-    display:flex; align-items:flex-start; justify-content:center;
+    display:flex; align-items:center; justify-content:center;
     padding:clamp(20px,4vw,40px) 16px;
   }
   /* Height-based sizing fills the viewport with no gap at the top, but on
@@ -147,9 +147,9 @@
      stays locked to the image's real ratio (5/4) at every width — that's
      what makes "scale the whole image+overlay together" work with zero
      per-breakpoint reflow. */
-  .gate{ width:100%; max-width:460px; }
+  .gate{ width:100%; max-width:620px; }
   .gate-machine{
-    position:relative; width:100%; aspect-ratio:5/4;
+    position:relative; width:100%; aspect-ratio:1472/1489;
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
     filter:drop-shadow(0 8px 0 rgba(49,49,49,0.18)) drop-shadow(0 14px 26px rgba(49,49,49,0.22));
   }
@@ -170,13 +170,13 @@
   }
   .gate-card:hover{ background:rgba(255,255,255,0.16); transform:scale(1.015); }
   .gate-card:active{ background:rgba(49,49,49,0.1); transform:scale(0.98); transition-duration:.08s; }
-  .gate-card-create{ left:24.4%; top:47%; width:12.8%; height:16.6%; }
-  .gate-card-join{ left:39%; top:47%; width:12.8%; height:16.6%; }
+  .gate-card-create{ left:4.96%; top:43.45%; width:21.67%; height:22.3%; }
+  .gate-card-join{ left:29.76%; top:43.52%; width:21.67%; height:22.16%; }
   /* Not part of the reference artwork at all — admin-only and hidden for
      everyone else — so rather than pretend it's drawn into the machine,
      it's its own small pill in the open panel space below the coin slot. */
   .gate-card-admin{
-    left:27%; top:82.5%; width:34%; height:6.4%; display:none;
+    left:12%; top:79%; width:40%; height:7%; display:none;
     background:var(--cream); border:2px solid var(--ink-warm); border-radius:999px;
     align-items:center; justify-content:center;
     font-family:'Kalam',cursive; font-weight:700; font-size:clamp(0.55rem,2.4vw,0.75rem); color:var(--ink-warm);
@@ -189,7 +189,7 @@
      resting Create/Join buttons), so both render as an opaque card over
      that same region instead of fighting the baked-in pixels underneath. */
   .join-step{
-    position:absolute; left:19%; top:37%; width:62%; height:36%; z-index:2;
+    position:absolute; left:1%; top:39%; width:53%; height:34%; z-index:2;
     display:none; flex-direction:column; align-items:center; justify-content:center; gap:4%;
     background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:8%;
     box-shadow:0 6px 0 rgba(49,49,49,0.18); padding:5%; box-sizing:border-box;
@@ -207,14 +207,14 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .gate .gate-overlay-input:focus{ box-shadow:none; outline:none; background:rgba(255,255,255,0.35); }
-  #authEmail{ left:25.4%; top:50.55%; width:25.1%; height:7.1%; }
-  #authPassword{ left:25.4%; top:59.7%; width:25.1%; height:7.05%; }
+  #authEmail{ left:6.59%; top:48.22%; width:42.7%; height:9.54%; }
+  #authPassword{ left:6.66%; top:60.51%; width:42.63%; height:9.47%; }
   .gate .auth-forgot-link{
-    position:absolute; left:25.4%; top:67.1%; width:25.1%; height:2.5%; margin:0;
+    position:absolute; left:6.66%; top:70.3%; width:42.63%; height:3.5%; margin:0;
     font-size:clamp(0.5rem,1.9vw,0.65rem); text-align:right;
   }
   .auth-submit-btn{
-    position:absolute; left:29.44%; top:69.95%; width:16.44%; height:5.3%;
+    position:absolute; left:13.46%; top:74.28%; width:27.94%; height:7.12%;
     display:flex; align-items:center; justify-content:center; gap:4px;
     background:transparent; border:none; border-radius:999px; color:transparent;
     font-family:'Kalam',cursive; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
@@ -236,7 +236,7 @@
      reached via an email link) or needs unconstrained height for
      multi-line/translated text, so it lives in normal flow directly under
      the machine instead of fighting a fixed-aspect image for room. */
-  .gate-below{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:14px auto 0; }
+  .gate-below{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:380px; margin:14px auto 0; }
   .gate-below .lang-switcher-row{ display:none; }
   .gate-below .lang-switcher-row.show{ display:flex; }
   .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both; box-sizing:border-box;}
