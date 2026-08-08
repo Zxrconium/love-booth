@@ -229,6 +229,16 @@
   .auth-submit-btn:hover{ filter:brightness(1.08); }
   .auth-submit-btn:active{ transform:scale(0.96); }
   .auth-submit-btn .btn-spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
+  /* The generic button:disabled{opacity:0.4} rule further down assumes an
+     opaque button sitting on the page background — fine there, but this
+     button is normally fully transparent by design (see needs-label above)
+     and only gains a solid fill while loading. Fading THAT fill to 40%
+     let the curtain artwork bleed straight through it and double-expose
+     with the spinner/label, rather than just looking "disabled". Loading
+     stays fully opaque; needs-label's solid --coral already reads as
+     "busy" well enough on its own once it's not see-through, so no extra
+     dimmed shade needed. */
+  .auth-submit-btn:disabled{ opacity:1; cursor:not-allowed; }
 
   /* Everything below either isn't depicted in the artwork at all (auth
      banners, the language switcher, the separate "set new password" card
