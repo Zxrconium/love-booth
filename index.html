@@ -38,23 +38,22 @@
   html{-webkit-text-size-adjust:100%; overflow-x:hidden;}
   body{
     margin:0; min-height:100vh; position:relative; overflow-x:hidden;
+    /* street-bg.png is a single fixed street scene (one bakery/bookstore/
+       cafe row), not a seamlessly-tiling pattern — its left and right
+       edges don't line up, so repeating it horizontally produced a visible
+       doubled/duplicated seam wherever it wrapped. One cover-sized,
+       non-repeating instance avoids that entirely; cover crops rather than
+       stretches, so the illustration stays proportional at any viewport
+       size, anchored to the bottom so the sidewalk stays in view. */
     background:
       linear-gradient(180deg, rgba(255,232,194,0.4), rgba(255,217,153,0.45)),
       url('assets/street-bg.png');
-    background-size:auto, min(1400px, 100%) auto;
-    background-repeat:no-repeat, repeat-x;
-    background-position:center, left bottom;
+    background-size:auto, cover;
+    background-repeat:no-repeat, no-repeat;
+    background-position:center, center bottom;
     font-family:'Poppins',sans-serif; color:var(--paper);
     display:flex; align-items:center; justify-content:center;
     padding:clamp(20px,4vw,40px) 16px;
-  }
-  /* Height-based sizing fills the viewport with no gap at the top, but on
-     a narrow/portrait phone it forces a tile so wide relative to the
-     screen that you only ever see a heavily zoomed-in sliver of one shop
-     — worse than the gap it fixes. Width-based sizing above keeps the
-     whole illustration recognizable there instead. */
-  @media (min-width:700px){
-    body{ background-size:auto, auto 100vh; }
   }
   /* The street illustration is a literal background asset (not a mood
      board) — the peach gradient layered over it via background-image
@@ -203,7 +202,7 @@
   .gate .gate-overlay-input{
     position:absolute; background:transparent; border:none; border-radius:0;
     color:var(--ink-warm); text-align:left; padding:0 3%; letter-spacing:normal; margin:0;
-    font-size:clamp(0.52rem,2.5vw,0.72rem);
+    font-family:'Kalam',cursive; font-weight:700; font-size:clamp(0.72rem,3.4vw,1.05rem);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .gate .gate-overlay-input:focus{ box-shadow:none; outline:none; background:rgba(255,255,255,0.35); }
@@ -211,7 +210,7 @@
   #authPassword{ left:6.66%; top:60.51%; width:42.63%; height:9.47%; }
   .gate .auth-forgot-link{
     position:absolute; left:6.66%; top:70.3%; width:42.63%; height:3.5%; margin:0;
-    font-size:clamp(0.5rem,1.9vw,0.65rem); text-align:right;
+    font-size:clamp(0.5rem,1.9vw,0.65rem); text-align:center;
   }
   .auth-submit-btn{
     position:absolute; left:13.46%; top:74.28%; width:27.94%; height:7.12%;
