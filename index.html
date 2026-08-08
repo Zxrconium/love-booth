@@ -1361,7 +1361,7 @@ const TRANSLATIONS = {
     buildStrip: '🖤 build my strip', retakeAll: 'retake all 10 (costs 1 coin)',
     hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 4 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
     leaveRoom: 'leave room', stripStyle: 'strip style',
-    themeBlack: 'Black', themeWhite: 'White',
+    themeBlack: 'Black', themeWhite: 'White', themeBorderedWhite: 'Bordered White',
     downloadStrip: '⬇ download strip',
     outOfCoins: "you're out of coins — message us on Star Meks to get set up",
     outOfCoinsTitle: 'out of coins', gotIt: 'got it', close: 'close',
@@ -1449,7 +1449,7 @@ const TRANSLATIONS = {
     buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10 (1 coin)',
     hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 4 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
     leaveRoom: 'umalis sa room', stripStyle: 'estilo ng strip',
-    themeBlack: 'Itim', themeWhite: 'Puti',
+    themeBlack: 'Itim', themeWhite: 'Puti', themeBorderedWhite: 'Puti na may Border',
     downloadStrip: '⬇ i-download ang strip',
     outOfCoins: 'naubusan ka na ng coins — mag-message sa Star Meks para ma-set up',
     outOfCoinsTitle: 'naubusan ng coins', gotIt: 'sige', close: 'isara',
@@ -1537,7 +1537,7 @@ const TRANSLATIONS = {
     buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos (1 moneda)',
     hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 4 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
     leaveRoom: 'salir de la sala', stripStyle: 'estilo de la tira',
-    themeBlack: 'Negro', themeWhite: 'Blanco',
+    themeBlack: 'Negro', themeWhite: 'Blanco', themeBorderedWhite: 'Blanco con Borde',
     downloadStrip: '⬇ descargar tira',
     outOfCoins: 'te quedaste sin monedas — escríbenos a Star Meks para activarlas',
     outOfCoinsTitle: 'sin monedas', gotIt: 'entendido', close: 'cerrar',
@@ -1625,7 +1625,7 @@ const TRANSLATIONS = {
     buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기 (1코인)',
     hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 4장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
     leaveRoom: '방 나가기', stripStyle: '스트립 스타일',
-    themeBlack: '블랙', themeWhite: '화이트',
+    themeBlack: '블랙', themeWhite: '화이트', themeBorderedWhite: '테두리 화이트',
     downloadStrip: '⬇ 스트립 다운로드',
     outOfCoins: '코인이 부족합니다 — Star Meks로 메시지를 보내주세요',
     outOfCoinsTitle: '코인 부족', gotIt: '확인', close: '닫기',
@@ -1713,7 +1713,7 @@ const TRANSLATIONS = {
     buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す（1コイン）',
     hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの4枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
     leaveRoom: 'ルームを退出', stripStyle: 'ストリップのスタイル',
-    themeBlack: 'ブラック', themeWhite: 'ホワイト',
+    themeBlack: 'ブラック', themeWhite: 'ホワイト', themeBorderedWhite: '枠付きホワイト',
     downloadStrip: '⬇ ストリップをダウンロード',
     outOfCoins: 'コインがなくなりました — Star Meks までメッセージをお送りください',
     outOfCoinsTitle: 'コイン不足', gotIt: '了解', close: '閉じる',
@@ -3084,27 +3084,20 @@ const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
 /* ---------------- Strip themes ----------------
-   Exactly 2 plain themes, shown to users as "Black" and "White" (ids stay
-   framed/frameless internally — see labelKey below — so sync/saved state
-   isn't affected by the rename): "Black" (thin black outer border + a thin
-   black divider between each photo slot) and "White" (identical layout,
-   no border, no dividers). No header text, no caption/footer,
-   no sprockets/textures — draw functions below read from the active
-   theme's borderWidth/divider rather than branching on its id. Each
-   theme's slots either show a captured photo or, until then, a shared
-   illustrated sky/cloud/hill placeholder. */
-// ink switched from pure black to the same warm charcoal (#313131) used
-// for every hand-drawn outline elsewhere in the redesign — a visual-only
-// constant, the same two themes/ids/broadcast behavior are unchanged.
+   3 plain themes: "White" (frameless — no border, no dividers), "Bordered
+   White" (id stays 'framed' internally — this used to be the only "Black"
+   theme, back when it was one of just two options; renamed for display
+   once a genuinely solid-black theme existed too, but the id is left
+   alone so old sync/saved state and the broadcast protocol don't care
+   about the rename), and "Black" — a new id ('solid') with a solid black
+   strip background rather than just a black border/divider on white. No
+   header text, no caption/footer, no sprockets/textures — draw functions
+   below read from the active theme's background/ink/borderWidth/divider
+   rather than branching on its id, so adding this third theme was just
+   adding a third entry here, nothing structural. Each theme's slots either
+   show a captured photo or, until then, a shared illustrated
+   sky/cloud/hill placeholder. */
 const THEMES = [
-  {
-    id: 'framed',
-    labelKey: 'themeBlack',
-    background: '#fff8ec',
-    ink: '#313131',
-    borderWidth: 3,
-    divider: true
-  },
   {
     id: 'frameless',
     labelKey: 'themeWhite',
@@ -3112,9 +3105,28 @@ const THEMES = [
     ink: '#313131',
     borderWidth: 0,
     divider: false
+  },
+  {
+    id: 'framed',
+    labelKey: 'themeBorderedWhite',
+    background: '#fff8ec',
+    ink: '#313131',
+    borderWidth: 3,
+    divider: true
+  },
+  {
+    id: 'solid',
+    labelKey: 'themeBlack',
+    background: '#131313',
+    ink: '#fff8ec',
+    borderWidth: 0,
+    divider: false
   }
 ];
-let currentThemeId = THEMES[0].id;
+// Explicit id rather than THEMES[0].id — keeps the default theme stable
+// (matches what was previously the only "Black" option) regardless of
+// display order in the array/dropdown above.
+let currentThemeId = 'framed';
 function getTheme(){ return THEMES.find(t=>t.id===currentThemeId) || THEMES[0]; }
 
 THEMES.forEach(theme=>{
