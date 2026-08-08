@@ -135,162 +135,123 @@
     from{ opacity:0; transform:translateY(14px) scale(0.98); }
     to{ opacity:1; transform:translateY(0) scale(1); }
   }
-  /* The gate is one continuous illustrated machine silhouette — main body,
-     stepped roofline, door column and the sign-on-a-post — traced as a
-     single unbroken SVG outline (.gm-outline) rather than separate boxes
-     placed near each other. All the fills (.gm-body, .gm-trim-main,
-     .gm-trim-door, .gm-post, .gm-plaque) share exact coordinates with
-     portions of that same outline path, so there are no seams; the
-     outline is drawn last, on top of every
-     fill, so it always reads as one connected line. HTML content (login
-     form, curtain, sign text) is layered above the SVG and positioned by
-     percentage against its 600x760 viewBox, so it stays locked to the
-     artwork at any container size — the container's aspect-ratio is fixed
-     to match (600/760) so the percentages and the SVG never drift apart. */
+  /* The gate/login screens are two real illustrated PNGs (front_booth.png
+     for the create/join machine, log_in.png for the login machine) rather
+     than a hand-built SVG/CSS silhouette. Both share the exact same
+     2500x2000 artwork canvas, so every interactive control below is
+     positioned as a percentage against that canvas — matched by hand to
+     the pixel bounding box of its button/field in the source PNGs — and
+     the two images/overlays swap cleanly as one unit. Unlike the old SVG
+     (preserveAspectRatio="none", free to stretch to any box), a raster
+     photo can only scale proportionally, so .gate-machine's aspect-ratio
+     stays locked to the image's real ratio (5/4) at every width — that's
+     what makes "scale the whole image+overlay together" work with zero
+     per-breakpoint reflow. */
   .gate{ width:100%; max-width:460px; }
   .gate-machine{
-    position:relative; width:100%; aspect-ratio:600/700;
+    position:relative; width:100%; aspect-ratio:5/4;
     animation:riseIn 0.6s cubic-bezier(.2,.8,.3,1) both;
     filter:drop-shadow(0 8px 0 rgba(49,49,49,0.18)) drop-shadow(0 14px 26px rgba(49,49,49,0.22));
   }
-  .gate-machine-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  .gm-body{ fill:var(--machine-tan); }
-  .gm-trim-main, .gm-trim-door, .gm-post, .gm-plaque{ fill:var(--mint); }
-  .gm-dividers{ fill:none; stroke:var(--ink-warm); stroke-width:3; stroke-linecap:round; }
-  .gm-outline{ fill:none; stroke:var(--ink-warm); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; }
+  .gate-art{ position:absolute; inset:0; width:100%; height:100%; display:none; pointer-events:none; user-select:none; -webkit-user-drag:none; }
+  .gate-art.show{ display:block; }
+  .gate-content{ position:absolute; inset:0; z-index:1; }
 
-  /* ---- Sign text, laid over the mint plaque the SVG already drew ---- */
-  .gate-sign-text{
-    position:absolute; left:76.7%; width:23.3%; top:1.2%; height:6.6%; z-index:2;
-    display:flex; align-items:center; justify-content:center; gap:2px;
-    transform:rotate(-3deg); pointer-events:none; text-align:center; line-height:1;
-    font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
-    font-size:clamp(0.4rem,1.9vw,0.62rem); letter-spacing:0.2px; white-space:nowrap;
-  }
-  .gate-sign-text .sparkle{ font-size:0.8em; }
+  /* Real, focusable, translatable text for screen readers/other locales,
+     even where the artwork already bakes the English label into pixels —
+     visually invisible so it doesn't duplicate what the image already
+     shows. */
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-  /* ---- Main content, positioned inside the body's SVG-drawn silhouette ---- */
-  .gate-body{
-    position:absolute; left:0; right:26.7%; top:12.9%; bottom:2.9%; z-index:1;
-    padding:22px 18px 14px; box-sizing:border-box; overflow:visible;
-    display:flex; flex-direction:column; align-items:center; text-align:center;
-  }
-  .gate-content{ width:100%; min-width:0; text-align:center; position:relative; z-index:1; }
-  @media (max-width:400px){
-    .gate-body{ padding:14px 12px 8px; }
-  }
-
-  /* Little peg feet at the base corners — purely decorative. */
-  .gate-foot{ position:absolute; bottom:-14px; width:20px; height:16px; background:var(--coral-soft); border:2.5px solid var(--ink-warm); border-top:none; border-radius:0 0 6px 6px; z-index:2; }
-  .gate-foot.fl{ left:4%; }
-  .gate-foot.fr{ right:7%; }
-
-  /* ---- Film-strip preview window (top of the body content) ---- */
-  .gate-film-window{
-    width:100%; max-width:230px; height:78px; margin:0 0 14px; position:relative;
-    background:var(--film-frame); border:3px solid var(--ink-warm); border-radius:10px;
-    overflow:hidden; flex:none;
-  }
-  .gate-film-window-inner{ position:absolute; inset:6px; background:var(--film-window); border-radius:5px; overflow:visible; }
-  .film-strip{
-    position:absolute; top:50%; width:17%; height:150%;
-    border:2px solid var(--ink-warm); border-radius:5px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7%;
-    padding:8% 0;
-  }
-  .film-strip::before{
-    content:''; position:absolute; top:-6%; width:34%; height:10%;
-    background:var(--cream); border:1.5px solid var(--ink-warm); border-radius:2px;
-    transform:rotate(18deg);
-  }
-  .film-strip span{ display:block; width:64%; height:22%; background:var(--cream); border:1.5px solid var(--ink-warm); border-radius:2px; }
-  .film-strip.s1{ left:16%; background:var(--mint); transform:translateY(-50%) rotate(-10deg); z-index:1; }
-  .film-strip.s2{ left:41%; background:var(--machine-tan); transform:translateY(-50%) rotate(3deg); z-index:2; }
-  .film-strip.s3{ left:66%; background:var(--coral-soft); transform:translateY(-50%) rotate(12deg); z-index:1; }
-
-  /* ---- Door / curtain window — sits inside the door column the SVG
-     already drew, sized to read as a proportionally wide arched doorway
-     rather than a cramped sliver. ---- */
-  .gate-door{
-    position:absolute; left:76.7%; right:3.3%; top:28.6%; bottom:5.7%; z-index:1;
-    border-radius:50% 50% 6px 6px; overflow:hidden;
-    border:2.5px solid var(--ink-warm); background:var(--mint-deep);
-  }
-  .gate-curtain-sill{ position:absolute; left:0; right:0; bottom:0; height:9%; background:var(--cream); border-top:2px solid var(--ink-warm); z-index:1; }
-  .gate-curtain-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  .gate-curtain-svg .curtain-shape{
-    transform-origin:top right;
-    transform:translateX(60%) rotate(10deg); /* resting/open position — shown immediately for prefers-reduced-motion */
-  }
-  @media (prefers-reduced-motion:no-preference){
-    .gate-curtain-svg .curtain-shape{ animation:curtainOpen 1.1s 0.5s cubic-bezier(.4,0,.2,1) both; }
-  }
-  @keyframes curtainOpen{
-    0%{ transform:translateX(0) rotate(0deg); }
-    100%{ transform:translateX(60%) rotate(10deg); }
-  }
-
-  /* .gate is also the wrapper for #joinStep/#authStep, but both of those
-     already cap themselves narrower (280px/300px, margin:0 auto) regardless
-     of what .gate allows, so widening it here only actually gives
-     #gateCards more room — the other screens are unaffected. */
-  .gate-cards{display:flex; flex-direction:column; gap:12px; width:100%; max-width:230px; margin:0 auto; position:relative; z-index:1;}
+  .gate-cards{ position:absolute; inset:0; display:none; }
   .gate-card{
-    position:relative; overflow:hidden;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    background:var(--coral); border:3px solid var(--ink-warm);
-    border-radius:14px; padding:16px 14px; cursor:pointer; text-align:center;
-    font-family:'Poppins',sans-serif; color:#fff;
-    box-shadow:0 4px 0 var(--ink-warm);
-    transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease;
-    animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;
+    position:absolute; border:none; background:rgba(255,255,255,0); border-radius:10%;
+    cursor:pointer; transition:background-color .15s ease, transform .15s ease;
   }
-  /* Staggered entrance — each card animates in slightly after the last,
-     rather than both popping in at once. */
-  .gate-card:nth-child(1){ animation-delay:0.05s; }
-  .gate-card:nth-child(2){ animation-delay:0.16s; }
-  .gate-card:nth-child(3){ animation-delay:0.27s; }
-  .gate-card:hover{ background:var(--coral-deep); transform:translateY(-2px); box-shadow:0 6px 0 var(--ink-warm); }
-  .gate-card:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--ink-warm); transition-duration:.08s; }
-  /* #adminLink reuses .gate-card but starts hidden — only ever shown (as a
-     third card, see updateAdminLinkVisibility() in JS) for the one admin
-     account. Being an ID selector, this wins over .gate-card's own
-     display:flex when not .show, and flex layout skips it entirely when
-     hidden, so Create/Join still lay out as a normal pair for everyone else. */
-  #adminLink{ display:none; background:var(--cream); color:var(--ink-warm); padding:10px 14px; }
-  #adminLink.show{ display:flex; }
-  #adminLink .gate-card-title{ color:var(--ink-warm); font-size:1rem; }
-  #adminLink .gate-card-sub{ color:rgba(49,49,49,0.6); }
-  /* The reference mockup's buttons are plain hand-lettered pills with no
-     icon — dropping the icon circle here rather than trying to restyle it
-     to fit a hand-drawn look it wasn't designed for. */
-  .gate-icon{ display:none; }
-  .gate-card-title{
-    font-family:'Kalam',cursive; font-weight:700; font-size:1.15rem; color:#fff;
-    text-transform:uppercase; letter-spacing:0.5px;
+  .gate-card:hover{ background:rgba(255,255,255,0.16); transform:scale(1.015); }
+  .gate-card:active{ background:rgba(49,49,49,0.1); transform:scale(0.98); transition-duration:.08s; }
+  .gate-card-create{ left:24.4%; top:47%; width:12.8%; height:16.6%; }
+  .gate-card-join{ left:39%; top:47%; width:12.8%; height:16.6%; }
+  /* Not part of the reference artwork at all — admin-only and hidden for
+     everyone else — so rather than pretend it's drawn into the machine,
+     it's its own small pill in the open panel space below the coin slot. */
+  .gate-card-admin{
+    left:27%; top:82.5%; width:34%; height:6.4%; display:none;
+    background:var(--cream); border:2px solid var(--ink-warm); border-radius:999px;
+    align-items:center; justify-content:center;
+    font-family:'Kalam',cursive; font-weight:700; font-size:clamp(0.55rem,2.4vw,0.75rem); color:var(--ink-warm);
   }
-  .gate-card-sub{ display:flex; align-items:center; gap:4px; font-size:0.68rem; color:rgba(255,255,255,0.85); }
-  .gate-card-sub svg{ width:10px; height:10px; stroke:rgba(255,255,255,0.85); }
-  /* Coin slot beneath the Create/Join buttons — pure decoration, no
-     function (payment happens via the account's coin balance, not this
-     slit), but the reference mockup shows it as part of the machine face. */
-  .gate-coin-slot{ width:10px; height:26px; margin:14px auto 0; background:var(--film-window); border:2px solid var(--ink-warm); border-radius:3px; }
-  .join-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px; margin:0 auto;}
-  .auth-step{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px; margin:0 auto;}
-  .auth-form-fields{display:flex; flex-direction:column; gap:10px; width:100%;}
-  .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;}
+  .gate-card-admin.show{ display:flex; }
+  .gate-card-admin:hover{ background:#fff; }
+  .gate-card-admin:active{ transform:scale(0.97); }
+
+  /* Neither sub-step is depicted in the artwork (the mockup only shows the
+     resting Create/Join buttons), so both render as an opaque card over
+     that same region instead of fighting the baked-in pixels underneath. */
+  .join-step{
+    position:absolute; left:19%; top:37%; width:62%; height:36%; z-index:2;
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:4%;
+    background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:8%;
+    box-shadow:0 6px 0 rgba(49,49,49,0.18); padding:5%; box-sizing:border-box;
+  }
+  .join-step input{ margin:0; padding:9px 10px; font-size:0.8rem; }
+  .join-step .btn-primary{ padding:8px 14px; font-size:0.8rem; }
+  .join-step .leave-link{ font-size:0.68rem; padding:2px; }
+
+  .auth-step{ position:absolute; inset:0; display:none; }
+  .auth-form-fields{ position:relative; width:100%; height:100%; }
+  .gate .gate-overlay-input{
+    position:absolute; background:transparent; border:none; border-radius:0;
+    color:var(--ink-warm); text-align:left; padding:0 3%; letter-spacing:normal; margin:0;
+    font-size:clamp(0.52rem,2.5vw,0.72rem);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .gate .gate-overlay-input:focus{ box-shadow:none; outline:none; background:rgba(255,255,255,0.35); }
+  #authEmail{ left:25.4%; top:50.55%; width:25.1%; height:7.1%; }
+  #authPassword{ left:25.4%; top:59.7%; width:25.1%; height:7.05%; }
+  .gate .auth-forgot-link{
+    position:absolute; left:25.4%; top:67.1%; width:25.1%; height:2.5%; margin:0;
+    font-size:clamp(0.5rem,1.9vw,0.65rem); text-align:right;
+  }
+  .auth-submit-btn{
+    position:absolute; left:29.44%; top:69.95%; width:16.44%; height:5.3%;
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    background:transparent; border:none; border-radius:999px; color:transparent;
+    font-family:'Kalam',cursive; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+    font-size:clamp(0.5rem,2vw,0.7rem);
+  }
+  /* Only breaks from the baked-in "LOG IN" pixels when the label has to
+     say something the artwork can't show — a loading state, or "forgot
+     password" mode — otherwise it stays fully transparent so the real
+     illustrated pill shows through untouched; the child label's color
+     just inherits, so this one toggle handles both the button and its
+     text. */
+  .auth-submit-btn.needs-label{ background:var(--coral); color:#fff; }
+  .auth-submit-btn:hover{ filter:brightness(1.08); }
+  .auth-submit-btn:active{ transform:scale(0.96); }
+  .auth-submit-btn .btn-spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
+
+  /* Everything below either isn't depicted in the artwork at all (auth
+     banners, the language switcher, the separate "set new password" card
+     reached via an email link) or needs unconstrained height for
+     multi-line/translated text, so it lives in normal flow directly under
+     the machine instead of fighting a fixed-aspect image for room. */
+  .gate-below{ display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:280px; margin:14px auto 0; }
+  .gate-below .lang-switcher-row{ display:none; }
+  .gate-below .lang-switcher-row.show{ display:flex; }
+  .auth-banner{display:flex; align-items:flex-start; gap:8px; width:100%; border-radius:12px; padding:10px 12px; font-size:0.8rem; text-align:left; line-height:1.4; animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both; box-sizing:border-box;}
   .auth-banner-icon{flex:none; font-size:0.95rem; line-height:1.3;}
   .auth-banner-error{background:rgba(224,105,126,0.14); border:1.5px solid rgba(224,105,126,0.5); color:#ffd4dc;}
   .auth-banner-success{background:rgba(143,209,158,0.14); border:1.5px solid rgba(143,209,158,0.5); color:#c9f0d1;}
-  .auth-submit-btn{display:flex; align-items:center; justify-content:center; gap:8px;}
+  .auth-submit-btn-inline{display:flex; align-items:center; justify-content:center; gap:8px;}
   .btn-spinner{display:none; flex:none; width:15px; height:15px; border-radius:50%; border:2px solid rgba(21,16,26,0.3); border-top-color:var(--film-black); animation:authSpin 0.7s linear infinite;}
-  .auth-submit-btn.is-loading .btn-spinner{ display:inline-block; }
+  .is-loading .btn-spinner{ display:inline-block; }
   @keyframes authSpin{ to{ transform:rotate(360deg); } }
-  .auth-confirm-card{display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; background:rgba(251,243,231,0.05); border:1.5px solid rgba(215,162,74,0.4); border-radius:16px; padding:22px 18px; text-align:center; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both;}
+  .auth-confirm-card{display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; background:rgba(251,243,231,0.05); border:1.5px solid rgba(215,162,74,0.4); border-radius:16px; padding:22px 18px; text-align:center; animation:riseIn 0.3s cubic-bezier(.2,.8,.3,1) both; box-sizing:border-box;}
   .auth-confirm-icon{font-size:1.8rem;}
   .auth-confirm-title{font-family:'Caveat',cursive; font-size:1.3rem; color:var(--gold); margin:0;}
   .auth-confirm-text{font-size:0.82rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
-  .gate-footnote{font-size:0.72rem; color:rgba(251,243,231,0.4); margin-top:20px; line-height:1.4;}
+  .gate-footnote{font-size:0.72rem; color:rgba(49,49,49,0.55); line-height:1.4; text-align:center; margin:0;}
 
   .coin-badge{
     position:fixed; top:14px; right:14px; z-index:60;
@@ -534,24 +495,14 @@
   .gate .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   .gate .btn-primary .btn-spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
 
-  /* Narrow phones can't fit the full-height artwork's fixed-px content
-     (film window, form fields, footnote) inside the same proportional
-     zone that works at wider sizes, so this breakpoint both shrinks that
-     content and gives the silhouette itself extra relative height — safe
-     because .gate-machine-svg uses preserveAspectRatio="none", so the
-     artwork always stretches to exactly fill the container regardless of
-     its ratio, and every overlay position below is a percentage of that
-     same box. Placed after every rule it overrides so it wins the
-     cascade on specificity ties regardless of being inside @media. */
+  /* The image+overlay already scales together as one fixed-ratio unit at
+     every width (see .gate-machine above), so narrow phones need no
+     separate reflow — just tighter type/padding on the below-the-image
+     extras, which aren't part of that percentage system. */
   @media (max-width:400px){
-    .gate-machine{ aspect-ratio:600/860; }
-    .gate-film-window{ height:52px; margin-bottom:8px; }
-    .gate .choice-label{ margin:0 0 6px; }
-    .gate-cards{ gap:8px; }
-    .join-step, .auth-step{ gap:7px; }
     .gate input{ padding:10px; font-size:0.95rem; }
     .gate .btn-primary{ padding:9px 16px; font-size:0.95rem; }
-    .gate-footnote{ margin-top:8px; font-size:0.66rem; }
+    .gate-footnote{ font-size:0.66rem; }
   }
 
   .layout{width:100%; display:flex; gap:28px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
@@ -1019,54 +970,21 @@
 
   <div class="gate" id="gate">
    <div class="gate-machine">
-    <svg class="gate-machine-svg" viewBox="0 0 600 700" preserveAspectRatio="none" aria-hidden="true">
-      <path class="gm-body" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,150 L475,150 L475,53 L460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 L525,53 L525,150 L580,150 A20,20 0 0 1 600,170 L600,668 A12,12 0 0 1 588,680 L14,680 A14,14 0 0 1 0,666 Z"/>
-      <path class="gm-trim-main" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,118 Z"/>
-      <path class="gm-trim-door" d="M440,170 L440,150 L580,150 A20,20 0 0 1 600,170 Z"/>
-      <rect class="gm-post" x="475" y="53" width="50" height="97"/>
-      <path class="gm-plaque" d="M460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 Z"/>
-      <path class="gm-dividers" d="M28,118 L440,118 M440,170 L580,170"/>
-      <path class="gm-outline" d="M0,118 A28,28 0 0 1 28,90 L440,90 L440,150 L475,150 L475,53 L460,53 L460,22 A14,14 0 0 1 474,8 L586,8 A14,14 0 0 1 600,22 L600,53 L525,53 L525,150 L580,150 A20,20 0 0 1 600,170 L600,668 A12,12 0 0 1 588,680 L14,680 A14,14 0 0 1 0,666 Z"/>
-    </svg>
-    <div class="gate-sign-text" aria-hidden="true"><span class="sparkle" aria-hidden="true">✦</span> luv booth <span class="sparkle" aria-hidden="true">✦</span></div>
-    <div class="gate-body">
-      <div class="gate-film-window" aria-hidden="true">
-        <div class="gate-film-window-inner">
-          <div class="film-strip s1"><span></span><span></span><span></span></div>
-          <div class="film-strip s2"><span></span><span></span><span></span></div>
-          <div class="film-strip s3"><span></span><span></span><span></span></div>
-        </div>
-      </div>
-      <div class="gate-content">
+    <img class="gate-art show" id="gateArtBooth" src="assets/front_booth.png" alt="" aria-hidden="true" draggable="false">
+    <img class="gate-art" id="gateArtLogin" src="assets/log_in.png" alt="" aria-hidden="true" draggable="false">
+    <div class="gate-content">
       <div class="gate-cards" id="gateCards" style="display:none;">
-        <button class="gate-card" id="createCard" type="button">
-          <span class="gate-icon blush" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#7a4456" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>
-          </span>
-          <span class="gate-card-title" data-i18n="createTitle">Create</span>
-          <span class="gate-card-sub"><span data-i18n="createSub">a new room</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          </span>
+        <button class="gate-card gate-card-create" id="createCard" type="button">
+          <span class="sr-only" data-i18n="createTitle">Create</span>
+          <span class="sr-only" data-i18n="createSub">a new room</span>
         </button>
-        <button class="gate-card" id="joinCard" type="button">
-          <span class="gate-icon gold" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#5c4111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 5l3 3M18 3l3 3"/></svg>
-          </span>
-          <span class="gate-card-title" data-i18n="joinTitle">Join</span>
-          <span class="gate-card-sub"><span data-i18n="joinSub">with your partner's code</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          </span>
+        <button class="gate-card gate-card-join" id="joinCard" type="button">
+          <span class="sr-only" data-i18n="joinTitle">Join</span>
+          <span class="sr-only" data-i18n="joinSub">with your partner's code</span>
         </button>
-        <button class="gate-card" id="adminLink" type="button">
-          <span class="gate-icon paper" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#2b1b2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3L5.6 5.6"/></svg>
-          </span>
-          <span class="gate-card-title" data-i18n="adminLink">Admin</span>
-          <span class="gate-card-sub"><span data-i18n="adminCardSub">manage accounts</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          </span>
+        <button class="gate-card gate-card-admin" id="adminLink" type="button">
+          <span data-i18n="adminLink">Admin</span>
         </button>
-        <div class="gate-coin-slot" aria-hidden="true"></div>
       </div>
 
       <div class="join-step" id="joinStep" style="display:none;">
@@ -1076,64 +994,48 @@
       </div>
 
       <div class="auth-step" id="authStep" style="display:none;">
-        <div class="lang-switcher-row">
-          <select id="langSwitcher" class="lang-switcher" aria-label="Language"></select>
-        </div>
         <div class="auth-form-fields" id="authFormFields">
-          <p class="choice-label" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
-          <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
-            <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
-          </div>
-          <input id="authEmail" type="text" data-i18n-placeholder="emailOrUsernamePlaceholder" placeholder="EMAIL OR USERNAME" autocomplete="username" style="text-transform:none; letter-spacing:normal;">
-          <input id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
+          <p class="sr-only" id="authStepTitle" data-i18n="authTitleLogin">log in to start a room</p>
+          <input class="gate-overlay-input" id="authEmail" type="text" data-i18n-placeholder="emailOrUsernamePlaceholder" placeholder="EMAIL OR USERNAME" autocomplete="username" style="text-transform:none; letter-spacing:normal;">
+          <input class="gate-overlay-input" id="authPassword" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="PASSWORD" autocomplete="current-password" style="text-transform:none; letter-spacing:normal;">
           <button class="leave-link auth-forgot-link" id="forgotPasswordLink" type="button" data-i18n="forgotPasswordLink">forgot password?</button>
           <button class="leave-link auth-forgot-link" id="backToLoginLink" type="button" data-i18n="backToLogin" style="display:none;">back to log in</button>
-          <button class="btn-primary auth-submit-btn" id="authSubmitBtn" type="button">
+          <button class="auth-submit-btn" id="authSubmitBtn" type="button">
             <span class="btn-spinner" id="authSpinner" aria-hidden="true"></span>
             <span id="authSubmitLabel" data-i18n="logIn">log in</span>
           </button>
-          <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
-            <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
-          </div>
-        </div>
-        <div class="auth-confirm-card" id="resetPasswordCard" style="display:none;">
-          <span class="auth-confirm-icon" aria-hidden="true">🔑</span>
-          <p class="auth-confirm-title" data-i18n="setNewPasswordTitle">set a new password</p>
-          <div class="auth-banner auth-banner-error" id="resetPasswordErrorBanner" role="alert" style="display:none;">
-            <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="resetPasswordErrorText"></span>
-          </div>
-          <input id="newPasswordInput" type="password" data-i18n-placeholder="newPasswordPlaceholder" placeholder="NEW PASSWORD" autocomplete="new-password" style="text-transform:none; letter-spacing:normal; width:100%;">
-          <button class="btn-primary auth-submit-btn" id="resetPasswordSubmitBtn" type="button">
-            <span class="btn-spinner" id="resetPasswordSpinner" aria-hidden="true"></span>
-            <span id="resetPasswordSubmitLabel" data-i18n="setNewPasswordBtn">set new password</span>
-          </button>
-          <div class="auth-banner auth-banner-success" id="resetPasswordSuccessBanner" style="display:none;">
-            <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="resetPasswordSuccessText"></span>
-          </div>
         </div>
       </div>
+    </div>
+   </div>
 
-      <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
-      <div class="error-msg" id="gateError" role="alert"></div>
+   <div class="gate-below">
+    <div class="lang-switcher-row" id="langSwitcherRow">
+      <select id="langSwitcher" class="lang-switcher" aria-label="Language"></select>
+    </div>
+    <div class="auth-banner auth-banner-error" id="authErrorBanner" role="alert" style="display:none;">
+      <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="authErrorText"></span>
+    </div>
+    <div class="auth-banner auth-banner-success" id="authSuccessBanner" style="display:none;">
+      <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="authSuccessText"></span>
+    </div>
+    <div class="auth-confirm-card" id="resetPasswordCard" style="display:none;">
+      <span class="auth-confirm-icon" aria-hidden="true">🔑</span>
+      <p class="auth-confirm-title" data-i18n="setNewPasswordTitle">set a new password</p>
+      <div class="auth-banner auth-banner-error" id="resetPasswordErrorBanner" role="alert" style="display:none;">
+        <span class="auth-banner-icon" aria-hidden="true">⚠</span><span id="resetPasswordErrorText"></span>
+      </div>
+      <input id="newPasswordInput" type="password" data-i18n-placeholder="newPasswordPlaceholder" placeholder="NEW PASSWORD" autocomplete="new-password" style="text-transform:none; letter-spacing:normal; width:100%;">
+      <button class="btn-primary auth-submit-btn-inline" id="resetPasswordSubmitBtn" type="button">
+        <span class="btn-spinner" id="resetPasswordSpinner" aria-hidden="true"></span>
+        <span id="resetPasswordSubmitLabel" data-i18n="setNewPasswordBtn">set new password</span>
+      </button>
+      <div class="auth-banner auth-banner-success" id="resetPasswordSuccessBanner" style="display:none;">
+        <span class="auth-banner-icon" aria-hidden="true">✓</span><span id="resetPasswordSuccessText"></span>
       </div>
     </div>
-    <div class="gate-door" aria-hidden="true">
-      <svg class="gate-curtain-svg" viewBox="0 0 100 130" preserveAspectRatio="none">
-        <defs>
-          <pattern id="ginghamPattern" width="16" height="16" patternUnits="userSpaceOnUse">
-            <rect width="16" height="16" fill="#fff8ec"/>
-            <rect width="16" height="6" fill="#ef6562" opacity="0.6"/>
-            <rect width="6" height="16" fill="#ef6562" opacity="0.6"/>
-          </pattern>
-        </defs>
-        <path class="curtain-shape"
-          d="M3 3 L97 3 L97 96 Q88 110 79 96 Q70 112 61 96 Q52 110 43 96 Q34 112 25 96 Q16 110 7 96 Z"
-          fill="url(#ginghamPattern)" stroke="#313131" stroke-width="2" stroke-linejoin="round"/>
-      </svg>
-      <div class="gate-curtain-sill"></div>
-    </div>
-    <div class="gate-foot fl" aria-hidden="true"></div>
-    <div class="gate-foot fr" aria-hidden="true"></div>
+    <p class="gate-footnote" id="gateFootnote" data-i18n="gateFootnote">your coins &amp; recaps are tied to your account — nothing else is saved</p>
+    <div class="error-msg" id="gateError" role="alert"></div>
    </div>
   </div>
 
@@ -1819,6 +1721,9 @@ document.addEventListener('pointerdown', (e)=>{
 /* ---------------- Room gate ---------------- */
 const gate = document.getElementById('gate');
 const marquee = document.querySelector('.marquee');
+const gateArtBooth = document.getElementById('gateArtBooth');
+const gateArtLogin = document.getElementById('gateArtLogin');
+const langSwitcherRow = document.getElementById('langSwitcherRow');
 const gateCards = document.getElementById('gateCards');
 const joinStep = document.getElementById('joinStep');
 const roomInput = document.getElementById('roomInput');
@@ -1953,6 +1858,10 @@ function showAuthSuccess(msg){
 function setAuthLoading(loading){
   authSubmitBtn.disabled = loading;
   authSubmitBtn.classList.toggle('is-loading', loading);
+  // The artwork always shows "LOG IN" baked into its pixels — the overlay
+  // button only needs a real (opaque) label of its own when it has to say
+  // something the art can't: loading, or "forgot password" mode.
+  authSubmitBtn.classList.toggle('needs-label', loading || authMode === 'forgot');
   authSubmitLabel.textContent = loading
     ? (authMode === 'forgot' ? t('sendingResetLink') : t('loggingIn'))
     : (authMode === 'forgot' ? t('sendResetLink') : t('logIn'));
@@ -1975,6 +1884,9 @@ setAuthMode('login');
 function showAuthStep(show){
   gateCards.style.display = show ? 'none' : 'flex';
   authStep.style.display = show ? 'flex' : 'none';
+  gateArtLogin.classList.toggle('show', show);
+  gateArtBooth.classList.toggle('show', !show);
+  langSwitcherRow.classList.toggle('show', show);
   authFormFields.style.display = 'flex';
   resetPasswordCard.style.display = 'none';
   hideAuthFeedback();
@@ -2079,8 +1991,7 @@ async function refreshAuthState(){
    login/Create-Join decision. Registered before the initial gate-entry
    IIFE below so it's ready to fire as soon as the client detects it. */
 function showResetPasswordCard(){
-  gateCards.style.display = 'none';
-  authStep.style.display = 'flex';
+  showAuthStep(true);
   authFormFields.style.display = 'none';
   resetPasswordCard.style.display = 'flex';
   resetPasswordErrorBanner.style.display = 'none';
