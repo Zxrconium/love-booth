@@ -870,6 +870,34 @@
   .swap-modal-close{background:rgba(251,243,231,0.1); color:var(--paper); width:34px; height:34px; min-width:34px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;}
   .swap-modal-close:hover{ background:rgba(251,243,231,0.18); }
   .swap-modal .thumb-grid{max-height:none; margin:0;}
+  /* Reuses .swap-modal-backdrop for the dark blurred overlay (same
+     mechanic as the swap/admin modals) but its own smaller card styled to
+     match the hand-drawn gate/booth theme rather than the older dark
+     swap-modal look — this is the only modal shown from either screen so
+     far, and it needs to read clearly on both. */
+  .out-of-coins-modal{
+    position:relative; background:var(--cream); border:3px solid var(--ink-warm); border-radius:20px;
+    padding:30px 24px 24px; width:100%; max-width:320px; text-align:center; box-sizing:border-box;
+    box-shadow:0 8px 0 rgba(49,49,49,0.18), 0 16px 34px rgba(49,49,49,0.28);
+    animation:riseIn 0.25s cubic-bezier(.2,.8,.3,1) both;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .out-of-coins-icon{ font-size:2.6rem; line-height:1; }
+  .out-of-coins-title{ font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--coral-deep); margin:0; text-transform:uppercase; letter-spacing:0.5px; }
+  .out-of-coins-text{ font-size:0.92rem; color:var(--ink-warm); line-height:1.5; margin:0; }
+  .out-of-coins-close{
+    position:absolute; top:10px; right:10px; background:var(--cream); border:2px solid var(--ink-warm);
+    color:var(--ink-warm); width:30px; height:30px; min-width:30px; border-radius:50%; padding:0;
+    display:flex; align-items:center; justify-content:center; font-size:1.05rem; line-height:1; cursor:pointer;
+  }
+  .out-of-coins-close:hover{ background:#fff; }
+  .out-of-coins-modal .btn-primary{
+    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.5px; margin-top:6px; width:auto; padding:11px 28px;
+  }
+  .out-of-coins-modal .btn-primary:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .out-of-coins-modal .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   @keyframes celebrate{
     0%{ transform:scale(1); }
     45%{ transform:scale(1.06); box-shadow:0 22px 50px rgba(215,162,74,0.35); }
@@ -1213,6 +1241,16 @@
   <div class="fs-thumb-rail" id="fsThumbRail"></div>
 </div>
 
+<div class="swap-modal-backdrop" id="outOfCoinsBackdrop">
+  <div class="out-of-coins-modal">
+    <button class="out-of-coins-close" id="outOfCoinsClose" type="button" data-i18n-aria="close" aria-label="close">×</button>
+    <span class="out-of-coins-icon" aria-hidden="true">🪙</span>
+    <p class="out-of-coins-title" data-i18n="outOfCoinsTitle">out of coins</p>
+    <p class="out-of-coins-text" data-i18n="outOfCoins">you're out of coins — message us on Star Meks to get set up</p>
+    <button class="btn-primary" id="outOfCoinsGotIt" type="button" data-i18n="gotIt">got it</button>
+  </div>
+</div>
+
 <div class="swap-modal-backdrop" id="swapModalBackdrop">
   <div class="swap-modal">
     <div class="swap-modal-header">
@@ -1296,6 +1334,7 @@ const TRANSLATIONS = {
     themeBlack: 'Black', themeWhite: 'White',
     downloadStrip: '⬇ download strip',
     outOfCoins: "you're out of coins — message us on Star Meks to get set up",
+    outOfCoinsTitle: 'out of coins', gotIt: 'got it', close: 'close',
     couldNotCheckBalance: 'Could not check your coin balance — try again in a moment.',
     accountsNotAvailable: "accounts aren't available right now — try again later.",
     enterBothFields: 'enter your email or username, and a password.',
@@ -1383,6 +1422,7 @@ const TRANSLATIONS = {
     themeBlack: 'Itim', themeWhite: 'Puti',
     downloadStrip: '⬇ i-download ang strip',
     outOfCoins: 'naubusan ka na ng coins — mag-message sa Star Meks para ma-set up',
+    outOfCoinsTitle: 'naubusan ng coins', gotIt: 'sige', close: 'isara',
     couldNotCheckBalance: 'Hindi ma-check ang balanse ng coins mo — subukan ulit sandali.',
     accountsNotAvailable: 'hindi pa available ang accounts ngayon — subukan ulit mamaya.',
     enterBothFields: 'ilagay ang email o username, at password.',
@@ -1470,6 +1510,7 @@ const TRANSLATIONS = {
     themeBlack: 'Negro', themeWhite: 'Blanco',
     downloadStrip: '⬇ descargar tira',
     outOfCoins: 'te quedaste sin monedas — escríbenos a Star Meks para activarlas',
+    outOfCoinsTitle: 'sin monedas', gotIt: 'entendido', close: 'cerrar',
     couldNotCheckBalance: 'No se pudo revisar tu saldo de monedas — intenta de nuevo en un momento.',
     accountsNotAvailable: 'las cuentas no están disponibles ahora mismo — intenta más tarde.',
     enterBothFields: 'ingresa tu correo o nombre de usuario, y tu contraseña.',
@@ -1557,6 +1598,7 @@ const TRANSLATIONS = {
     themeBlack: '블랙', themeWhite: '화이트',
     downloadStrip: '⬇ 스트립 다운로드',
     outOfCoins: '코인이 부족합니다 — Star Meks로 메시지를 보내주세요',
+    outOfCoinsTitle: '코인 부족', gotIt: '확인', close: '닫기',
     couldNotCheckBalance: '코인 잔액을 확인할 수 없습니다 — 잠시 후 다시 시도해 주세요.',
     accountsNotAvailable: '지금은 계정 기능을 사용할 수 없습니다 — 나중에 다시 시도해 주세요.',
     enterBothFields: '이메일 또는 아이디와 비밀번호를 모두 입력해 주세요.',
@@ -1644,6 +1686,7 @@ const TRANSLATIONS = {
     themeBlack: 'ブラック', themeWhite: 'ホワイト',
     downloadStrip: '⬇ ストリップをダウンロード',
     outOfCoins: 'コインがなくなりました — Star Meks までメッセージをお送りください',
+    outOfCoinsTitle: 'コイン不足', gotIt: '了解', close: '閉じる',
     couldNotCheckBalance: 'コイン残高を確認できませんでした — しばらくしてからもう一度お試しください。',
     accountsNotAvailable: '現在アカウント機能はご利用いただけません — 後でもう一度お試しください。',
     enterBothFields: 'メールアドレスまたはユーザー名と、パスワードの両方を入力してください。',
@@ -2526,6 +2569,15 @@ function showGateError(msg){
   gateError.textContent = msg;
 }
 
+// Was previously just showGateError(t('outOfCoins')) — small red text tucked
+// below the footnote, easy to miss entirely. A real modal instead, matching
+// the admin panel's card styling, triggered at the actual moment someone
+// with 0 coins tries to create a room. (Listeners are wired up further
+// down, next to the outOfCoins* const declarations — these are function
+// declarations so they're hoisted and safe to call from above that point.)
+function showOutOfCoinsModal(){ outOfCoinsBackdrop.classList.add('show'); }
+function hideOutOfCoinsModal(){ outOfCoinsBackdrop.classList.remove('show'); }
+
 function showJoinStep(show){
   gateCards.style.display = show ? 'none' : 'flex';
   joinStep.style.display = show ? 'flex' : 'none';
@@ -2552,7 +2604,7 @@ createCard.addEventListener('click', async ()=>{
     return;
   }
   if(newBalance === null){
-    showGateError(t('outOfCoins'));
+    showOutOfCoinsModal();
     return;
   }
   coinBadgeCount.textContent = newBalance;
@@ -2640,6 +2692,14 @@ const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
 const printSlot = document.getElementById('printSlot');
 const printingIndicator = document.getElementById('printingIndicator');
+const outOfCoinsBackdrop = document.getElementById('outOfCoinsBackdrop');
+const outOfCoinsClose = document.getElementById('outOfCoinsClose');
+const outOfCoinsGotIt = document.getElementById('outOfCoinsGotIt');
+outOfCoinsClose.addEventListener('click', hideOutOfCoinsModal);
+outOfCoinsGotIt.addEventListener('click', hideOutOfCoinsModal);
+outOfCoinsBackdrop.addEventListener('click', (e)=>{
+  if(e.target === outOfCoinsBackdrop) hideOutOfCoinsModal();
+});
 const swapModalBackdrop = document.getElementById('swapModalBackdrop');
 const swapModalTitle = document.getElementById('swapModalTitle');
 const swapModalClose = document.getElementById('swapModalClose');
