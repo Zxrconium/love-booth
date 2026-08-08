@@ -771,15 +771,31 @@
      mechanics and z-indexing as before) in the illustrated arched "output
      slot" window from the mockups, purely as an outer decorative layer so
      none of the existing print-out-animation positioning math changes. */
-  .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; padding:20px 16px 14px; }
+  /* aspect-ratio pinned to the arch SVG's own viewBox (100:168) so the
+     frame's shape stays constant regardless of how big the strip inside it
+     is — without this, shrinking the strip below also shrinks .output-slot
+     itself (its height is otherwise just content-driven), which squashes
+     the arch flatter since output-slot-frame stretches to fill whatever
+     box it's given (preserveAspectRatio="none"). Centering the (now
+     smaller) strip-print-frame inside via flex handles both axes at once. */
+  .output-slot{
+    position:relative; width:100%; max-width:230px; margin-top:14px; padding:20px 16px 14px;
+    box-sizing:border-box; aspect-ratio:100/168; display:flex; align-items:center; justify-content:center;
+  }
   .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-  .strip-print-frame{position:relative; width:100%; max-width:230px; display:flex; flex-direction:column; align-items:center;}
+  /* A percentage of .output-slot's own (post-padding) width, not a fixed
+     px cap — .output-slot doesn't always actually render at its 230px max
+     (narrower when the booth layout is tight on horizontal room), and a
+     fixed px value stayed the same size regardless, so the strip ended up
+     filling most of a smaller arch just like before the fix. 65% keeps it
+     sitting well inset with real margin on every side at any size. */
+  .strip-print-frame{position:relative; width:65%; display:flex; flex-direction:column; align-items:center;}
   .print-slot{
     width:86%; height:9px; border-radius:5px 5px 2px 2px; background:#1a1a1a;
     box-shadow:inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08);
     margin-bottom:-3px; position:relative; z-index:1;
   }
-  #stripCanvas{box-shadow:0 18px 40px rgba(0,0,0,0.45); max-width:230px; width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none; position:relative; z-index:0;}
+  #stripCanvas{box-shadow:0 18px 40px rgba(0,0,0,0.45); width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
   #stripCanvas.print-out{ animation:stripPrintOut 1.3s both; transform-origin:50% 0%; }
   #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
@@ -944,7 +960,11 @@
     .output-column{ gap:10px; }
     .strip-wrap{ max-width:180px; }
     .strip-wrap .btn-gold{ max-width:180px; font-size:0.78rem; padding:11px 8px; }
-    .output-slot, .strip-print-frame, #stripCanvas, .theme-picker{ max-width:180px; }
+    .output-slot, .theme-picker{ max-width:180px; }
+    /* No separate strip-print-frame/#stripCanvas override needed here —
+       both are percentage-sized off .output-slot now, so they scale down
+       with it automatically at any width instead of needing a matching
+       fixed px value at every breakpoint. */
     .recap-panel{ max-width:180px; padding:10px 7px; }
     .recap-title{ font-size:0.82rem; }
     #recapQr{ width:88px; height:88px; padding:4px; }
