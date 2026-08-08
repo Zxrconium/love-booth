@@ -288,9 +288,26 @@
     35%{ opacity:1; }
     100%{ opacity:0; transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); }
   }
-  .logout-link{position:fixed; top:76px; right:14px; z-index:60; display:none; background:none; border:none; color:var(--ink-warm); font-family:'Kalam',cursive; font-weight:700; font-size:0.85rem; text-decoration:underline; padding:4px; width:auto;}
-  .logout-link.show{ display:inline-block; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
-  .logout-link:hover{ color:var(--coral-deep); }
+  /* Fixed in the same corner on every screen (mirrors .coin-badge on the
+     opposite side) rather than living inside .booth-card or .gate, so one
+     element covers "log out" everywhere without per-screen placement code.
+     Sized and contrasted to match .coin-badge's visual weight — the old
+     text link's whole problem was being small and easy to miss, so this
+     deliberately isn't subtle: solid cream circle, thick ink border, drop
+     shadow, and a full 48px tap target. */
+  .logout-icon-btn{
+    position:fixed; top:14px; left:14px; z-index:60;
+    display:none; align-items:center; justify-content:center;
+    width:48px; height:48px; padding:0; cursor:pointer;
+    background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:50%;
+    box-shadow:0 3px 0 var(--ink-warm);
+    transition:box-shadow .2s ease, transform .15s ease;
+  }
+  .logout-icon-btn.show{ display:flex; animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both; animation-delay:0.08s; }
+  .logout-icon-btn svg{ width:26px; height:19px; overflow:visible; transition:transform .15s ease; }
+  .logout-icon-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 0 var(--ink-warm); }
+  .logout-icon-btn:hover svg{ transform:translateX(-2px); }
+  .logout-icon-btn:active{ transform:translateY(1px); box-shadow:0 2px 0 var(--ink-warm); }
 
   /* .swap-modal.admin-modal (two classes) rather than .admin-modal alone —
      needed to outrank the later, equal-specificity base .swap-modal sizing
@@ -376,11 +393,11 @@
      (not replacing) the existing :active press-down scale — see the
      pointerdown delegation in JS that sets --rx/--ry and toggles
      .is-rippling on whichever of these it lands on. */
-  .btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge{
+  .btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge, .logout-icon-btn{
     --rx:50%; --ry:50%;
   }
   .btn-primary::after, .btn-gold::after, .btn-ghost::after, .btn-reconnect::after, .copy-btn::after,
-  .gate-card::after, .choice-card::after, .thumb::after, .coin-badge::after{
+  .gate-card::after, .choice-card::after, .thumb::after, .coin-badge::after, .logout-icon-btn::after{
     content:''; position:absolute; left:var(--rx); top:var(--ry);
     width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
     background:radial-gradient(circle, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%);
@@ -388,7 +405,8 @@
   }
   .btn-primary.is-rippling::after, .btn-gold.is-rippling::after, .btn-ghost.is-rippling::after,
   .btn-reconnect.is-rippling::after, .copy-btn.is-rippling::after, .gate-card.is-rippling::after,
-  .choice-card.is-rippling::after, .thumb.is-rippling::after, .coin-badge.is-rippling::after{
+  .choice-card.is-rippling::after, .thumb.is-rippling::after, .coin-badge.is-rippling::after,
+  .logout-icon-btn.is-rippling::after{
     animation:rippleFx 0.55s ease-out;
   }
   @keyframes rippleFx{
@@ -399,7 +417,8 @@
   @media (max-width: 400px){
     .coin-badge{ font-size:1.05rem; padding:8px 13px 8px 8px; gap:7px; }
     .coin-badge-icon{ width:28px; height:28px; font-size:0.95rem; }
-    .logout-link{ top:68px; }
+    .logout-icon-btn{ width:42px; height:42px; top:10px; left:10px; }
+    .logout-icon-btn svg{ width:23px; height:17px; }
     /* The generate button eating horizontal space left the "TEMPORARY
        PASSWORD" placeholder (already widened a lot by the uppercase
        4px letter-spacing every .admin-modal input uses) truncated mid-word
@@ -512,20 +531,6 @@
   .booth-card{
     width:100%; max-width:400px; position:relative;
   }
-  /* Leaving the room, restyled as the mockup's small open-door + arrow
-     icon instead of a text link — same #leaveBtn element/click handler as
-     before (teardownAndReturnToGate), just a different presentation, so it
-     sits consistently in the same spot across all four booth states
-     (connected/disconnected/picking/aftermath) rather than needing its own
-     per-state placement. */
-  .door-icon-btn{
-    position:absolute; top:-38px; left:-6px; z-index:5;
-    width:38px; height:30px; padding:0; background:none; border:none;
-    display:flex; align-items:center; justify-content:flex-start; cursor:pointer;
-  }
-  .door-icon-btn svg{ width:100%; height:100%; overflow:visible; }
-  .door-icon-btn:hover svg{ transform:translateX(-2px); }
-  .door-icon-btn svg{ transition:transform .15s ease; }
   /* Purely decorative, flanks the whole two-column booth layout — hidden
      below 900px where there's no longer room beside both columns without
      cramping them (the shooting/picking screens are already the widest,
@@ -949,7 +954,20 @@
 </head>
 <body>
 <div class="coin-badge" id="coinBadge"><span class="coin-badge-icon"><img src="assets/coin-purse.png" alt="" aria-hidden="true"><span class="coin-sparkle s1" aria-hidden="true">✦</span><span class="coin-sparkle s2" aria-hidden="true">✦</span><span class="coin-sparkle s3" aria-hidden="true">✦</span></span><span id="coinBadgeCount">0</span></div>
-<button class="logout-link" id="logoutLink" type="button" data-i18n="logout">log out</button>
+<!-- Single logout control, shown fixed in the same screen corner on every
+     screen (gate and booth alike) whenever someone's logged in — replaces
+     both the old hard-to-see "log out" text link and the booth screen's
+     separate door-icon "leave room" button, so there's one unambiguous way
+     to log out instead of two redundant ones. Signing out already tears
+     down an in-progress room first (see the click handler), so nothing is
+     lost by folding "leave room" into this. -->
+<button class="logout-icon-btn" id="logoutBtn" type="button" data-i18n-aria="logout" data-i18n-title="logout" aria-label="log out" title="log out">
+  <svg viewBox="0 0 44 32" aria-hidden="true">
+    <path d="M27 4 L27 28 L15 25 L15 7 Z" fill="#313131"/>
+    <circle cx="19" cy="16" r="1.4" fill="#fff8ec"/>
+    <path d="M10 16 L1 16 M1 16 L6 11 M1 16 L6 21" stroke="#313131" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+</button>
 <div class="recap-viewer" id="recapViewer">
   <div class="recap-viewer-card">
     <p class="recap-viewer-title" data-i18n="recapTitle">session recap</p>
@@ -1041,13 +1059,6 @@
   <div class="layout" id="boothLayout" style="display:none;">
     <div class="barber-pole" aria-hidden="true"></div>
     <div class="booth-card">
-      <button class="door-icon-btn" id="leaveBtn" type="button" data-i18n-aria="leaveRoom" aria-label="leave room">
-        <svg viewBox="0 0 44 32" aria-hidden="true">
-          <path d="M27 4 L27 28 L15 25 L15 7 Z" fill="#313131"/>
-          <circle cx="19" cy="16" r="1.4" fill="#fff8ec"/>
-          <path d="M10 16 L1 16 M1 16 L6 11 M1 16 L6 21" stroke="#313131" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
-      </button>
       <div class="room-tag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
       <div class="code-row" id="codeRow" style="display:none;">
         <button class="copy-btn" id="copyBtn" type="button" data-i18n="copyCode">copy code</button>
@@ -1673,6 +1684,12 @@ function applyStaticTranslations(){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>{
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
 }
 
 function setLanguage(lang){
@@ -1705,7 +1722,7 @@ applyStaticTranslations();
    (see .is-rippling above), so the global prefers-reduced-motion rule at
    the top of this stylesheet collapses it to a no-op automatically —
    nothing extra to gate here. */
-const RIPPLE_SELECTOR = '.btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge';
+const RIPPLE_SELECTOR = '.btn-primary, .btn-gold, .btn-ghost, .btn-reconnect, .copy-btn, .gate-card, .choice-card, .thumb, .coin-badge, .logout-icon-btn';
 document.addEventListener('pointerdown', (e)=>{
   const target = e.target.closest(RIPPLE_SELECTOR);
   if(!target || target.disabled) return;
@@ -1734,7 +1751,6 @@ const gateError = document.getElementById('gateError');
 const boothLayout = document.getElementById('boothLayout');
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
-const leaveBtn = document.getElementById('leaveBtn');
 const countdownBackBtn = document.getElementById('countdownBackBtn');
 const authStep = document.getElementById('authStep');
 const authFormFields = document.getElementById('authFormFields');
@@ -1760,7 +1776,7 @@ const resetPasswordSuccessBanner = document.getElementById('resetPasswordSuccess
 const resetPasswordSuccessText = document.getElementById('resetPasswordSuccessText');
 const coinBadge = document.getElementById('coinBadge');
 const coinBadgeCount = document.getElementById('coinBadgeCount');
-const logoutLink = document.getElementById('logoutLink');
+const logoutBtn = document.getElementById('logoutBtn');
 const adminLink = document.getElementById('adminLink');
 const adminBackdrop = document.getElementById('adminBackdrop');
 const adminCloseBtn = document.getElementById('adminCloseBtn');
@@ -1801,6 +1817,17 @@ let isHost = null;
 // single photo (camera denied, or they leave before shooting) — see
 // refundCoinIfUnused() below.
 let photosStartedThisRoom = false;
+
+// Server-side counterpart to photosStartedThisRoom — refund_last_spend()
+// checks this column (not anything the client reports) before paying out,
+// so someone can't just flip the client's own photosStartedThisRoom back to
+// false in devtools after actually using a paid room and then claim a
+// refund anyway. Fire-and-forget: nothing in the UI depends on this having
+// landed, it only matters that it eventually does.
+function markSpendUsedOnServer(){
+  if(!sbClient || !currentUser) return;
+  sbClient.rpc('mark_last_spend_used').catch(()=>{});
+}
 
 async function refundCoinIfUnused(){
   if(!isHost || photosStartedThisRoom || !sbClient || !currentUser) return false;
@@ -1978,7 +2005,7 @@ async function refreshAuthState(){
   const { data:{ session } } = await sbClient.auth.getSession();
   currentUser = session ? session.user : null;
   coinBadge.classList.toggle('show', !!currentUser);
-  logoutLink.classList.toggle('show', !!currentUser);
+  logoutBtn.classList.toggle('show', !!currentUser);
   updateAdminLinkVisibility();
   if(currentUser) await refreshCoinBalance();
 }
@@ -2035,7 +2062,7 @@ resetPasswordSubmitBtn.addEventListener('click', async ()=>{
     try{ await sbClient.auth.signOut(); }catch(e){}
     currentUser = null;
     coinBadge.classList.remove('show');
-    logoutLink.classList.remove('show');
+    logoutBtn.classList.remove('show');
     setTimeout(()=>{
       setAuthMode('login');
       showAuthStep(true);
@@ -2050,17 +2077,20 @@ resetPasswordSubmitBtn.addEventListener('click', async ()=>{
 
 newPasswordInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') resetPasswordSubmitBtn.click(); });
 
-logoutLink.addEventListener('click', async ()=>{
-  // log out is visible (and clickable) from inside a room too, not just the
+logoutBtn.addEventListener('click', async ()=>{
+  // Log out is visible (and clickable) from inside a room too, not just the
   // gate — without this, clicking it mid-room cleared the session but left
   // boothLayout on screen with the gate still hidden underneath, so nothing
-  // ever appeared to happen.
+  // ever appeared to happen. This also fully replaces the old booth-screen
+  // "leave room" door icon: leaving is just what happens on the way to
+  // logging out, so one click here does both instead of needing two
+  // separate controls.
   if(currentRoomCode){
     teardownAndReturnToGate();
   }
   currentUser = null;
   coinBadge.classList.remove('show');
-  logoutLink.classList.remove('show');
+  logoutBtn.classList.remove('show');
   updateAdminLinkVisibility();
   gate.style.display = 'block';
   marquee.classList.remove('show');
@@ -3680,7 +3710,6 @@ function teardownAndReturnToGate(){
   redrawStrip();
 }
 
-leaveBtn.addEventListener('click', teardownAndReturnToGate);
 window.addEventListener('beforeunload', ()=>{
   if(peer) try{ peer.destroy(); }catch(e){}
 });
@@ -4045,6 +4074,7 @@ async function runCaptureSequence(seconds){
     flash();
     const shot = capturePhoto(filterSelect.value);
     tenShots.push(shot);
+    if(!photosStartedThisRoom) markSpendUsedOnServer();
     photosStartedThisRoom = true;
     fillThumbSlot(i);
     fillFsThumb(i, shot);

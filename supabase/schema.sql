@@ -15,13 +15,22 @@ create table if not exists public.profiles (
   -- the ground (camera denied, left before any photo) — see that function
   -- below for the abuse-resistant refund window.
   last_spend_at timestamptz,
-  last_spend_refunded boolean not null default true
+  last_spend_refunded boolean not null default true,
+  -- Server-side record of whether the room that spend paid for actually
+  -- produced a photo. The client also tracks this itself (photosStartedThisRoom)
+  -- to decide when to *offer* a refund in the UI, but that's just a JS
+  -- variable in a page anyone can open devtools on — mark_last_spend_used()
+  -- below is the real enforcement, called the moment the first photo is
+  -- captured, so refund_last_spend() can refuse a refund even if the client
+  -- is lying about whether the room was used.
+  last_spend_used boolean not null default false
 );
 
 -- Safe to re-run against an already-deployed profiles table too (create
 -- table if not exists skips the columns above if the table already exists).
 alter table public.profiles add column if not exists last_spend_at timestamptz;
 alter table public.profiles add column if not exists last_spend_refunded boolean not null default true;
+alter table public.profiles add column if not exists last_spend_used boolean not null default false;
 
 alter table public.profiles enable row level security;
 
@@ -66,7 +75,7 @@ declare
   new_balance integer;
 begin
   update public.profiles
-    set coins = coins - 1, last_spend_at = now(), last_spend_refunded = false
+    set coins = coins - 1, last_spend_at = now(), last_spend_refunded = false, last_spend_used = false
     where id = auth.uid() and coins > 0
   returning coins into new_balance;
   return new_balance;
@@ -75,12 +84,33 @@ $$;
 
 grant execute on function public.spend_coin() to authenticated;
 
+-- Marks the current spend as "used" — called by the client the instant the
+-- first photo of a room is captured. One-directional (never flips back to
+-- false) and safe to call any number of times; the only thing that matters
+-- is that it lands at least once before someone tries to claim a refund.
+create or replace function public.mark_last_spend_used()
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.profiles set last_spend_used = true where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.mark_last_spend_used() to authenticated;
+
 -- Gives back the most recent spend, but only if: (a) it hasn't already been
 -- refunded (one-shot — flips last_spend_refunded to true so this can't be
--- called twice for the same spend), and (b) it happened within the last 10
+-- called twice for the same spend), (b) it happened within the last 10
 -- minutes (caps how long a room-creation stays "refundable", so this can't
--- be used to farm coins on old spends). Returns the new balance, or NULL if
--- there was no eligible un-refunded recent spend (safe no-op).
+-- be used to farm coins on old spends), and (c) mark_last_spend_used() was
+-- never called for it — i.e. the room never actually produced a photo.
+-- (c) is what stops someone from fully using a paid room and then refunding
+-- it anyway by just lying to the client about whether photos were taken —
+-- the client's own "should I offer a refund" check (photosStartedThisRoom)
+-- is only a JS variable, so it can't be trusted as the sole gate here.
+-- Returns the new balance, or NULL if there was no eligible refund.
 create or replace function public.refund_last_spend()
 returns integer
 language plpgsql
@@ -93,6 +123,7 @@ begin
     set coins = coins + 1, last_spend_refunded = true
     where id = auth.uid()
       and last_spend_refunded = false
+      and last_spend_used = false
       and last_spend_at > now() - interval '10 minutes'
   returning coins into new_balance;
   return new_balance;
