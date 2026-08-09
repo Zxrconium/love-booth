@@ -772,28 +772,31 @@
      transparent background — see the asset itself for provenance), purely
      as an outer decorative layer so none of the existing print-out-
      animation positioning math changes. */
-  /* aspect-ratio pinned to the cropped PNG's own pixel dimensions (185:439)
-     so the frame's shape stays constant regardless of how big the strip
-     inside it is — without this, shrinking the strip below also shrinks
-     .output-slot itself (its height is otherwise just content-driven),
-     which would squash the art. strip-print-frame is positioned absolutely
-     at the exact pixel bounds of the window's own border in the PNG
-     (x:34–153/y:113.5–377.5 of the 185x439 image → left 18.38%/top
-     25.85%/width 64.32%), since the image's aspect ratio matches
-     .output-slot's own box exactly, so pixel coordinates translate 1:1 to
-     CSS percentages of width/height. The canvas's own internal geometry
-     (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script below) is sized to
-     the same illustrated slot measurements, so filling this box edge to
-     edge lands each photo exactly inside its drawn slot — no separate
-     centering/margin math needed here the way the old hand-drawn SVG frame
-     required. */
-  .output-slot{
-    position:relative; width:100%; max-width:230px; margin-top:14px;
-    box-sizing:border-box; aspect-ratio:185/439;
-  }
-  .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; }
+  /* .output-slot deliberately has NO forced aspect-ratio of its own — the
+     frame image is a normal in-flow block (width:100%, height:auto), which
+     sizes .output-slot to the image's real intrinsic 185x439 ratio by
+     construction, with zero chance of the box and the art disagreeing
+     about their shape (an earlier version pinned a separate aspect-ratio
+     on .output-slot and stretched the image to fill it via object-fit,
+     which silently distorted/cropped the art if the two ever drifted).
+     strip-print-frame is positioned absolutely at the exact pixel bounds
+     of each illustrated slot's OWN inner border (not the window's outer
+     border, which is ~9px further out on every side and was the previous
+     bug — photos sized to the window opening overflowed past each slot's
+     own drawn rectangle). Measured directly off assets/dropper.png
+     (185x439): all 4 slots share x:42.5–145 (55.41% wide, left 22.97%);
+     slot 1 y:122–180, slot 2 y:185–244, slot 3 y:249–307, slot 4 y:312–371
+     (13.21–13.44% tall each, ~1.14% gap between). The strip canvas's own
+     internal geometry (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script
+     below) is scaled to that same union box (top of slot 1 to bottom of
+     slot 4, left/right of slot 1) with zero margin of its own, so
+     positioning this wrapper at that box's left/top/width — height comes
+     from the canvas's own matching aspect ratio — lands each photo exactly
+     inside its drawn slot. */
+  .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
+  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; }
   .strip-print-frame{
-    position:absolute; left:18.38%; top:25.85%; width:64.32%;
+    position:absolute; left:22.97%; top:27.79%; width:55.41%;
     display:flex; flex-direction:column; align-items:center;
   }
   /* No box-shadow — the strip is no longer a distinct card floating above
@@ -3081,15 +3084,18 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* These proportions (and PHOTO_RADIUS below) are measured directly off the
-   4 illustrated slot rects baked into assets/dropper.png — not chosen for
-   camera aspect ratio. SIDE is 0 because the illustrated rects run edge to
-   edge inside the window opening, with no side margin of their own; TOP/
-   BOTTOM/GAP mirror the window-border-to-rect and rect-to-rect gaps in the
-   artwork. Photos are cropped (not stretched) to this shape when drawn —
-   see drawSlot(). */
-const PHOTO_W = 260, PHOTO_H = 128, SIDE = 0, GAP = 11, TOP = 19, BOTTOM = 14;
-const PHOTO_RADIUS = 18;
+/* These proportions are measured directly off the 4 illustrated slot
+   rects' own inner borders in assets/dropper.png (185x439 image; slots at
+   x:42.5-145, y:122-180/185-244/249-307/312-371 — see the CSS comment on
+   .strip-print-frame for the full pixel/percentage breakdown) — not chosen
+   for camera aspect ratio. SIDE/TOP/BOTTOM are 0 because the illustrated
+   rects fill their shared column edge-to-edge with no margin of their own
+   before the first slot or after the last; GAP mirrors the ~5px rect-to-
+   rect gap in the artwork, scaled by the same factor (260/102.5) as
+   PHOTO_W. Photos are cropped (not stretched) to this shape when drawn —
+   see drawSlot(). No corner rounding and no border here: the frame/window
+   shape comes only from the illustrated art underneath, per the reference. */
+const PHOTO_W = 260, PHOTO_H = 148, SIDE = 0, GAP = 13, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3928,9 +3934,6 @@ function drawStripBase(){
 function drawSlot(index, imgCanvas){
   const theme = getTheme();
   const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
-  stripCtx.save();
-  roundRectPath(stripCtx, x, y, PHOTO_W, PHOTO_H, PHOTO_RADIUS);
-  stripCtx.clip();
   if(imgCanvas){
     stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
     stripCtx.fillStyle = theme.ink;
@@ -3938,7 +3941,6 @@ function drawSlot(index, imgCanvas){
   }else{
     drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
   }
-  stripCtx.restore();
 }
 
 /* Idle (room just created, waiting for a partner, anything before "start
