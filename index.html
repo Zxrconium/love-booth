@@ -3242,26 +3242,33 @@ const STRIP_SLOTS = 4;
    keeps a visually heavier frame than plain "White" despite both using
    the same ink/background pair — otherwise the two would render
    identically once every theme has a border. */
+/* ink matches background (rather than a contrasting color) on the two
+   themes that are meant to read as border/divider-free (White, Black) —
+   drawStripBorder()/drawDivider() still run for every theme, but drawing
+   in the same color as the background makes their strokes invisible
+   instead of needing a separate "skip chrome" branch. Bordered White is
+   the only theme where ink stays a real contrasting color, since it's
+   the one theme whose whole point is a visible outline + dividers. */
 const THEMES = [
   {
     id: 'frameless',
     labelKey: 'themeWhite',
-    background: '#fff8ec',
-    ink: '#313131',
+    background: '#ffffff',
+    ink: '#ffffff',
     borderWidth: 3
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
-    background: '#fff8ec',
-    ink: '#313131',
+    background: '#ffffff',
+    ink: '#000000',
     borderWidth: 6
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
-    background: '#131313',
-    ink: '#fff8ec',
+    background: '#000000',
+    ink: '#000000',
     borderWidth: 4
   }
 ];
@@ -4108,14 +4115,7 @@ function drawSlot(index, imgCanvas){
     stripCtx.fillStyle = theme.ink;
     stripCtx.fillRect(x + PHOTO_W / 2 - 1, y, 2, PHOTO_H);
   }else{
-    // Not-yet-taken slots stay the current theme's own background (already
-    // painted by drawStripBase() underneath, but filled explicitly here too
-    // so this stays correct even if a slot is ever redrawn on its own) —
-    // a neutral placeholder rather than the illustrated sky/cloud graphic
-    // this used to draw, which showed the same light blue/white regardless
-    // of theme and swamped the Black theme's own dark background.
-    stripCtx.fillStyle = theme.background;
-    stripCtx.fillRect(x, y, PHOTO_W, PHOTO_H);
+    drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
   }
 }
 
