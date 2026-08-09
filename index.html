@@ -767,47 +767,47 @@
     padding:6px 12px; text-align:center; max-width:200px; margin:0;
   }
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
-  /* Wraps .strip-print-frame (unmodified — same print-slot/canvas/printing
-     mechanics and z-indexing as before) in the real illustrated arch/window
-     artwork (assets/dropper.png, cropped to content + colorized wood-tan
-     with a transparent background — see the asset itself for provenance),
-     purely as an outer decorative layer so none of the existing
-     print-out-animation positioning math changes. */
+  /* Wraps .strip-print-frame in the real illustrated arch/window artwork
+     (assets/dropper.png, cropped to content + colorized wood-tan with a
+     transparent background — see the asset itself for provenance), purely
+     as an outer decorative layer so none of the existing print-out-
+     animation positioning math changes. */
   /* aspect-ratio pinned to the cropped PNG's own pixel dimensions (185:439)
      so the frame's shape stays constant regardless of how big the strip
      inside it is — without this, shrinking the strip below also shrinks
      .output-slot itself (its height is otherwise just content-driven),
      which would squash the art. strip-print-frame is positioned absolutely
-     at the exact percentage bounds of the window opening drawn in the PNG
-     (the 4-slot rect area, pixel box x:36–153/y:114–376 of the 185x439
-     image → center 51.1%/55.8%), since the image's aspect ratio matches
+     at the exact pixel bounds of the window's own border in the PNG
+     (x:34–153/y:113.5–377.5 of the 185x439 image → left 18.38%/top
+     25.85%/width 64.32%), since the image's aspect ratio matches
      .output-slot's own box exactly, so pixel coordinates translate 1:1 to
-     CSS percentages of width/height. */
+     CSS percentages of width/height. The canvas's own internal geometry
+     (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script below) is sized to
+     the same illustrated slot measurements, so filling this box edge to
+     edge lands each photo exactly inside its drawn slot — no separate
+     centering/margin math needed here the way the old hand-drawn SVG frame
+     required. */
   .output-slot{
     position:relative; width:100%; max-width:230px; margin-top:14px;
     box-sizing:border-box; aspect-ratio:185/439;
   }
   .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; }
-  /* width is a percentage of .output-slot's own width, sized so the strip
-     (a tall, narrow 4-photo canvas) fills most of the window opening's
-     height with a clean margin on every side, at any size (mobile included,
-     since both scale off the same .output-slot percentages). */
   .strip-print-frame{
-    position:absolute; left:51.1%; top:55.8%; width:40%; transform:translate(-50%,-50%);
+    position:absolute; left:18.38%; top:25.85%; width:64.32%;
     display:flex; flex-direction:column; align-items:center;
   }
-  .print-slot{
-    width:86%; height:9px; border-radius:5px 5px 2px 2px; background:#1a1a1a;
-    box-shadow:inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08);
-    margin-bottom:-3px; position:relative; z-index:1;
-  }
-  #stripCanvas{box-shadow:0 18px 40px rgba(0,0,0,0.45); width:100%; height:auto; transition:box-shadow .3s ease; touch-action:none; position:relative; z-index:0;}
+  /* No box-shadow — the strip is no longer a distinct card floating above
+     the frame art (see drawStripBase()'s comment), so a drop shadow would
+     just draw an unwanted rectangular silhouette around the transparent
+     canvas, the same double-border problem as the border/background it
+     replaced. */
+  #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
   #stripCanvas.print-out{ animation:stripPrintOut 1.3s both; transform-origin:50% 0%; }
   #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
   #stripCanvas.print-pending{ clip-path:inset(0 0 100% 0); }
   .printing-indicator{
-    display:none; position:absolute; left:0; right:0; top:6px; bottom:0; z-index:2;
+    display:none; position:absolute; left:0; right:0; top:0; bottom:0; z-index:2;
     background:#1a1a1a;
     box-shadow:inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08);
     flex-direction:column; align-items:center; justify-content:center; gap:4px;
@@ -1235,7 +1235,6 @@
         <div class="output-slot">
           <img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false">
           <div class="strip-print-frame">
-            <div class="print-slot" id="printSlot"></div>
             <div class="printing-indicator" id="printingIndicator">
               <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
             </div>
@@ -2724,7 +2723,6 @@ const outputSlotTag = document.getElementById('outputSlotTag');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
-const printSlot = document.getElementById('printSlot');
 const printingIndicator = document.getElementById('printingIndicator');
 const outOfCoinsBackdrop = document.getElementById('outOfCoinsBackdrop');
 const outOfCoinsClose = document.getElementById('outOfCoinsClose');
@@ -3083,7 +3081,15 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-const PHOTO_W = 260, PHOTO_H = 195, SIDE = 20, GAP = 14, TOP = 20, BOTTOM = 20;
+/* These proportions (and PHOTO_RADIUS below) are measured directly off the
+   4 illustrated slot rects baked into assets/dropper.png — not chosen for
+   camera aspect ratio. SIDE is 0 because the illustrated rects run edge to
+   edge inside the window opening, with no side margin of their own; TOP/
+   BOTTOM/GAP mirror the window-border-to-rect and rect-to-rect gaps in the
+   artwork. Photos are cropped (not stretched) to this shape when drawn —
+   see drawSlot(). */
+const PHOTO_W = 260, PHOTO_H = 128, SIDE = 0, GAP = 11, TOP = 19, BOTTOM = 14;
+const PHOTO_RADIUS = 18;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3910,36 +3916,21 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
   ctx.restore();
 }
 
-function drawDivider(theme){
-  stripCtx.save();
-  stripCtx.strokeStyle = theme.ink;
-  stripCtx.lineWidth = 2;
-  for(let i = 0; i < STRIP_SLOTS - 1; i++){
-    const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
-    stripCtx.beginPath();
-    stripCtx.moveTo(SIDE, y);
-    stripCtx.lineTo(SIDE + PHOTO_W, y);
-    stripCtx.stroke();
-  }
-  stripCtx.restore();
-}
-
+/* No background fill, divider, or border stroke here on purpose — the
+   frame/border is the illustrated assets/dropper.png art the canvas sits
+   inside (see .output-slot-frame), so painting a competing card shape here
+   would double it up. Leaving the canvas transparent between/around slots
+   lets that artwork show through untouched. */
 function drawStripBase(){
-  const theme = getTheme();
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
-  stripCtx.fillStyle = theme.background;
-  stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
-  if(theme.divider) drawDivider(theme);
-  if(theme.borderWidth){
-    stripCtx.strokeStyle = theme.ink;
-    stripCtx.lineWidth = theme.borderWidth;
-    stripCtx.strokeRect(theme.borderWidth / 2, theme.borderWidth / 2, stripCanvas.width - theme.borderWidth, stripCanvas.height - theme.borderWidth);
-  }
 }
 
 function drawSlot(index, imgCanvas){
   const theme = getTheme();
   const x = SIDE, y = TOP + index * (PHOTO_H + GAP);
+  stripCtx.save();
+  roundRectPath(stripCtx, x, y, PHOTO_W, PHOTO_H, PHOTO_RADIUS);
+  stripCtx.clip();
   if(imgCanvas){
     stripCtx.drawImage(imgCanvas, x, y, PHOTO_W, PHOTO_H);
     stripCtx.fillStyle = theme.ink;
@@ -3947,6 +3938,7 @@ function drawSlot(index, imgCanvas){
   }else{
     drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
   }
+  stripCtx.restore();
 }
 
 /* Idle (room just created, waiting for a partner, anything before "start
@@ -3975,13 +3967,13 @@ function redrawStrip(){
   updateOutputSlotTag();
 }
 
-/* Keeps the decorative "print slot" bar (and the printing-wait indicator,
-   styled to match it) above the strip consistent with whatever theme is
-   currently active. */
+/* Keeps the printing-wait overlay consistent with whatever theme is
+   currently active. The decorative print-slot bar itself is hidden now
+   that the strip sits inside the illustrated dropper.png window instead
+   (see .print-slot in the stylesheet), but the element and this function
+   are left in place rather than torn out piecemeal. */
 function updatePrintSlotTheme(){
   const theme = getTheme();
-  printSlot.style.background = theme.ink;
-  printSlot.style.boxShadow = `inset 0 2px 3px rgba(0,0,0,0.55), 0 1px 0 ${theme.ink}`;
   printingIndicator.style.background = theme.ink;
 }
 
