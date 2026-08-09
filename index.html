@@ -105,6 +105,14 @@
   body.room-screen{ background-image:none; background-color:#fff; }
   body.room-screen::before{ display:none; }
   .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
+  /* The gate/login screen's .scene is deliberately narrow (max-width:1000)
+     to match its own centered single-column art. Room screens instead lay
+     out a full row — left pole, instructions note, boxed machine, output
+     column, right pole — side by side, which needs more horizontal room
+     than that to avoid wrapping onto a second line at ordinary desktop
+     widths. Scoped to body.room-screen only so the gate/login layout is
+     untouched. */
+  body.room-screen .scene{ max-width:1180px; }
   /* The "LUV BOOTH" plaque sign started as a floating pill shown on every
      screen. The gate/login machine now grows its own sign, physically
      mounted on a post as part of that illustration (see .gate-sign), so
@@ -558,13 +566,19 @@
     .gate-footnote{ font-size:0.66rem; }
   }
 
-  .layout{width:100%; display:flex; gap:28px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
-  /* The reference mockup has no boxed "card" at all here — the camera view
-     itself carries the bold picture-frame border and everything else sits
-     straight on the page background, flanked by decorative barber-pole
-     columns. Dropping .booth-card's opaque dark panel to match. */
+  .layout{width:100%; display:flex; gap:20px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
+  /* Everything that makes up the actual shooting/controls UI — video feed,
+     connection status, camera-permission warning, start/theme/reset
+     controls, the picking grid and its own controls — is enclosed in one
+     bordered machine-box frame now (per the reference mockup), instead of
+     sitting loose on the page background the way an earlier revision of
+     this screen had it. .hint-list moved OUT to become its own sibling
+     flex item (see its own comment) so it can sit beside this box rather
+     than being just another item stacked inside it. */
   .booth-card{
-    width:100%; max-width:400px; position:relative;
+    width:100%; max-width:400px; position:relative; box-sizing:border-box;
+    background:#fff; border:3px solid var(--ink-warm); border-radius:28px;
+    padding:20px 20px 16px;
   }
   /* Purely decorative, flanks the whole two-column booth layout — hidden
      below 900px where there's no longer room beside both columns without
@@ -780,14 +794,34 @@
   #boothLayout .thumb.selected{ border-color:var(--ink-warm); box-shadow:0 0 0 2px rgba(49,49,49,0.35); }
   #boothLayout .thumb-badge{ background:var(--ink-warm); }
   .selection-actions{display:flex; flex-direction:column; gap:8px;}
-  /* The reference mockup shows this as a slightly-tilted handwritten
-     receipt tucked at the corner of the camera frame. */
+  /* A tilted handwritten receipt, now sitting outside .booth-card as its
+     own sibling flex item in .layout (moved out of the box per the
+     "wrap everything in one machine box, note stays outside/beside it"
+     mockup) rather than just another item stacked inside the box. Order
+     is swapped between breakpoints rather than reordering the DOM itself:
+     .layout is flex+wrap, so on wide viewports (room for barber-pole,
+     note, box, and the output column all in one row) order:1 pulls it
+     in front of .booth-card (order:2 there) to sit at the box's left;
+     below that, order resets to after .booth-card so it stacks below the
+     box like every other item instead — never off to the side with no
+     room to actually show the box beside it. align-self:center keeps it
+     vertically centered against the box's own height when they're side
+     by side. */
   .hint-list{
     text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
-    line-height:1.6; margin:20px auto 0; padding:14px 14px 14px 30px; max-width:280px;
+    line-height:1.6; margin:0; padding:14px 14px 14px 30px; width:100%; max-width:240px;
     background:var(--cream); border:2px solid var(--ink-warm); border-radius:3px;
     box-shadow:0 5px 12px rgba(49,49,49,0.22);
     transform:rotate(-1.4deg);
+    align-self:center; order:3;
+  }
+  .booth-card{ order:2; }
+  .output-column{ order:4; }
+  .layout > .barber-pole:first-child{ order:1; }
+  .layout > .barber-pole:last-child{ order:5; }
+  @media (min-width:900px){
+    .hint-list{ order:1; }
+    .booth-card{ order:2; }
   }
   .hint-list li{margin-bottom:4px;}
   .hint-list li:last-child{margin-bottom:0;}
@@ -1285,15 +1319,20 @@
           <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
         </div>
       </div>
-      <ol class="hint-list">
-        <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
-        <li data-i18n="hintStep2">You pick your favorite 4 to build the strip</li>
-        <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
-      </ol>
       <div class="leave-row">
         <button class="leave-link" id="countdownBackBtn" type="button" data-i18n="back" style="display:none;">back</button>
       </div>
     </div>
+
+    <!-- Sibling of .booth-card (not nested inside it) so it can sit beside
+         the box as its own flex item — see the .hint-list CSS comment for
+         how it's positioned to the box's left on wide viewports and below
+         it on narrow ones. -->
+    <ol class="hint-list">
+      <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
+      <li data-i18n="hintStep2">You pick your favorite 4 to build the strip</li>
+      <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
+    </ol>
 
     <div class="output-column">
       <div class="strip-wrap">
