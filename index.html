@@ -3936,19 +3936,26 @@ function drawDivider(theme){
   stripCtx.restore();
 }
 
-/* The strip's own chrome (background/divider/border, per theme) is drawn
-   first and photos are drawn on top in drawSlot() — with SIDE/TOP/BOTTOM
-   at 0 (see the constants above), that chrome only remains visible in the
-   GAP slivers between photos and along the outer edge, which is exactly
-   where it's meant to read as the strip's border/dividers sitting inside
-   the illustrated dropper.png window, not a competing card shape around
-   it. "White" has no borderWidth/divider so this is a no-op fill of a
-   background that's fully hidden either way. */
+/* Background fill only — the divider/border stroke used to live here too,
+   but with SIDE/TOP/BOTTOM at 0 (see the constants above) every photo sits
+   flush against the canvas edge, so a border drawn before the photos got
+   completely painted over the instant drawSlot() ran (a real bug: it read
+   fine in a static screenshot review because the illustrated dropper.png
+   line underneath sits almost exactly where the border would be, so the
+   two were easy to mistake for each other — but the canvas's own border
+   was never actually visible). The divider between slots survived because
+   it falls inside the GAP slivers, which no photo draws into. Border and
+   divider are now drawn by drawStripChrome(), called AFTER all 4 photos in
+   redrawStrip(), so both stay on top regardless of edge-to-edge photos. */
 function drawStripBase(){
   const theme = getTheme();
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
   stripCtx.fillStyle = theme.background;
   stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
+}
+
+function drawStripChrome(){
+  const theme = getTheme();
   if(theme.divider) drawDivider(theme);
   if(theme.borderWidth){
     stripCtx.strokeStyle = theme.ink;
@@ -3990,6 +3997,7 @@ function redrawStrip(){
       : (i < shots.length ? shots[i] : null);
     drawSlot(i, photo || null);
   }
+  drawStripChrome();
   drawRemoteCursor();
   updatePrintSlotTheme();
   updateOutputSlotTag();
