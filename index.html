@@ -780,23 +780,27 @@
      on .output-slot and stretched the image to fill it via object-fit,
      which silently distorted/cropped the art if the two ever drifted).
      strip-print-frame is positioned absolutely at the exact pixel bounds
-     of each illustrated slot's OWN inner border (not the window's outer
-     border, which is ~9px further out on every side and was the previous
-     bug — photos sized to the window opening overflowed past each slot's
-     own drawn rectangle). Measured directly off assets/dropper.png
-     (185x439): all 4 slots share x:42.5–145 (55.41% wide, left 22.97%);
-     slot 1 y:122–180, slot 2 y:185–244, slot 3 y:249–307, slot 4 y:312–371
-     (13.21–13.44% tall each, ~1.14% gap between). The strip canvas's own
+     of the illustrated WINDOW's own outer border — not each individual
+     slot rect's own (tighter) border, which an earlier version used: that
+     made photos fill precisely into the 4 small drawn rectangles, but the
+     canvas's own border stroke (needed since nothing else framed the
+     strip) sat in the ~9px gap of frame "matting" between those rects and
+     the window's outer line, reading as two separate, disconnected
+     borders rather than one. Using the window's own border-box instead
+     means the photos (bigger now, covering the individual rects and the
+     matting completely, evenly on every side) sit flush against that
+     thicker illustrated line directly, and no canvas-drawn border is
+     needed at all — see drawStripBase()'s comment. Measured directly off
+     assets/dropper.png (185x439): window border at x:34–153 (64.32% wide,
+     left 18.38%), y:113.5–377.5 (top 25.85%). The strip canvas's own
      internal geometry (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script
-     below) is scaled to that same union box (top of slot 1 to bottom of
-     slot 4, left/right of slot 1) with zero margin of its own, so
-     positioning this wrapper at that box's left/top/width — height comes
-     from the canvas's own matching aspect ratio — lands each photo exactly
-     inside its drawn slot. */
+     below) is scaled to that same box with zero margin of its own, so
+     positioning this wrapper at the box's left/top/width — height comes
+     from the canvas's own matching aspect ratio — fills it edge to edge. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; }
   .strip-print-frame{
-    position:absolute; left:22.97%; top:27.79%; width:55.41%;
+    position:absolute; left:18.38%; top:25.85%; width:64.32%;
     display:flex; flex-direction:column; align-items:center;
   }
   /* No box-shadow — the strip is no longer a distinct card floating above
@@ -3084,18 +3088,22 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* These proportions are measured directly off the 4 illustrated slot
-   rects' own inner borders in assets/dropper.png (185x439 image; slots at
-   x:42.5-145, y:122-180/185-244/249-307/312-371 — see the CSS comment on
-   .strip-print-frame for the full pixel/percentage breakdown) — not chosen
-   for camera aspect ratio. SIDE/TOP/BOTTOM are 0 because the illustrated
-   rects fill their shared column edge-to-edge with no margin of their own
-   before the first slot or after the last; GAP mirrors the ~5px rect-to-
-   rect gap in the artwork, scaled by the same factor (260/102.5) as
-   PHOTO_W. Photos are cropped (not stretched) to this shape when drawn —
-   see drawSlot(). No corner rounding and no border here: the frame/window
-   shape comes only from the illustrated art underneath, per the reference. */
-const PHOTO_W = 260, PHOTO_H = 148, SIDE = 0, GAP = 13, TOP = 0, BOTTOM = 0;
+/* These proportions are measured directly off the illustrated window's own
+   OUTER border-box in assets/dropper.png (185x439 image; window border at
+   x:34-153/y:113.5-377.5 — see the CSS comment on .strip-print-frame for
+   the full pixel/percentage breakdown), not the 4 individual slot rects
+   drawn inside it. SIDE/TOP/BOTTOM are 0 so all 4 photos, as a block, fill
+   that window edge to edge with no margin of their own — the individual
+   rects and the matting around them get fully covered (photos are bigger
+   than those inner rects on every side, so nothing peeks out unevenly),
+   and what's left showing is only the window's own thicker outer line,
+   which reads as the strip's border with no separate stroke of its own
+   competing with or duplicating it (see drawStripBase()'s comment). GAP
+   is scaled the same way PHOTO_W is (260/119, window-width-based, not the
+   old 260/102.5 rect-width-based factor). Photos are cropped (not
+   stretched) to this shape when drawn — see drawSlot(). No corner
+   rounding: the window's own corners are already near-square. */
+const PHOTO_W = 260, PHOTO_H = 136, SIDE = 0, GAP = 11, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3108,18 +3116,21 @@ const STRIP_SLOTS = 4;
    about the rename), and "Black" — a new id ('solid') with a solid black
    strip background rather than just a black border/divider on white. No
    header text, no caption/footer, no sprockets/textures — draw functions
-   below read from the active theme's background/ink/borderWidth/divider
-   rather than branching on its id, so adding this third theme was just
-   adding a third entry here, nothing structural. Each theme's slots either
-   show a captured photo or, until then, a shared illustrated
-   sky/cloud/hill placeholder. */
+   below read from the active theme's background/ink/divider rather than
+   branching on its id, so adding this third theme was just adding a third
+   entry here, nothing structural. Each theme's slots either show a
+   captured photo or, until then, a shared illustrated sky/cloud/hill
+   placeholder. There's no borderWidth here (there used to be, for a
+   canvas-drawn outer border) — the strip's outer edge sits flush against
+   the illustrated window border baked into assets/dropper.png (see the
+   .strip-print-frame CSS comment), which reads as the strip's border for
+   every theme without a separate stroke competing with it. */
 const THEMES = [
   {
     id: 'frameless',
     labelKey: 'themeWhite',
     background: '#fff8ec',
     ink: '#313131',
-    borderWidth: 0,
     divider: false
   },
   {
@@ -3127,7 +3138,6 @@ const THEMES = [
     labelKey: 'themeBorderedWhite',
     background: '#fff8ec',
     ink: '#313131',
-    borderWidth: 3,
     divider: true
   },
   {
@@ -3135,7 +3145,6 @@ const THEMES = [
     labelKey: 'themeBlack',
     background: '#131313',
     ink: '#fff8ec',
-    borderWidth: 0,
     divider: false
   }
 ];
@@ -3936,17 +3945,16 @@ function drawDivider(theme){
   stripCtx.restore();
 }
 
-/* Background fill only — the divider/border stroke used to live here too,
-   but with SIDE/TOP/BOTTOM at 0 (see the constants above) every photo sits
-   flush against the canvas edge, so a border drawn before the photos got
-   completely painted over the instant drawSlot() ran (a real bug: it read
-   fine in a static screenshot review because the illustrated dropper.png
-   line underneath sits almost exactly where the border would be, so the
-   two were easy to mistake for each other — but the canvas's own border
-   was never actually visible). The divider between slots survived because
-   it falls inside the GAP slivers, which no photo draws into. Border and
-   divider are now drawn by drawStripChrome(), called AFTER all 4 photos in
-   redrawStrip(), so both stay on top regardless of edge-to-edge photos. */
+/* Background fill only. There's no canvas-drawn outer border anymore — a
+   3px strokeRect() lived here briefly, but at the strip's actual on-screen
+   size that line thinned out to roughly a single real pixel, and it also
+   sat ~9px inside the window's own illustrated border with a visible gap
+   of frame material between the two lines rather than reading as one
+   clean border. The strip is now sized/positioned (see PHOTO_W etc. below
+   and the .strip-print-frame CSS comment) to fill the illustrated
+   window's own border-box edge to edge, so that thicker hand-drawn line
+   IS the strip's outer border, for every theme, with nothing of the
+   canvas's own competing with or duplicating it. */
 function drawStripBase(){
   const theme = getTheme();
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
@@ -3954,14 +3962,12 @@ function drawStripBase(){
   stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
 }
 
+/* Only the divider (between-photo lines) lives here now — drawn AFTER all
+   4 photos in redrawStrip() so it stays on top rather than getting
+   painted over, same as before. No border stroke; see drawStripBase(). */
 function drawStripChrome(){
   const theme = getTheme();
   if(theme.divider) drawDivider(theme);
-  if(theme.borderWidth){
-    stripCtx.strokeStyle = theme.ink;
-    stripCtx.lineWidth = theme.borderWidth;
-    stripCtx.strokeRect(theme.borderWidth / 2, theme.borderWidth / 2, stripCanvas.width - theme.borderWidth, stripCanvas.height - theme.borderWidth);
-  }
 }
 
 function drawSlot(index, imgCanvas){
