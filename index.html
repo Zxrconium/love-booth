@@ -3248,28 +3248,38 @@ const STRIP_SLOTS = 4;
    in the same color as the background makes their strokes invisible
    instead of needing a separate "skip chrome" branch. Bordered White is
    the only theme where ink stays a real contrasting color, since it's
-   the one theme whose whole point is a visible outline + dividers. */
+   the one theme whose whole point is a visible outline + dividers.
+
+   borderWidth is the same 16px across all three themes rather than each
+   theme picking its own — on Black/White, the divider between photos
+   reads as a full GAP-width (14px) band since the background fill and
+   the divider stroke share one color, not just its own 2px stroke; a
+   thinner per-theme border (the previous 3/4/6px values) then looked
+   thinner than that band, when the outer edge of the whole strip should
+   read as at least as heavy as the seams inside it, not lighter. 16px
+   comfortably covers that even on Bordered White, where the divider
+   really is just its thin 2px stroke. */
 const THEMES = [
   {
     id: 'frameless',
     labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#ffffff',
-    borderWidth: 3
+    borderWidth: 16
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#ffffff',
     ink: '#000000',
-    borderWidth: 6
+    borderWidth: 16
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#000000',
     ink: '#000000',
-    borderWidth: 4
+    borderWidth: 16
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
