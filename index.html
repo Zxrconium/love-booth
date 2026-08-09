@@ -835,33 +835,29 @@
      about their shape (an earlier version pinned a separate aspect-ratio
      on .output-slot and stretched the image to fill it via object-fit,
      which silently distorted/cropped the art if the two ever drifted).
-     strip-print-frame is positioned absolutely at the exact pixel bounds
-     of the illustrated window's own straight-sided interior — this asset
-     has no separate inset "matting" rectangle the way the old one did, so
-     the box is simply where the arch's curve resolves into parallel
-     vertical sides down to the window's own base line, ignoring the
-     decorative curved+vertical divider baked into the art (the canvas's
-     own single-column strip, with its own theme divider, sits on top of
-     that instead — same "art's decorative lines don't have to exactly
-     match the content" precedent as the old asset's unused slot insets).
-     Measured directly off assets/dropper-arch.png (223x472): window interior at
-     x:26–200 (78.03% wide, left 11.66%), y:97–410 (top 20.55%, bottom
-     86.86%). The strip canvas's own internal geometry (PHOTO_W/PHOTO_H/
-     GAP/SIDE/TOP/BOTTOM in the script below) is scaled to that same box
-     with zero margin of its own, so positioning this wrapper at the box's
-     left/top/width — height comes from the canvas's own matching aspect
-     ratio — fills it edge to edge. */
+     The strip now draws its own outer border for every theme (see
+     drawStripChrome() in the script below) instead of relying on the
+     arch art's own line, so strip-print-frame no longer needs to fill the
+     window's straight-sided interior edge to edge — it's inset by a flat
+     15px (in the underlying 223x472 image's own pixel space) on every
+     side instead, so the strip reads as its own distinct bordered object
+     sitting inside the arch's window with a clear, EVEN margin around it
+     on all 4 sides (a matched percentage of each axis instead would give
+     uneven margins, since the window itself isn't square — 174 wide vs
+     313 tall — this also keeps the strip's photo content clear of the
+     decorative curved+vertical divider baked into the art, which crossed
+     distractingly through the photos when the strip filled the full
+     window). Window interior measured directly off assets/dropper-arch.png
+     (223x472): x:26–200/y:97–410; inset by 15px gives x:41–185/y:112–395
+     → left 18.39%, top 23.73%, width 64.57% (see the PHOTO_W/PHOTO_H/GAP
+     comment below for the matching pixel math). Height comes from the
+     canvas's own matching aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:11.66%; top:20.55%; width:78.03%; z-index:0;
+    position:absolute; left:18.39%; top:23.73%; width:64.57%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
-  /* No box-shadow — the strip is no longer a distinct card floating above
-     the frame art (see drawStripBase()'s comment), so a drop shadow would
-     just draw an unwanted rectangular silhouette around the transparent
-     canvas, the same double-border problem as the border/background it
-     replaced. */
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
   #stripCanvas.print-out{ animation:stripPrintOut 1.3s both; transform-origin:50% 0%; }
@@ -3155,61 +3151,64 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* These proportions are measured directly off the illustrated window's own
-   straight-sided interior in assets/dropper-arch.png (223x472 image; window
-   interior at x:26-200/y:97-410 — see the CSS comment on .strip-print-frame
-   for the full pixel/percentage breakdown). SIDE/TOP/BOTTOM are 0 so all 4
-   photos, as a block, fill that window edge to edge with no margin of their
-   own, flush against the illustrated line directly, with no canvas-drawn
-   border of its own competing with or duplicating it (see drawStripBase()'s
-   comment). GAP is scaled the same way PHOTO_W is (260/174, window-width-
-   based) to preserve the window's own height:width ratio (313:174) at any
-   PHOTO_W. Photos are cropped (not stretched) to this shape when drawn —
-   see drawSlot(). No corner rounding: the window's own corners are already
-   near-square. */
-const PHOTO_W = 260, PHOTO_H = 111, SIDE = 0, GAP = 8, TOP = 0, BOTTOM = 0;
+/* These proportions preserve the illustrated window's own straight-sided
+   interior in assets/dropper-arch.png (223x472 image; window interior at
+   x:26-200/y:97-410) once inset by a flat 15px on each side — see the CSS
+   comment on .strip-print-frame for the full pixel math — giving a
+   144:283 wide:tall box (ratio ~1.9653) for the strip to fill, with its
+   own border/dividers now, rather than filling the window edge to edge.
+   SIDE/TOP/BOTTOM stay 0 — the visible margin around the strip comes
+   entirely from the CSS inset, not from padding baked into the canvas
+   itself. GAP is scaled the same way PHOTO_W is (260/144, window-width-
+   based). Photos are cropped (not stretched) to this shape when drawn —
+   see drawSlot(). No corner rounding: the window's own corners are
+   already near-square. */
+const PHOTO_W = 260, PHOTO_H = 121, SIDE = 0, GAP = 9, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
 /* ---------------- Strip themes ----------------
-   3 plain themes: "White" (frameless — no border, no dividers), "Bordered
-   White" (id stays 'framed' internally — this used to be the only "Black"
-   theme, back when it was one of just two options; renamed for display
-   once a genuinely solid-black theme existed too, but the id is left
-   alone so old sync/saved state and the broadcast protocol don't care
-   about the rename), and "Black" — a new id ('solid') with a solid black
-   strip background rather than just a black border/divider on white. No
-   header text, no caption/footer, no sprockets/textures — draw functions
-   below read from the active theme's background/ink/divider rather than
-   branching on its id, so adding this third theme was just adding a third
-   entry here, nothing structural. Each theme's slots either show a
-   captured photo or, until then, a shared illustrated sky/cloud/hill
-   placeholder. There's no borderWidth here (there used to be, for a
-   canvas-drawn outer border) — the strip's outer edge sits flush against
-   the illustrated window border baked into assets/dropper-arch.png (see the
-   .strip-print-frame CSS comment), which reads as the strip's border for
-   every theme without a separate stroke competing with it. */
+   3 plain themes: "White", "Bordered White" (id stays 'framed' internally
+   — this used to be the only "Black" theme, back when it was one of just
+   two options; renamed for display once a genuinely solid-black theme
+   existed too, but the id is left alone so old sync/saved state and the
+   broadcast protocol don't care about the rename), and "Black" — a new id
+   ('solid') with a solid black strip background rather than just a black
+   border/divider on white. No header text, no caption/footer, no
+   sprockets/textures — draw functions below read from the active theme's
+   background/ink/borderWidth rather than branching on its id, so adding
+   this third theme was just adding a third entry here, nothing
+   structural. Each theme's slots either show a captured photo or, until
+   then, a shared illustrated sky/cloud/hill placeholder. */
+/* Every theme now draws its own outer border + dividers between all 4
+   photos (see drawStripChrome()) — the strip has to read as one bordered,
+   cohesive object on its own, not rely on the illustrated arch's own
+   (much thinner, and not always present depending on state) window line
+   for its shape. borderWidth still varies per theme so "Bordered White"
+   keeps a visually heavier frame than plain "White" despite both using
+   the same ink/background pair — otherwise the two would render
+   identically once every theme has a border. */
 const THEMES = [
   {
     id: 'frameless',
     labelKey: 'themeWhite',
     background: '#fff8ec',
     ink: '#313131',
-    divider: false
+    borderWidth: 3
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#fff8ec',
     ink: '#313131',
-    divider: true
+    borderWidth: 6
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#131313',
     ink: '#fff8ec',
-    divider: false
+    borderWidth: 4
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
@@ -4014,16 +4013,21 @@ function drawDivider(theme){
   stripCtx.restore();
 }
 
-/* Background fill only. There's no canvas-drawn outer border anymore — a
-   3px strokeRect() lived here briefly, but at the strip's actual on-screen
-   size that line thinned out to roughly a single real pixel, and it also
-   sat ~9px inside the window's own illustrated border with a visible gap
-   of frame material between the two lines rather than reading as one
-   clean border. The strip is now sized/positioned (see PHOTO_W etc. below
-   and the .strip-print-frame CSS comment) to fill the illustrated
-   window's own border-box edge to edge, so that thicker hand-drawn line
-   IS the strip's outer border, for every theme, with nothing of the
-   canvas's own competing with or duplicating it. */
+/* The strip's own outer border, so it reads as one cohesive bordered
+   object regardless of the arch art around it (which sits further out
+   now — see the .strip-print-frame CSS comment — rather than being relied
+   on as the strip's only edge). Inset by half the stroke width so the
+   full line renders inside the canvas bounds rather than getting clipped
+   at the edge. */
+function drawStripBorder(theme){
+  stripCtx.save();
+  stripCtx.strokeStyle = theme.ink;
+  stripCtx.lineWidth = theme.borderWidth;
+  const half = theme.borderWidth / 2;
+  stripCtx.strokeRect(half, half, stripCanvas.width - theme.borderWidth, stripCanvas.height - theme.borderWidth);
+  stripCtx.restore();
+}
+
 function drawStripBase(){
   const theme = getTheme();
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
@@ -4031,12 +4035,15 @@ function drawStripBase(){
   stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
 }
 
-/* Only the divider (between-photo lines) lives here now — drawn AFTER all
-   4 photos in redrawStrip() so it stays on top rather than getting
-   painted over, same as before. No border stroke; see drawStripBase(). */
+/* Border + divider both live here — drawn AFTER all 4 photos in
+   redrawStrip() so they stay on top rather than getting painted over.
+   Every theme draws both now (see the THEMES comment above) so the strip
+   always reads as a single bordered strip with visible seams between
+   photos, not 4 disconnected images. */
 function drawStripChrome(){
   const theme = getTheme();
-  if(theme.divider) drawDivider(theme);
+  drawDivider(theme);
+  drawStripBorder(theme);
 }
 
 function drawSlot(index, imgCanvas){
