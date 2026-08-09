@@ -875,29 +875,29 @@
      window edge to edge — it's sized down and positioned as its own
      distinct bordered object floating inside the arch's opening instead.
      This box no longer shares its predecessors' ~1.9653 h:w ratio — it's
-     deliberately narrower and a little taller (a straightforward uniform
-     scale would widen it too, which reads as too close to the arch's
-     inner side walls, so width and height are scaled independently:
-     width *0.85, height *1.15 off the previous 110.16x216.5 box, landing
-     on 93.636x248.975, ratio ~2.659). PHOTO_W/PHOTO_H/GAP below are
-     retuned to match this new ratio for the same reason. Horizontal
-     center stays on the window's own x-center (66.182–159.818, still
-     comfortably clear of the window's own x:26–200 side walls). Vertical
-     position is shifted down 25px from the previous (full-opening-
-     centered) position rather than centered — 88.5px of clear space
-     above the strip against the full visual opening (domed cap included,
-     ~y:34 down to the window's own bottom border at y:410 — see prior
-     revisions of this comment for why that's the right reference, not
-     just the narrower straight-sided window box) and 38.5px below,
-     comfortably clear of the window's own bottom border, not flush to
-     it. Final box in the underlying 223x472 image's own pixel space:
-     x:66.182–159.818, y:122.5125–371.4875 → left 29.68%, top 25.96%,
-     width 41.99%. Height comes from the canvas's own matching aspect
-     ratio. */
+     bigger overall and deliberately taller still, now bottom-anchored
+     against the window's own bottom border/crossbar instead of centered
+     in the opening, so it reads as sitting low in the window rather than
+     floating mid-air. Sized up from the previous 93.636x248.975 box to
+     104.81x320.05 (width *1.12, height *1.286 — again independent
+     scales, not a uniform one, since the window has much more spare
+     height than spare width to give up: the straight side walls sit at
+     x:26–200 (174px) while the full domed opening runs y:34–410 (376px),
+     so growing height costs far less headroom against those walls than
+     growing width would). Horizontal center stays on the window's own
+     x-center (59.1–163.9, still clear of the x:26–200 side walls, with
+     margin to spare even up near the dome's own narrower curve at the
+     top of the box). Bottom edge sits at y:400, ~10px above the window's
+     own bottom border at y:410 (close to it, not flush/overlapping), so
+     top lands at y:80 — comfortably below the dome apex, inside the
+     dome's own curve at that height. Final box in the underlying 223x472
+     image's own pixel space: x:59.1–163.9, y:80–400.05 → left 26.50%,
+     top 16.95%, width 47%. Height comes from the canvas's own matching
+     aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:29.68%; top:25.96%; width:41.99%; z-index:0;
+    position:absolute; left:26.50%; top:16.95%; width:47%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3198,24 +3198,26 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* This ratio (~2.659) traces back to the illustrated window's own
+/* This ratio (~3.054) traces back to the illustrated window's own
    straight-sided interior in assets/dropper-arch.png, but has since gone
    through several rounds of independent resizing/recentering on top of
    that — see the CSS comment on .strip-print-frame for the current box
-   (93.636 x 248.975px in the underlying 223x472 image's own pixel space)
-   and why it's narrower and taller than earlier revisions instead of a
-   uniform scale of them. PHOTO_H/GAP are retuned here to match that same
-   ratio each time the CSS box's shape (not just its size) changes — a
-   fixed PHOTO_H/GAP only stays correct across a pure scale, not a
-   width/height-independent resize like this one. The strip fills that
-   box with its own border/dividers now, rather than filling the window
-   edge to edge. SIDE/TOP/BOTTOM stay 0 — the visible margin around the
-   strip comes entirely from the CSS position, not from padding baked
-   into the canvas itself. GAP is scaled the same way PHOTO_W is
-   (260/93.636, window-width-based). Photos are cropped (not stretched)
-   to this shape when drawn — see drawSlot(). No corner rounding: the
-   window's own corners are already near-square. */
-const PHOTO_W = 260, PHOTO_H = 164, SIDE = 0, GAP = 12, TOP = 0, BOTTOM = 0;
+   (104.81 x 320.05px in the underlying 223x472 image's own pixel space)
+   and why it's taller than earlier revisions instead of a uniform scale
+   of them (bigger overall AND relatively taller, to use more of the
+   window's vertical room and sit low against the window's bottom
+   border/crossbar rather than centered). PHOTO_H/GAP are retuned here to
+   match that same ratio each time the CSS box's shape (not just its
+   size) changes — a fixed PHOTO_H/GAP only stays correct across a pure
+   scale, not a width/height-independent resize like this one. The strip
+   fills that box with its own border/dividers now, rather than filling
+   the window edge to edge. SIDE/TOP/BOTTOM stay 0 — the visible margin
+   around the strip comes entirely from the CSS position, not from
+   padding baked into the canvas itself. GAP is scaled the same way
+   PHOTO_H is. Photos are cropped (not stretched) to this shape when
+   drawn — see drawSlot(). No corner rounding: the window's own corners
+   are already near-square. */
+const PHOTO_W = 260, PHOTO_H = 188, SIDE = 0, GAP = 14, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
