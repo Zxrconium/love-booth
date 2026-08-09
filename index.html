@@ -4108,7 +4108,14 @@ function drawSlot(index, imgCanvas){
     stripCtx.fillStyle = theme.ink;
     stripCtx.fillRect(x + PHOTO_W / 2 - 1, y, 2, PHOTO_H);
   }else{
-    drawSkyPlaceholder(stripCtx, x, y, PHOTO_W, PHOTO_H);
+    // Not-yet-taken slots stay the current theme's own background (already
+    // painted by drawStripBase() underneath, but filled explicitly here too
+    // so this stays correct even if a slot is ever redrawn on its own) —
+    // a neutral placeholder rather than the illustrated sky/cloud graphic
+    // this used to draw, which showed the same light blue/white regardless
+    // of theme and swamped the Black theme's own dark background.
+    stripCtx.fillStyle = theme.background;
+    stripCtx.fillRect(x, y, PHOTO_W, PHOTO_H);
   }
 }
 
