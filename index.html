@@ -94,6 +94,16 @@
     50%{ transform:translate(1.5%,1%) scale(1.08); }
     100%{ transform:translate(2%,-1.5%) scale(1.03); }
   }
+  /* Room/booth screens (connected/disconnected/picking/aftermath) get a
+     solid white page background instead of the peach illustrated
+     storefront — toggled via this body class alongside gate/boothLayout
+     visibility in JS (see setRoomScreenActive()), rather than scoping the
+     override to #boothLayout itself, since the street illustration and its
+     peach glow both live on <body>, outside #boothLayout. Login/gate
+     screens never get this class, so they keep the Stage 1 peach body
+     untouched. */
+  body.room-screen{ background-image:none; background-color:#fff; }
+  body.room-screen::before{ display:none; }
   .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
   /* The "LUV BOOTH" plaque sign started as a floating pill shown on every
      screen. The gate/login machine now grows its own sign, physically
@@ -103,9 +113,9 @@
      picking, etc.) — toggled via .show alongside gate.style.display in JS. */
   .marquee{
     display:none; align-items:center; gap:10px;
-    font-family:'Kalam',cursive; font-weight:700; color:var(--coral-deep);
+    font-family:'Kalam',cursive; font-weight:700; color:var(--ink-warm);
     font-size:clamp(1.5rem,5vw,2.1rem); text-align:center; letter-spacing:0.5px;
-    background:var(--mint); border:2.5px solid var(--ink-warm); border-radius:14px;
+    background:#fff; border:2.5px solid var(--ink-warm); border-radius:14px;
     padding:10px 26px; box-shadow:0 4px 0 rgba(49,49,49,0.25);
   }
   .marquee.show{ display:inline-flex; }
@@ -576,7 +586,7 @@
   @media (min-width:900px){ .barber-pole{ display:flex; } }
   .barber-pole-body{
     flex:none; width:34px; height:min(70vh, 420px); box-sizing:border-box;
-    background:repeating-linear-gradient(-35deg, var(--coral) 0 10px, var(--cream) 10px 20px);
+    background:repeating-linear-gradient(-35deg, var(--ink-warm) 0 10px, #fff 10px 20px);
     border-left:3px solid var(--ink-warm); border-right:3px solid var(--ink-warm);
   }
   /* Each cap SVG is wider (42) than the 34px column so the collar rect reads
@@ -584,16 +594,19 @@
      matching the sketch — centered for free by the column's own
      align-items:center. */
   .bp-cap{ flex:none; width:42px; height:24px; display:block; overflow:visible; }
-  .bp-cap-dome{ fill:var(--cream); stroke:var(--ink-warm); stroke-width:3; stroke-linejoin:round; }
-  .bp-cap-collar{ fill:var(--coral-deep); stroke:var(--ink-warm); stroke-width:3; }
+  .bp-cap-dome{ fill:#fff; stroke:var(--ink-warm); stroke-width:3; stroke-linejoin:round; }
+  .bp-cap-collar{ fill:var(--ink-warm); stroke:var(--ink-warm); stroke-width:3; }
   .room-tag{display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--ink-warm); margin-bottom:6px; flex-wrap:wrap; text-align:center;}
-  .dot{width:8px; height:8px; border-radius:50%; background:#c0576f; flex:none; transition:background-color .3s ease;}
-  .dot.live{background:var(--ok); box-shadow:0 0 0 0 rgba(143,209,158,0.6); animation:pulse-ring 1.8s ease-out infinite, dotPop 0.4s ease-out;}
+  /* B&W room theme: connected/waiting is communicated by fill vs. hollow
+     outline instead of a red/green color swap — solid ink-warm dot once
+     live, a plain white-with-border dot while waiting. */
+  .dot{width:8px; height:8px; border-radius:50%; background:#fff; border:1.5px solid var(--ink-warm); box-sizing:border-box; flex:none; transition:background-color .3s ease;}
+  .dot.live{background:var(--ink-warm); box-shadow:0 0 0 0 rgba(49,49,49,0.6); animation:pulse-ring 1.8s ease-out infinite, dotPop 0.4s ease-out;}
   .dot.waiting{animation:heartbeat 1.8s ease-in-out infinite;}
   @keyframes pulse-ring{
-    0%{ box-shadow:0 0 0 0 rgba(143,209,158,0.55); }
-    70%{ box-shadow:0 0 0 7px rgba(143,209,158,0); }
-    100%{ box-shadow:0 0 0 0 rgba(143,209,158,0); }
+    0%{ box-shadow:0 0 0 0 rgba(49,49,49,0.55); }
+    70%{ box-shadow:0 0 0 7px rgba(49,49,49,0); }
+    100%{ box-shadow:0 0 0 0 rgba(49,49,49,0); }
   }
   @keyframes dotPop{
     0%{ transform:scale(1); }
@@ -612,7 +625,7 @@
     70%{ opacity:0.7; transform:scale(0.88); }
   }
   .code-row{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
-  .code-badge{background:var(--cream); border:2px solid var(--ink-warm); color:var(--coral-deep); padding:2px 10px; border-radius:999px; font-weight:700; letter-spacing:2px; font-size:0.9rem;}
+  .code-badge{background:#fff; border:2px solid var(--ink-warm); color:var(--ink-warm); padding:2px 10px; border-radius:999px; font-weight:700; letter-spacing:2px; font-size:0.9rem;}
   .copy-btn{background:var(--cream); border:2px solid var(--ink-warm); color:var(--ink-warm); padding:4px 10px; font-size:0.68rem; border-radius:999px;}
   .copy-btn:hover:not(:disabled){ background:#fff; }
 
@@ -621,15 +634,15 @@
      Shared with .fullscreen-shoot (the countdown/10-shot overlay), which is
      explicitly in scope for this stage too — only the camera/WebRTC
      plumbing underneath is off-limits, not its frame. */
-  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; border:8px solid var(--machine-tan); display:flex; box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3); animation:viewfinderIdle 5s ease-in-out infinite; will-change:transform, box-shadow;}
+  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; border:8px solid #fff; display:flex; box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3); animation:viewfinderIdle 5s ease-in-out infinite; will-change:transform, box-shadow;}
   /* Only breathes in its boxed setup-screen home, before the countdown
      moves it into the fullscreen shoot overlay (see enterFullscreenShoot in
      JS) — never during the actual 10-shot sequence, so it doesn't distract
      mid-shoot or fight with the countdown/flash animations. */
   .fullscreen-shoot .viewfinder{ animation:none; }
   @keyframes viewfinderIdle{
-    0%,100%{ transform:scale(1) rotate(0deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 0 0 rgba(239,101,98,0); }
-    50%{ transform:scale(1.006) rotate(0.15deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 22px 2px rgba(239,101,98,0.3); }
+    0%,100%{ transform:scale(1) rotate(0deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 0 0 rgba(49,49,49,0); }
+    50%{ transform:scale(1.006) rotate(0.15deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 22px 2px rgba(49,49,49,0.3); }
   }
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
   .half video{width:100%; height:100%; object-fit:cover; display:block; will-change:filter;}
@@ -644,7 +657,7 @@
   .video-vignette.show{opacity:1;}
   .video-grain{position:absolute; inset:0; pointer-events:none; mix-blend-mode:overlay; background-repeat:repeat; opacity:0; transition:opacity .15s ease; will-change:opacity;}
   .video-grain.show{opacity:0.08;}
-  .divider{width:3px; background:var(--coral); flex:none;}
+  .divider{width:3px; background:#fff; flex:none;}
   .waiting-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; font-family:'Kalam',cursive; font-size:1.15rem; color:rgba(251,243,231,0.7); text-align:center; padding:10px; line-height:1.3; animation:breathe 2.6s ease-in-out infinite;}
   @keyframes breathe{
     0%,100%{ opacity:0.55; }
@@ -671,63 +684,70 @@
      disconnected!" headline — the actual copy is still whatever the
      existing JS/i18n logic puts here (sayCheese, disconnected, photo X of
      10, etc.); only the presentation changes. */
-  .status-line{text-align:center; font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--coral-deep); margin-top:10px; min-height:24px;}
-  .camera-permission-banner{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; background:rgba(224,105,126,0.16); border:2px solid var(--err); border-radius:14px; padding:16px; margin-top:10px; text-align:center;}
+  .status-line{text-align:center; font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--ink-warm); margin-top:10px; min-height:24px;}
+  /* Camera-permission-denied banner keeps a plain black border/text instead
+     of the old red alert styling, per the room screens' B&W-only chrome —
+     the icon + "camera blocked"-style copy still reads as an alert without
+     needing color. */
+  .camera-permission-banner{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; background:#fff; border:2px solid var(--ink-warm); border-radius:14px; padding:16px; margin-top:10px; text-align:center;}
   .camera-permission-banner.show{display:flex;}
   .camera-permission-icon{font-size:1.8rem;}
-  .camera-permission-text{font-size:0.85rem; color:#7a2029; line-height:1.4; margin:0;}
+  .camera-permission-text{font-size:0.85rem; color:var(--ink-warm); line-height:1.4; margin:0;}
   .text-flip{ animation:textFlipIn 0.3s ease both; }
   @keyframes textFlipIn{
     from{ opacity:0; transform:translateY(3px); }
     to{ opacity:1; transform:translateY(0); }
   }
-  .sync-note{text-align:center; font-size:0.72rem; color:var(--coral-deep); background:rgba(239,101,98,0.12); border:1.5px solid var(--coral); border-radius:10px; padding:6px 10px; margin:8px 4px 0; line-height:1.4;}
+  .sync-note{text-align:center; font-size:0.72rem; color:var(--ink-warm); background:#fff; border:1.5px solid var(--ink-warm); border-radius:10px; padding:6px 10px; margin:8px 4px 0; line-height:1.4;}
   .controls{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center;}
   /* .btn-primary/.btn-ghost/select are shared with the gate (Stage 1) and
      admin modal (not yet redesigned) — scoped overrides here rather than
      touching those base rules. */
   .booth-card .btn-primary{
-    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    background:var(--ink-warm); color:#fff; border:3px solid var(--ink-warm);
     box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
     font-size:1rem; letter-spacing:0.5px;
   }
-  .booth-card .btn-primary:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .booth-card .btn-primary:hover:not(:disabled){ background:#000; box-shadow:0 6px 0 var(--ink-warm); filter:none; }
   .booth-card .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
-  .booth-card .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
+  .booth-card .btn-ghost{ background:#fff; color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
   .booth-card .btn-ghost:hover:not(:disabled){ background:#fff; border-color:var(--ink-warm); }
   .booth-card .btn-reconnect{
-    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    background:var(--ink-warm); color:#fff; border:3px solid var(--ink-warm);
     box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
   }
-  .booth-card .btn-reconnect:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .booth-card .btn-reconnect:hover:not(:disabled){ background:#000; box-shadow:0 6px 0 var(--ink-warm); filter:none; }
   .booth-card .btn-reconnect:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   .booth-card select{
-    background-color:var(--cream); color:var(--ink-warm);
+    background-color:#fff; color:var(--ink-warm);
     background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23313131%22/></svg>');
     border:2.5px solid var(--ink-warm); font-family:'Poppins',sans-serif;
   }
   .booth-card .leave-link{ color:rgba(49,49,49,0.55); }
   .booth-card .leave-link:hover{ color:var(--ink-warm); }
   .countdown-choice{margin-top:14px; text-align:center; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
-  .booth-card .choice-label{ font-family:'Kalam',cursive; font-size:1.1rem; color:var(--coral-deep); margin:0 0 10px; }
+  .booth-card .choice-label{ font-family:'Kalam',cursive; font-size:1.1rem; color:var(--ink-warm); margin:0 0 10px; }
   .choice-options{display:flex; gap:10px; justify-content:center;}
   .choice-card{
     position:relative; flex:1; max-width:110px; display:flex; flex-direction:column; align-items:center;
     gap:2px; padding:16px 8px; border-radius:16px; cursor:pointer;
-    background:var(--cream); border:2.5px solid var(--ink-warm); color:var(--ink-warm);
+    background:#fff; border:2.5px solid var(--ink-warm); color:var(--ink-warm);
     transition:border-color .2s ease, background-color .2s ease, transform .15s ease, box-shadow .2s ease;
   }
   .choice-card:hover{ background:#fff; transform:translateY(-2px); box-shadow:0 4px 0 var(--ink-warm); }
   .choice-card:active{ transform:scale(0.96) translateY(0); transition-duration:.08s; }
-  .choice-card.is-default{ border-color:var(--coral); box-shadow:0 0 0 2px rgba(239,101,98,0.3); }
+  /* "Default" is already communicated by the .choice-tag text label below,
+     so the ring here is just a subtle box-shadow (ink-warm, not a color)
+     rather than a second, redundant cue. */
+  .choice-card.is-default{ border-color:var(--ink-warm); box-shadow:0 0 0 2px rgba(49,49,49,0.2); }
   /* Brief tap confirmation before the countdown actually starts — see the
      .choice-card click handler in JS, which holds this class for a beat
      so the tap doesn't feel ignored right before the screen changes. */
-  .choice-card.is-chosen{ background:var(--coral); border-color:var(--coral-deep); color:#fff; transform:scale(1.08); box-shadow:0 5px 0 var(--ink-warm); }
+  .choice-card.is-chosen{ background:var(--ink-warm); border-color:var(--ink-warm); color:#fff; transform:scale(1.08); box-shadow:0 5px 0 var(--ink-warm); }
   .choice-card.is-chosen .choice-unit{ color:rgba(255,255,255,0.85); }
   .choice-num{font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; line-height:1;}
   .choice-unit{font-family:'Poppins',sans-serif; font-size:0.7rem; color:rgba(49,49,49,0.55);}
-  .choice-tag{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--coral); color:#fff; font-size:0.6rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:2px 8px; border-radius:999px;}
+  .choice-tag{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--ink-warm); color:#fff; font-size:0.6rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:2px 8px; border-radius:999px;}
   @media (max-width:380px){
     .choice-options{ gap:8px; }
     .choice-card{ padding:12px 6px; }
@@ -752,6 +772,13 @@
   }
   .thumb.selected{ border-color:var(--coral); box-shadow:0 0 0 2px rgba(239,101,98,0.4); }
   .thumb-badge{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--coral); color:#fff; font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.35); border:2px solid var(--ink-warm); font-family:'Poppins',sans-serif;}
+  /* .thumb/.thumb-badge are shared with the (still dark-themed, out of
+     scope) per-slot swap modal — scoped overrides here rather than
+     touching those base rules, same pattern as .booth-card's button
+     overrides above. #boothLayout's own 10-shot picking grid is the only
+     .thumb-grid actually nested inside #boothLayout. */
+  #boothLayout .thumb.selected{ border-color:var(--ink-warm); box-shadow:0 0 0 2px rgba(49,49,49,0.35); }
+  #boothLayout .thumb-badge{ background:var(--ink-warm); }
   .selection-actions{display:flex; flex-direction:column; gap:8px;}
   /* The reference mockup shows this as a slightly-tilted handwritten
      receipt tucked at the corner of the camera frame. */
@@ -783,39 +810,37 @@
   }
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
   /* Wraps .strip-print-frame in the real illustrated arch/window artwork
-     (assets/dropper.png, cropped to content + colorized wood-tan with a
-     transparent background — see the asset itself for provenance), purely
-     as an outer decorative layer so none of the existing print-out-
-     animation positioning math changes. */
+     (assets/dropper.png — plain black linework on white, no color fill,
+     matching the room-screens B&W theme), purely as an outer decorative
+     layer so none of the existing print-out-animation positioning math
+     changes. */
   /* .output-slot deliberately has NO forced aspect-ratio of its own — the
      frame image is a normal in-flow block (width:100%, height:auto), which
-     sizes .output-slot to the image's real intrinsic 185x439 ratio by
+     sizes .output-slot to the image's real intrinsic 223x472 ratio by
      construction, with zero chance of the box and the art disagreeing
      about their shape (an earlier version pinned a separate aspect-ratio
      on .output-slot and stretched the image to fill it via object-fit,
      which silently distorted/cropped the art if the two ever drifted).
      strip-print-frame is positioned absolutely at the exact pixel bounds
-     of the illustrated WINDOW's own outer border — not each individual
-     slot rect's own (tighter) border, which an earlier version used: that
-     made photos fill precisely into the 4 small drawn rectangles, but the
-     canvas's own border stroke (needed since nothing else framed the
-     strip) sat in the ~9px gap of frame "matting" between those rects and
-     the window's outer line, reading as two separate, disconnected
-     borders rather than one. Using the window's own border-box instead
-     means the photos (bigger now, covering the individual rects and the
-     matting completely, evenly on every side) sit flush against that
-     thicker illustrated line directly, and no canvas-drawn border is
-     needed at all — see drawStripBase()'s comment. Measured directly off
-     assets/dropper.png (185x439): window border at x:34–153 (64.32% wide,
-     left 18.38%), y:113.5–377.5 (top 25.85%). The strip canvas's own
-     internal geometry (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script
-     below) is scaled to that same box with zero margin of its own, so
-     positioning this wrapper at the box's left/top/width — height comes
-     from the canvas's own matching aspect ratio — fills it edge to edge. */
+     of the illustrated window's own straight-sided interior — this asset
+     has no separate inset "matting" rectangle the way the old one did, so
+     the box is simply where the arch's curve resolves into parallel
+     vertical sides down to the window's own base line, ignoring the
+     decorative curved+vertical divider baked into the art (the canvas's
+     own single-column strip, with its own theme divider, sits on top of
+     that instead — same "art's decorative lines don't have to exactly
+     match the content" precedent as the old asset's unused slot insets).
+     Measured directly off assets/dropper.png (223x472): window interior at
+     x:26–200 (78.03% wide, left 11.66%), y:97–410 (top 20.55%, bottom
+     86.86%). The strip canvas's own internal geometry (PHOTO_W/PHOTO_H/
+     GAP/SIDE/TOP/BOTTOM in the script below) is scaled to that same box
+     with zero margin of its own, so positioning this wrapper at the box's
+     left/top/width — height comes from the canvas's own matching aspect
+     ratio — fills it edge to edge. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; }
   .strip-print-frame{
-    position:absolute; left:18.38%; top:25.85%; width:64.32%;
+    position:absolute; left:11.66%; top:20.55%; width:78.03%;
     display:flex; flex-direction:column; align-items:center;
   }
   /* No box-shadow — the strip is no longer a distinct card floating above
@@ -873,7 +898,7 @@
 
   .fullscreen-shoot{
     display:none; position:fixed; inset:0; z-index:200;
-    background:var(--peach-bg);
+    background:#fff;
     flex-direction:column; align-items:center; justify-content:center;
     padding:clamp(14px,3vw,32px); gap:12px; overflow-y:auto;
   }
@@ -903,7 +928,7 @@
      disconnected, picking, and aftermath alike. */
   .picking-frame{
     display:none; position:relative; width:100%; box-sizing:border-box;
-    border-radius:14px; background:#000; border:8px solid var(--machine-tan);
+    border-radius:14px; background:#000; border:8px solid #fff;
     box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3);
     padding:8px;
   }
@@ -911,7 +936,7 @@
   .picking-frame .thumb-grid{ margin:0; max-height:none; padding:0; }
   .picking-controls{ display:none; flex-direction:column; align-items:center; gap:10px; margin-top:14px; }
   .picking-controls.show{ display:flex; }
-  .picking-controls .choice-label{ font-family:'Kalam',cursive; color:var(--coral-deep); margin:0; text-align:center; }
+  .picking-controls .choice-label{ font-family:'Kalam',cursive; color:var(--ink-warm); margin:0; text-align:center; }
   .picking-controls .selection-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
   @keyframes modalBackdropIn{
@@ -963,7 +988,7 @@
      matches the strip's own width instead of being a separate sidebar. */
   .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:230px; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:12px 10px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .recap-panel.show{display:flex;}
-  .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1rem; color:var(--coral-deep); margin:0; text-align:center;}
+  .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1rem; color:var(--ink-warm); margin:0; text-align:center;}
   #recapQr{border-radius:8px; background:#fff; padding:6px; border:2px solid var(--ink-warm); width:110px; height:110px;}
   a.btn-ghost, a.btn-gold, a.btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:600; border-radius:999px; padding:11px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease, border-color .2s ease;}
   a.btn-ghost:hover, a.btn-gold:hover, a.btn-primary:hover{ filter:brightness(1.08); transform:translateY(-1px); }
@@ -971,10 +996,10 @@
   /* .btn-gold/.btn-ghost are shared with the admin modal (not redesigned
      yet) — scoped to .output-column rather than restyled globally. */
   .output-column .btn-gold{
-    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    background:var(--ink-warm); color:#fff; border:3px solid var(--ink-warm);
     box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
   }
-  .output-column .btn-gold:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .output-column .btn-gold:hover:not(:disabled){ background:#000; box-shadow:0 6px 0 var(--ink-warm); filter:none; }
   .output-column .btn-gold:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
   .output-column .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
   .output-column .btn-ghost:hover{ background:#fff; }
@@ -1048,8 +1073,8 @@
   .remote-cursor-live.show{ opacity:1; visibility:visible; }
   .remote-cursor-live-dot{
     position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px 0 0 -7px;
-    border-radius:50%; background:var(--remote-cursor-color, var(--gold));
-    box-shadow:0 0 14px 2px var(--remote-cursor-color, var(--gold)), 0 0 0 2px rgba(251,243,231,0.55);
+    border-radius:50%; background:var(--remote-cursor-color, var(--ink-warm));
+    box-shadow:0 0 14px 2px var(--remote-cursor-color, var(--ink-warm)), 0 0 0 2px rgba(255,255,255,0.75);
   }
   .remote-cursor-live-heart{
     position:absolute; top:-21px; left:6px; font-size:0.85rem; line-height:1;
@@ -1891,6 +1916,12 @@ const joinConfirmBtn = document.getElementById('joinConfirmBtn');
 const joinBackBtn = document.getElementById('joinBackBtn');
 const gateError = document.getElementById('gateError');
 const boothLayout = document.getElementById('boothLayout');
+/* Toggles the white-background/B&W-theme scope for room screens — see the
+   body.room-screen CSS comment. Call with true on the two room-entry paths
+   (host/guest), false on the single teardownAndReturnToGate() exit path. */
+function setRoomScreenActive(active){
+  document.body.classList.toggle('room-screen', active);
+}
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
 const countdownBackBtn = document.getElementById('countdownBackBtn');
@@ -2671,6 +2702,7 @@ createCard.addEventListener('click', async ()=>{
   gate.style.display = 'none';
   marquee.classList.add('show');
   boothLayout.style.display = 'flex';
+  setRoomScreenActive(true);
   startAsHost(code);
 });
 
@@ -2702,6 +2734,7 @@ joinConfirmBtn.addEventListener('click', ()=>{
   gate.style.display = 'none';
   marquee.classList.add('show');
   boothLayout.style.display = 'flex';
+  setRoomScreenActive(true);
   startAsGuest(code);
 });
 roomInput.addEventListener('animationend', ()=> roomInput.classList.remove('invalid'));
@@ -3104,21 +3137,18 @@ filterSelect.addEventListener('change', ()=>{
 applyLiveFilter();
 
 /* These proportions are measured directly off the illustrated window's own
-   OUTER border-box in assets/dropper.png (185x439 image; window border at
-   x:34-153/y:113.5-377.5 — see the CSS comment on .strip-print-frame for
-   the full pixel/percentage breakdown), not the 4 individual slot rects
-   drawn inside it. SIDE/TOP/BOTTOM are 0 so all 4 photos, as a block, fill
-   that window edge to edge with no margin of their own — the individual
-   rects and the matting around them get fully covered (photos are bigger
-   than those inner rects on every side, so nothing peeks out unevenly),
-   and what's left showing is only the window's own thicker outer line,
-   which reads as the strip's border with no separate stroke of its own
-   competing with or duplicating it (see drawStripBase()'s comment). GAP
-   is scaled the same way PHOTO_W is (260/119, window-width-based, not the
-   old 260/102.5 rect-width-based factor). Photos are cropped (not
-   stretched) to this shape when drawn — see drawSlot(). No corner
-   rounding: the window's own corners are already near-square. */
-const PHOTO_W = 260, PHOTO_H = 136, SIDE = 0, GAP = 11, TOP = 0, BOTTOM = 0;
+   straight-sided interior in assets/dropper.png (223x472 image; window
+   interior at x:26-200/y:97-410 — see the CSS comment on .strip-print-frame
+   for the full pixel/percentage breakdown). SIDE/TOP/BOTTOM are 0 so all 4
+   photos, as a block, fill that window edge to edge with no margin of their
+   own, flush against the illustrated line directly, with no canvas-drawn
+   border of its own competing with or duplicating it (see drawStripBase()'s
+   comment). GAP is scaled the same way PHOTO_W is (260/174, window-width-
+   based) to preserve the window's own height:width ratio (313:174) at any
+   PHOTO_W. Photos are cropped (not stretched) to this shape when drawn —
+   see drawSlot(). No corner rounding: the window's own corners are already
+   near-square. */
+const PHOTO_W = 260, PHOTO_H = 111, SIDE = 0, GAP = 8, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3186,8 +3216,12 @@ themeSelect.addEventListener('change', ()=>{
 /* ---------------- Real-time cursor (Figma-style) ----------------
    Shows where your partner's pointer is over the built strip. Active only
    once the strip actually exists (mirrors the same "swappable" condition
-   as the per-slot photo swap feature below). */
-function remoteColor(){ return isHost ? '#e893a8' : '#d7a24a'; }
+   as the per-slot photo swap feature below). Used to be host/guest-colored
+   (pink/gold) to tell the two apart, but each client only ever renders its
+   OWN partner's single remote cursor (never both at once), so there was
+   nothing to disambiguate — collapsed to one plain ink-warm color to match
+   the room screens' B&W theme instead of dropping the distinction. */
+function remoteColor(){ return '#313131'; }
 
 function roundRectPath(ctx, x, y, w, h, r){
   ctx.beginPath();
@@ -3879,6 +3913,7 @@ function teardownAndReturnToGate(){
   isHost = null;
   boothLayout.style.display = 'none';
   gate.style.display = 'block';
+  setRoomScreenActive(false);
   marquee.classList.remove('show');
   roomInput.value = '';
   showJoinStep(false);
