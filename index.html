@@ -810,7 +810,7 @@
   }
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
   /* Wraps .strip-print-frame in the real illustrated arch/window artwork
-     (assets/dropper.png — plain black linework on white, no color fill,
+     (assets/dropper-arch.png — plain black linework on white, no color fill,
      matching the room-screens B&W theme), purely as an outer decorative
      layer so none of the existing print-out-animation positioning math
      changes. */
@@ -830,7 +830,7 @@
      own single-column strip, with its own theme divider, sits on top of
      that instead — same "art's decorative lines don't have to exactly
      match the content" precedent as the old asset's unused slot insets).
-     Measured directly off assets/dropper.png (223x472): window interior at
+     Measured directly off assets/dropper-arch.png (223x472): window interior at
      x:26–200 (78.03% wide, left 11.66%), y:97–410 (top 20.55%, bottom
      86.86%). The strip canvas's own internal geometry (PHOTO_W/PHOTO_H/
      GAP/SIDE/TOP/BOTTOM in the script below) is scaled to that same box
@@ -877,15 +877,20 @@
      yet), then drops free under its own weight (56-70%, accelerating
      ease-in like gravity) and lands with a decaying bounce — overshoot
      past rest, rebound past rest the other way, then two smaller
-     settling wobbles — rather than sliding smoothly into place. */
+     settling wobbles — rather than sliding smoothly into place. Overshoot
+     amounts trimmed down from the pre-dropper-swap version (20px/-8px/4px/
+     -1.5px) since the strip now sits snug against the new arch's own
+     window border with no matting margin to spare — the old, larger
+     overshoot could nudge the strip visibly past that line or leave a
+     gap above the arch's legs for a couple of frames mid-bounce. */
   @keyframes stripPrintOut{
     0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.25,.46,.45,.94); }
     48%{ clip-path:inset(0 0 8% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
     56%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
-    70%{ clip-path:inset(0 0 0% 0); transform:translateY(20px) rotate(0.6deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
-    80%{ clip-path:inset(0 0 0% 0); transform:translateY(-8px) rotate(-0.5deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
-    88%{ clip-path:inset(0 0 0% 0); transform:translateY(4px) rotate(0.25deg); animation-timing-function:ease-out; }
-    94%{ clip-path:inset(0 0 0% 0); transform:translateY(-1.5px) rotate(-0.1deg); animation-timing-function:ease-out; }
+    70%{ clip-path:inset(0 0 0% 0); transform:translateY(10px) rotate(0.3deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
+    80%{ clip-path:inset(0 0 0% 0); transform:translateY(-4px) rotate(-0.25deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
+    88%{ clip-path:inset(0 0 0% 0); transform:translateY(2px) rotate(0.12deg); animation-timing-function:ease-out; }
+    94%{ clip-path:inset(0 0 0% 0); transform:translateY(-1px) rotate(-0.05deg); animation-timing-function:ease-out; }
     100%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); }
   }
   @keyframes stripFadeReduced{
@@ -1280,7 +1285,7 @@
         </div>
         <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
         <div class="output-slot">
-          <picture><source srcset="assets/dropper.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
+          <picture><source srcset="assets/dropper-arch.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper-arch.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
           <div class="strip-print-frame">
             <div class="printing-indicator" id="printingIndicator">
               <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
@@ -3137,7 +3142,7 @@ filterSelect.addEventListener('change', ()=>{
 applyLiveFilter();
 
 /* These proportions are measured directly off the illustrated window's own
-   straight-sided interior in assets/dropper.png (223x472 image; window
+   straight-sided interior in assets/dropper-arch.png (223x472 image; window
    interior at x:26-200/y:97-410 — see the CSS comment on .strip-print-frame
    for the full pixel/percentage breakdown). SIDE/TOP/BOTTOM are 0 so all 4
    photos, as a block, fill that window edge to edge with no margin of their
@@ -3167,7 +3172,7 @@ const STRIP_SLOTS = 4;
    captured photo or, until then, a shared illustrated sky/cloud/hill
    placeholder. There's no borderWidth here (there used to be, for a
    canvas-drawn outer border) — the strip's outer edge sits flush against
-   the illustrated window border baked into assets/dropper.png (see the
+   the illustrated window border baked into assets/dropper-arch.png (see the
    .strip-print-frame CSS comment), which reads as the strip's border for
    every theme without a separate stroke competing with it. */
 const THEMES = [
@@ -4061,7 +4066,7 @@ function redrawStrip(){
 
 /* Keeps the printing-wait overlay consistent with whatever theme is
    currently active. The decorative print-slot bar itself is hidden now
-   that the strip sits inside the illustrated dropper.png window instead
+   that the strip sits inside the illustrated dropper-arch.png window instead
    (see .print-slot in the stylesheet), but the element and this function
    are left in place rather than torn out piecemeal. */
 function updatePrintSlotTheme(){
