@@ -848,14 +848,20 @@
      decorative curved+vertical divider baked into the art, which crossed
      distractingly through the photos when the strip filled the full
      window). Window interior measured directly off assets/dropper-arch.png
-     (223x472): x:26–200/y:97–410; inset by 15px gives x:41–185/y:112–395
-     → left 18.39%, top 23.73%, width 64.57% (see the PHOTO_W/PHOTO_H/GAP
-     comment below for the matching pixel math). Height comes from the
-     canvas's own matching aspect ratio. */
+     (223x472): x:26–200/y:97–410; inset by 15px gives x:41–185/y:112–395,
+     then scaled down a further 10% around that box's own center (a touch
+     too large/wide against the arch opening at the flat-15px-inset size)
+     → x:48.2–177.8/y:126.15–380.85 → left 21.61%, top 26.73%, width
+     58.12% (see the PHOTO_W/PHOTO_H/GAP comment below for the matching
+     pixel math). Scaling both axes by the same factor around a fixed
+     center preserves the box's aspect ratio exactly, so nothing about
+     PHOTO_W/PHOTO_H/GAP/borderWidth/theme logic needed to change — only
+     the on-screen size shrank. Height comes from the canvas's own
+     matching aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:18.39%; top:23.73%; width:64.57%; z-index:0;
+    position:absolute; left:21.61%; top:26.73%; width:58.12%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3153,16 +3159,19 @@ applyLiveFilter();
 
 /* These proportions preserve the illustrated window's own straight-sided
    interior in assets/dropper-arch.png (223x472 image; window interior at
-   x:26-200/y:97-410) once inset by a flat 15px on each side — see the CSS
-   comment on .strip-print-frame for the full pixel math — giving a
-   144:283 wide:tall box (ratio ~1.9653) for the strip to fill, with its
-   own border/dividers now, rather than filling the window edge to edge.
+   x:26-200/y:97-410) once inset by a flat 15px on each side, giving a
+   144:283 wide:tall box (ratio ~1.9653) — see the CSS comment on
+   .strip-print-frame for the full pixel math, including the further 10%
+   scale-down applied on top of that inset (which preserves this same
+   ratio, so it's not reflected here — only the box's on-screen size
+   changed, not its shape). The strip fills that box with its own
+   border/dividers now, rather than filling the window edge to edge.
    SIDE/TOP/BOTTOM stay 0 — the visible margin around the strip comes
-   entirely from the CSS inset, not from padding baked into the canvas
-   itself. GAP is scaled the same way PHOTO_W is (260/144, window-width-
-   based). Photos are cropped (not stretched) to this shape when drawn —
-   see drawSlot(). No corner rounding: the window's own corners are
-   already near-square. */
+   entirely from the CSS inset/scale, not from padding baked into the
+   canvas itself. GAP is scaled the same way PHOTO_W is (260/144, window-
+   width-based). Photos are cropped (not stretched) to this shape when
+   drawn — see drawSlot(). No corner rounding: the window's own corners
+   are already near-square. */
 const PHOTO_W = 260, PHOTO_H = 121, SIDE = 0, GAP = 9, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
