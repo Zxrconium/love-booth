@@ -837,31 +837,34 @@
      which silently distorted/cropped the art if the two ever drifted).
      The strip now draws its own outer border for every theme (see
      drawStripChrome() in the script below) instead of relying on the
-     arch art's own line, so strip-print-frame no longer needs to fill the
-     window's straight-sided interior edge to edge — it's inset by a flat
-     15px (in the underlying 223x472 image's own pixel space) on every
-     side instead, so the strip reads as its own distinct bordered object
-     sitting inside the arch's window with a clear, EVEN margin around it
-     on all 4 sides (a matched percentage of each axis instead would give
-     uneven margins, since the window itself isn't square — 174 wide vs
-     313 tall — this also keeps the strip's photo content clear of the
-     decorative curved+vertical divider baked into the art, which crossed
-     distractingly through the photos when the strip filled the full
-     window). Window interior measured directly off assets/dropper-arch.png
-     (223x472): x:26–200/y:97–410; inset by 15px gives x:41–185/y:112–395,
-     then scaled down a further 10% around that box's own center (a touch
-     too large/wide against the arch opening at the flat-15px-inset size)
-     → x:48.2–177.8/y:126.15–380.85 → left 21.61%, top 26.73%, width
-     58.12% (see the PHOTO_W/PHOTO_H/GAP comment below for the matching
-     pixel math). Scaling both axes by the same factor around a fixed
-     center preserves the box's aspect ratio exactly, so nothing about
-     PHOTO_W/PHOTO_H/GAP/borderWidth/theme logic needed to change — only
-     the on-screen size shrank. Height comes from the canvas's own
+     arch art's own line, so strip-print-frame doesn't need to fill the
+     window edge to edge — it's sized down and centered as its own
+     distinct bordered object floating inside the arch's opening instead.
+     Vertical centering is against the FULL visual opening — the domed
+     cap above the straight-sided window included, top ~y:34 (roughly
+     where the arch's inner curve line clears, near the apex) down to the
+     window's own bottom border at y:410 — not just the narrower
+     straight-sided window box (y:97–410) alone: centering only within
+     that narrower box left a strip that looked bottom-heavy, since the
+     large domed cap above it reads as part of the same open space to the
+     eye even though it isn't part of the straight-sided rectangle.
+     Horizontal centering stays on the window's own x-center (the arch is
+     left-right symmetric, so the domed cap doesn't shift that). Final
+     box in the underlying 223x472 image's own pixel space: x:57.92–168.08
+     (width 110.16), y:113.75–330.25 (height 216.5) — 79.75px of clear
+     space above AND below the strip, measured against that full-opening
+     reference, giving left 25.97%, top 24.10%, width 49.40% (see the
+     PHOTO_W/PHOTO_H/GAP comment below for the matching pixel math). The
+     144:283/129.6:254.7 boxes from earlier iterations both shared this
+     same ~1.9653 h:w ratio, and this one keeps it too — scaling and
+     recentering without changing the ratio means nothing about
+     PHOTO_W/PHOTO_H/GAP/borderWidth/theme logic needed to change, only
+     this box's size and position. Height comes from the canvas's own
      matching aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:21.61%; top:26.73%; width:58.12%; z-index:0;
+    position:absolute; left:25.97%; top:24.10%; width:49.40%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3157,21 +3160,22 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* These proportions preserve the illustrated window's own straight-sided
-   interior in assets/dropper-arch.png (223x472 image; window interior at
-   x:26-200/y:97-410) once inset by a flat 15px on each side, giving a
-   144:283 wide:tall box (ratio ~1.9653) — see the CSS comment on
-   .strip-print-frame for the full pixel math, including the further 10%
-   scale-down applied on top of that inset (which preserves this same
-   ratio, so it's not reflected here — only the box's on-screen size
-   changed, not its shape). The strip fills that box with its own
-   border/dividers now, rather than filling the window edge to edge.
-   SIDE/TOP/BOTTOM stay 0 — the visible margin around the strip comes
-   entirely from the CSS inset/scale, not from padding baked into the
-   canvas itself. GAP is scaled the same way PHOTO_W is (260/144, window-
-   width-based). Photos are cropped (not stretched) to this shape when
-   drawn — see drawSlot(). No corner rounding: the window's own corners
-   are already near-square. */
+/* This ratio (~1.9653) traces back to the illustrated window's own
+   straight-sided interior in assets/dropper-arch.png, but has since gone
+   through a few rounds of shrinking and recentering on top of that — see
+   the CSS comment on .strip-print-frame for the current box (110.16 x
+   216.5px in the underlying 223x472 image's own pixel space) and why it's
+   centered against the arch's full domed opening rather than just the
+   straight-sided window. Every one of those rounds preserved this same
+   h:w ratio, so it's never needed to change here even as the box's size/
+   position did — only the on-screen size and centering changed, not the
+   shape. The strip fills that box with its own border/dividers now,
+   rather than filling the window edge to edge. SIDE/TOP/BOTTOM stay 0 —
+   the visible margin around the strip comes entirely from the CSS
+   position, not from padding baked into the canvas itself. GAP is scaled
+   the same way PHOTO_W is (260/110.16, window-width-based). Photos are
+   cropped (not stretched) to this shape when drawn — see drawSlot(). No
+   corner rounding: the window's own corners are already near-square. */
 const PHOTO_W = 260, PHOTO_H = 121, SIDE = 0, GAP = 9, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
