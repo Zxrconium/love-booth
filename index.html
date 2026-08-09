@@ -838,33 +838,32 @@
      The strip now draws its own outer border for every theme (see
      drawStripChrome() in the script below) instead of relying on the
      arch art's own line, so strip-print-frame doesn't need to fill the
-     window edge to edge — it's sized down and centered as its own
+     window edge to edge — it's sized down and positioned as its own
      distinct bordered object floating inside the arch's opening instead.
-     Vertical centering is against the FULL visual opening — the domed
-     cap above the straight-sided window included, top ~y:34 (roughly
-     where the arch's inner curve line clears, near the apex) down to the
-     window's own bottom border at y:410 — not just the narrower
-     straight-sided window box (y:97–410) alone: centering only within
-     that narrower box left a strip that looked bottom-heavy, since the
-     large domed cap above it reads as part of the same open space to the
-     eye even though it isn't part of the straight-sided rectangle.
-     Horizontal centering stays on the window's own x-center (the arch is
-     left-right symmetric, so the domed cap doesn't shift that). Final
-     box in the underlying 223x472 image's own pixel space: x:57.92–168.08
-     (width 110.16), y:113.75–330.25 (height 216.5) — 79.75px of clear
-     space above AND below the strip, measured against that full-opening
-     reference, giving left 25.97%, top 24.10%, width 49.40% (see the
-     PHOTO_W/PHOTO_H/GAP comment below for the matching pixel math). The
-     144:283/129.6:254.7 boxes from earlier iterations both shared this
-     same ~1.9653 h:w ratio, and this one keeps it too — scaling and
-     recentering without changing the ratio means nothing about
-     PHOTO_W/PHOTO_H/GAP/borderWidth/theme logic needed to change, only
-     this box's size and position. Height comes from the canvas's own
-     matching aspect ratio. */
+     This box no longer shares its predecessors' ~1.9653 h:w ratio — it's
+     deliberately narrower and a little taller (a straightforward uniform
+     scale would widen it too, which reads as too close to the arch's
+     inner side walls, so width and height are scaled independently:
+     width *0.85, height *1.15 off the previous 110.16x216.5 box, landing
+     on 93.636x248.975, ratio ~2.659). PHOTO_W/PHOTO_H/GAP below are
+     retuned to match this new ratio for the same reason. Horizontal
+     center stays on the window's own x-center (66.182–159.818, still
+     comfortably clear of the window's own x:26–200 side walls). Vertical
+     position is shifted down 25px from the previous (full-opening-
+     centered) position rather than centered — 88.5px of clear space
+     above the strip against the full visual opening (domed cap included,
+     ~y:34 down to the window's own bottom border at y:410 — see prior
+     revisions of this comment for why that's the right reference, not
+     just the narrower straight-sided window box) and 38.5px below,
+     comfortably clear of the window's own bottom border, not flush to
+     it. Final box in the underlying 223x472 image's own pixel space:
+     x:66.182–159.818, y:122.5125–371.4875 → left 29.68%, top 25.96%,
+     width 41.99%. Height comes from the canvas's own matching aspect
+     ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:25.97%; top:24.10%; width:49.40%; z-index:0;
+    position:absolute; left:29.68%; top:25.96%; width:41.99%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3160,23 +3159,24 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* This ratio (~1.9653) traces back to the illustrated window's own
+/* This ratio (~2.659) traces back to the illustrated window's own
    straight-sided interior in assets/dropper-arch.png, but has since gone
-   through a few rounds of shrinking and recentering on top of that — see
-   the CSS comment on .strip-print-frame for the current box (110.16 x
-   216.5px in the underlying 223x472 image's own pixel space) and why it's
-   centered against the arch's full domed opening rather than just the
-   straight-sided window. Every one of those rounds preserved this same
-   h:w ratio, so it's never needed to change here even as the box's size/
-   position did — only the on-screen size and centering changed, not the
-   shape. The strip fills that box with its own border/dividers now,
-   rather than filling the window edge to edge. SIDE/TOP/BOTTOM stay 0 —
-   the visible margin around the strip comes entirely from the CSS
-   position, not from padding baked into the canvas itself. GAP is scaled
-   the same way PHOTO_W is (260/110.16, window-width-based). Photos are
-   cropped (not stretched) to this shape when drawn — see drawSlot(). No
-   corner rounding: the window's own corners are already near-square. */
-const PHOTO_W = 260, PHOTO_H = 121, SIDE = 0, GAP = 9, TOP = 0, BOTTOM = 0;
+   through several rounds of independent resizing/recentering on top of
+   that — see the CSS comment on .strip-print-frame for the current box
+   (93.636 x 248.975px in the underlying 223x472 image's own pixel space)
+   and why it's narrower and taller than earlier revisions instead of a
+   uniform scale of them. PHOTO_H/GAP are retuned here to match that same
+   ratio each time the CSS box's shape (not just its size) changes — a
+   fixed PHOTO_H/GAP only stays correct across a pure scale, not a
+   width/height-independent resize like this one. The strip fills that
+   box with its own border/dividers now, rather than filling the window
+   edge to edge. SIDE/TOP/BOTTOM stay 0 — the visible margin around the
+   strip comes entirely from the CSS position, not from padding baked
+   into the canvas itself. GAP is scaled the same way PHOTO_W is
+   (260/93.636, window-width-based). Photos are cropped (not stretched)
+   to this shape when drawn — see drawSlot(). No corner rounding: the
+   window's own corners are already near-square. */
+const PHOTO_W = 260, PHOTO_H = 164, SIDE = 0, GAP = 12, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
