@@ -3922,13 +3922,39 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
   ctx.restore();
 }
 
-/* No background fill, divider, or border stroke here on purpose — the
-   frame/border is the illustrated assets/dropper.png art the canvas sits
-   inside (see .output-slot-frame), so painting a competing card shape here
-   would double it up. Leaving the canvas transparent between/around slots
-   lets that artwork show through untouched. */
+function drawDivider(theme){
+  stripCtx.save();
+  stripCtx.strokeStyle = theme.ink;
+  stripCtx.lineWidth = 2;
+  for(let i = 0; i < STRIP_SLOTS - 1; i++){
+    const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
+    stripCtx.beginPath();
+    stripCtx.moveTo(SIDE, y);
+    stripCtx.lineTo(SIDE + PHOTO_W, y);
+    stripCtx.stroke();
+  }
+  stripCtx.restore();
+}
+
+/* The strip's own chrome (background/divider/border, per theme) is drawn
+   first and photos are drawn on top in drawSlot() — with SIDE/TOP/BOTTOM
+   at 0 (see the constants above), that chrome only remains visible in the
+   GAP slivers between photos and along the outer edge, which is exactly
+   where it's meant to read as the strip's border/dividers sitting inside
+   the illustrated dropper.png window, not a competing card shape around
+   it. "White" has no borderWidth/divider so this is a no-op fill of a
+   background that's fully hidden either way. */
 function drawStripBase(){
+  const theme = getTheme();
   stripCtx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
+  stripCtx.fillStyle = theme.background;
+  stripCtx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
+  if(theme.divider) drawDivider(theme);
+  if(theme.borderWidth){
+    stripCtx.strokeStyle = theme.ink;
+    stripCtx.lineWidth = theme.borderWidth;
+    stripCtx.strokeRect(theme.borderWidth / 2, theme.borderWidth / 2, stripCanvas.width - theme.borderWidth, stripCanvas.height - theme.borderWidth);
+  }
 }
 
 function drawSlot(index, imgCanvas){
