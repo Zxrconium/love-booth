@@ -768,32 +768,32 @@
   }
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
   /* Wraps .strip-print-frame (unmodified — same print-slot/canvas/printing
-     mechanics and z-indexing as before) in the illustrated arched "output
-     slot" window from the mockups, purely as an outer decorative layer so
-     none of the existing print-out-animation positioning math changes. */
-  /* aspect-ratio pinned to the arch SVG's own viewBox (100:170) so the
-     frame's shape stays constant regardless of how big the strip inside it
-     is — without this, shrinking the strip below also shrinks .output-slot
-     itself (its height is otherwise just content-driven), which squashes
-     the arch flatter since output-slot-frame stretches to fill whatever
-     box it's given (preserveAspectRatio="none"). strip-print-frame is
-     positioned absolutely at the exact percentage bounds of the inner
-     "glass" rect drawn in the SVG (window x:22–78, y:34–118 of the
-     100x170 viewBox → left 50%/top 44.7% center, since the viewBox's
-     aspect ratio matches .output-slot's own box exactly, so viewBox units
-     translate 1:1 to CSS percentages of width/height). */
+     mechanics and z-indexing as before) in the real illustrated arch/window
+     artwork (assets/dropper.png, cropped to content + colorized wood-tan
+     with a transparent background — see the asset itself for provenance),
+     purely as an outer decorative layer so none of the existing
+     print-out-animation positioning math changes. */
+  /* aspect-ratio pinned to the cropped PNG's own pixel dimensions (185:439)
+     so the frame's shape stays constant regardless of how big the strip
+     inside it is — without this, shrinking the strip below also shrinks
+     .output-slot itself (its height is otherwise just content-driven),
+     which would squash the art. strip-print-frame is positioned absolutely
+     at the exact percentage bounds of the window opening drawn in the PNG
+     (the 4-slot rect area, pixel box x:36–153/y:114–376 of the 185x439
+     image → center 51.1%/55.8%), since the image's aspect ratio matches
+     .output-slot's own box exactly, so pixel coordinates translate 1:1 to
+     CSS percentages of width/height. */
   .output-slot{
     position:relative; width:100%; max-width:230px; margin-top:14px;
-    box-sizing:border-box; aspect-ratio:100/170;
+    box-sizing:border-box; aspect-ratio:185/439;
   }
-  .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .output-slot-frame{ position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; }
   /* width is a percentage of .output-slot's own width, sized so the strip
-     (a tall, narrow 4-photo canvas) fills most of the inner window rect's
-     height (window is 40 wide x 92 tall of the 100x170 viewBox) with a
-     clean margin on every side, at any size (mobile included, since both
-     scale off the same .output-slot percentages). */
+     (a tall, narrow 4-photo canvas) fills most of the window opening's
+     height with a clean margin on every side, at any size (mobile included,
+     since both scale off the same .output-slot percentages). */
   .strip-print-frame{
-    position:absolute; left:50%; top:44.7%; width:27%; transform:translate(-50%,-50%);
+    position:absolute; left:51.1%; top:55.8%; width:40%; transform:translate(-50%,-50%);
     display:flex; flex-direction:column; align-items:center;
   }
   .print-slot{
@@ -1233,10 +1233,7 @@
         </div>
         <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
         <div class="output-slot">
-          <svg class="output-slot-frame" aria-hidden="true" viewBox="0 0 100 170" preserveAspectRatio="none">
-            <path d="M2 168 L14 126 L14 26 A36 26 0 0 1 86 26 L86 126 L98 168 Z" fill="#ffd999" stroke="#313131" stroke-width="4" stroke-linejoin="round"/>
-            <rect x="30" y="30" width="40" height="92" rx="8" fill="#7eb3bb" stroke="#313131" stroke-width="3"/>
-          </svg>
+          <img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false">
           <div class="strip-print-frame">
             <div class="print-slot" id="printSlot"></div>
             <div class="printing-indicator" id="printingIndicator">
