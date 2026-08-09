@@ -548,33 +548,45 @@
     .gate-footnote{ font-size:0.66rem; }
   }
 
-  /* Booth screens template (connected/disconnected/picking/aftermath): one
-     illustrated raster (assets/InsideBooth_*.png, swapped by
-     setBoothBackground() in the script) replaces what used to be a
-     hand-coded machine card + barber-pole columns + dropper.png arch. Every
-     coordinate below is measured directly off the relevant PNG's own
-     pixels — connected-component/edge analysis on the actual image data,
-     not eyeballed — then expressed as a percentage of its 2500x2000 canvas
-     (left/width = x/2500, top/height = y/2000). .layout is the positioning
-     root; it has no forced aspect-ratio of its own; #boothBgImg is a plain
-     block image (width:100%, height:auto) sizing the container from its
-     real intrinsic dimensions instead, so the box and the art can never
-     disagree about their shape — the same lesson from the earlier
-     output-slot arch work. All 4 images (front/disconnect/aftermath) share
-     an identical video-frame and 3-button layout, verified by diffing
-     their pixel data, not assumed. */
-  .layout{
-    position:relative; width:100%; max-width:900px; margin:0 auto;
-    animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;
-    container-type:inline-size; container-name:booth;
+  .layout{width:100%; display:flex; gap:28px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
+  /* The reference mockup has no boxed "card" at all here — the camera view
+     itself carries the bold picture-frame border and everything else sits
+     straight on the page background, flanked by decorative barber-pole
+     columns. Dropping .booth-card's opaque dark panel to match. */
+  .booth-card{
+    width:100%; max-width:400px; position:relative;
   }
-  .booth-bg-img{ display:block; width:100%; height:auto; pointer-events:none; }
-  /* Redundant with the "○ connected"/"●disconnected" text baked into the
-     art for the two states that matter most — the live dot/text is kept
-     functional (still updated by JS) for transitional states like
-     "connecting…", just not shown, rather than deleting the element and
-     risking a null-reference in the status-update code. */
-  .room-tag{ display:none; }
+  /* Purely decorative, flanks the whole two-column booth layout — hidden
+     below 900px where there's no longer room beside both columns without
+     cramping them (the shooting/picking screens are already the widest,
+     most content-dense screens in the app). Built as three stacked pieces
+     (dome cap, collar clamp, striped body) rather than one rounded box, to
+     match the sketch's separate-pieces finial detail — the margin pushes
+     each pole out from the center content beyond the .layout gap it already
+     sits in, which is the "more breathing room" ask. Ramps from 0 extra
+     margin right at the 900px show/hide threshold up to 22px by ~1200px
+     (rather than a flat 22px) because a flat value was wide enough to push
+     .layout past 900px wide and wrap the right pole onto its own row right
+     at the edge of the breakpoint it's supposed to appear at. */
+  .barber-pole{
+    display:none; flex:none; flex-direction:column; align-items:center;
+    width:34px; align-self:center;
+    margin:0 clamp(0px, calc((100vw - 900px) * 0.0733), 22px);
+  }
+  @media (min-width:900px){ .barber-pole{ display:flex; } }
+  .barber-pole-body{
+    flex:none; width:34px; height:min(70vh, 420px); box-sizing:border-box;
+    background:repeating-linear-gradient(-35deg, var(--coral) 0 10px, var(--cream) 10px 20px);
+    border-left:3px solid var(--ink-warm); border-right:3px solid var(--ink-warm);
+  }
+  /* Each cap SVG is wider (42) than the 34px column so the collar rect reads
+     as a clamp that actually protrudes past the striped body's edges,
+     matching the sketch — centered for free by the column's own
+     align-items:center. */
+  .bp-cap{ flex:none; width:42px; height:24px; display:block; overflow:visible; }
+  .bp-cap-dome{ fill:var(--cream); stroke:var(--ink-warm); stroke-width:3; stroke-linejoin:round; }
+  .bp-cap-collar{ fill:var(--coral-deep); stroke:var(--ink-warm); stroke-width:3; }
+  .room-tag{display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--ink-warm); margin-bottom:6px; flex-wrap:wrap; text-align:center;}
   .dot{width:8px; height:8px; border-radius:50%; background:#c0576f; flex:none; transition:background-color .3s ease;}
   .dot.live{background:var(--ok); box-shadow:0 0 0 0 rgba(143,209,158,0.6); animation:pulse-ring 1.8s ease-out infinite, dotPop 0.4s ease-out;}
   .dot.waiting{animation:heartbeat 1.8s ease-in-out infinite;}
@@ -604,27 +616,21 @@
   .copy-btn{background:var(--cream); border:2px solid var(--ink-warm); color:var(--ink-warm); padding:4px 10px; font-size:0.68rem; border-radius:999px;}
   .copy-btn:hover:not(:disabled){ background:#fff; }
 
-  /* The picture-frame border is now the illustrated screen outline baked
-     into assets/InsideBooth_*.png (measured bbox x:580-1433/y:455-935 of
-     the shared 2500x2000 canvas — identical across front/disconnect/
-     aftermath, confirmed by diffing their pixel data rather than assumed),
-     so .viewfinder itself is borderless here, just sized/positioned to sit
-     exactly inside that drawn rectangle. Still shared with
-     .fullscreen-shoot (the countdown/10-shot overlay, off-limits/untouched
-     by this pass) via the same class, so its own layout there is
-     unaffected by these booth-screen-specific position/inset rules —
-     scoped with #boothLayout so they only apply here. */
-  #boothLayout .viewfinder{
-    position:absolute; left:23.2%; top:22.75%; width:34.12%; height:24%;
-    border-radius:2%; overflow:hidden; background:#000; display:flex;
-    animation:none; box-shadow:none; border:none;
+  /* Hand-drawn picture-frame border around the camera view — a thick tan
+     "mat" with a black ink outline, matching every shooting-screen mockup.
+     Shared with .fullscreen-shoot (the countdown/10-shot overlay), which is
+     explicitly in scope for this stage too — only the camera/WebRTC
+     plumbing underneath is off-limits, not its frame. */
+  .viewfinder{position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; border:8px solid var(--machine-tan); display:flex; box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3); animation:viewfinderIdle 5s ease-in-out infinite; will-change:transform, box-shadow;}
+  /* Only breathes in its boxed setup-screen home, before the countdown
+     moves it into the fullscreen shoot overlay (see enterFullscreenShoot in
+     JS) — never during the actual 10-shot sequence, so it doesn't distract
+     mid-shoot or fight with the countdown/flash animations. */
+  .fullscreen-shoot .viewfinder{ animation:none; }
+  @keyframes viewfinderIdle{
+    0%,100%{ transform:scale(1) rotate(0deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 0 0 rgba(239,101,98,0); }
+    50%{ transform:scale(1.006) rotate(0.15deg); box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3), 0 0 22px 2px rgba(239,101,98,0.3); }
   }
-  /* Belt-and-suspenders: JS already hides the live viewfinder feed once
-     picking mode is showing (see exitFullscreenShoot's restore callback),
-     but only once the fullscreen countdown overlay has actually closed —
-     this CSS rule guarantees it's never visible behind the 10-shot grid
-     regardless of that timing. */
-  #boothLayout[data-state="photos"] .viewfinder{ display:none; }
   .half{position:relative; width:50%; height:100%; overflow:hidden; background:#050505;}
   .half video{width:100%; height:100%; object-fit:cover; display:block; will-change:filter;}
   .half.mirror video{transform:scaleX(-1);}
@@ -665,34 +671,8 @@
      disconnected!" headline — the actual copy is still whatever the
      existing JS/i18n logic puts here (sayCheese, disconnected, photo X of
      10, etc.); only the presentation changes. */
-  /* Every open gap around the machine art (above the frame, below the
-     buttons) turned out to already be occupied by baked text at mobile
-     widths: "look at your camera lens", the baked "○ connected" /
-     "○ disconnected" indicator, and the torn-paper note all sit close
-     enough together that any live text placed between them collided with
-     one or the other once it wrapped to 2 lines. So instead this is
-     overlaid directly on the video feed itself as a small pill caption
-     near the top of the frame — same trick as a camera app's on-screen
-     status text — which sidesteps every piece of baked art entirely and
-     stays legible over any live video content behind it. Hidden during
-     picking (covered by the 10-shot grid), aftermath (baked heading
-     covers it) and disconnect (reconnect button covers it). */
-  #boothLayout .status-line{
-    position:absolute; left:25.2%; top:24.5%; width:30.12%; text-align:center;
-    z-index:5; pointer-events:none;
-    background:rgba(20,16,14,0.6); border-radius:8px; padding:3px 6%;
-    box-sizing:border-box;
-    /* cqw (container query width, off .layout's own container-type:
-       inline-size) rather than a fixed rem size, so it keeps scaling
-       down with everything else at small container widths (mobile)
-       instead of overflowing its box; clamped so it never goes below
-       legible or above the size it was tuned at on desktop. */
-    font-size:clamp(0.5rem, 1.1cqw, 0.72rem); line-height:1.2;
-    font-weight:600; color:#fdf6ee; margin:0; min-height:0;
-  }
-  #boothLayout[data-state="photos"] .status-line,
-  #boothLayout[data-state="aftermath"] .status-line{ display:none; }
-  .camera-permission-banner{display:none; flex-direction:column; align-items:center; gap:8px; width:90%; margin:0 auto; background:rgba(224,105,126,0.16); border:2px solid var(--err); border-radius:14px; padding:16px; text-align:center;}
+  .status-line{text-align:center; font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--coral-deep); margin-top:10px; min-height:24px;}
+  .camera-permission-banner{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; background:rgba(224,105,126,0.16); border:2px solid var(--err); border-radius:14px; padding:16px; margin-top:10px; text-align:center;}
   .camera-permission-banner.show{display:flex;}
   .camera-permission-icon{font-size:1.8rem;}
   .camera-permission-text{font-size:0.85rem; color:#7a2029; line-height:1.4; margin:0;}
@@ -701,101 +681,35 @@
     from{ opacity:0; transform:translateY(3px); }
     to{ opacity:1; transform:translateY(0); }
   }
-  .sync-note{text-align:center; font-size:0.72rem; color:var(--coral-deep); background:rgba(239,101,98,0.12); border:1.5px solid var(--coral); border-radius:10px; padding:6px 10px; margin:8px auto 0; max-width:90%; line-height:1.4;}
-  /* The 3 buttons (start strip / filter / reset) sit on top of their own
-     drawn pill outlines (measured x:779-1295/1106-1200,
-     x:776-1292/1219-1312, x:836-1246/1341-1424 of the shared 2500x2000
-     canvas), so they're transparent text controls here rather than the
-     filled coral/cream pills used pre-redesign — the pill IS the art now,
-     duplicating it in CSS would double the outline the same way the old
-     strip border doubled the arch's. */
-  #boothLayout .controls{ display:contents; }
-  #boothLayout #startBtn{
-    position:absolute; left:31.16%; top:55.3%; width:20.64%; height:4.7%;
+  .sync-note{text-align:center; font-size:0.72rem; color:var(--coral-deep); background:rgba(239,101,98,0.12); border:1.5px solid var(--coral); border-radius:10px; padding:6px 10px; margin:8px 4px 0; line-height:1.4;}
+  .controls{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:center;}
+  /* .btn-primary/.btn-ghost/select are shared with the gate (Stage 1) and
+     admin modal (not yet redesigned) — scoped overrides here rather than
+     touching those base rules. */
+  .booth-card .btn-primary{
+    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
+    font-size:1rem; letter-spacing:0.5px;
   }
-  #boothLayout #filterSelect{
-    position:absolute; left:31.04%; top:60.95%; width:20.64%; height:4.65%;
+  .booth-card .btn-primary:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .booth-card .btn-primary:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
+  .booth-card .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
+  .booth-card .btn-ghost:hover:not(:disabled){ background:#fff; border-color:var(--ink-warm); }
+  .booth-card .btn-reconnect{
+    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
   }
-  #boothLayout #resetBtn{
-    position:absolute; left:33.44%; top:67.05%; width:16.4%; height:4.15%;
+  .booth-card .btn-reconnect:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .booth-card .btn-reconnect:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
+  .booth-card select{
+    background-color:var(--cream); color:var(--ink-warm);
+    background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23313131%22/></svg>');
+    border:2.5px solid var(--ink-warm); font-family:'Poppins',sans-serif;
   }
-  #boothLayout .btn-primary, #boothLayout .btn-ghost, #boothLayout .btn-reconnect, #boothLayout select{
-    background:transparent; color:var(--ink-warm); border:none; box-shadow:none;
-    font-family:'Kalam',cursive; font-weight:700; text-align:center;
-    /* cqw-scaled like .status-line: these buttons' boxes are percentage-
-       sized off .layout, so a fixed rem size overflows the pill outline
-       (real, drawn ones like #reconnectBtn) once the container shrinks
-       down to mobile width. */
-    font-size:clamp(0.62rem, 2.6cqw, 0.95rem);
-    display:flex; align-items:center; justify-content:center; padding:0 4%;
-  }
-  #boothLayout .btn-primary:hover:not(:disabled), #boothLayout .btn-ghost:hover:not(:disabled), #boothLayout .btn-reconnect:hover:not(:disabled){
-    background:rgba(49,49,49,0.06); filter:none; transform:none; box-shadow:none;
-  }
-  #boothLayout .btn-primary:active:not(:disabled), #boothLayout .btn-ghost:active:not(:disabled), #boothLayout .btn-reconnect:active:not(:disabled){
-    background:rgba(49,49,49,0.12); transform:none; box-shadow:none;
-  }
-  #boothLayout .btn-primary:disabled{ opacity:0.4; }
-  /* No custom dropdown-arrow background-image here (unlike other selects
-     in the app) — both #filterSelect and #themeSelect are fully
-     transparent, and the art already draws its own "▼" as part of the
-     same baked pill, so a second arrow icon would just float redundantly
-     next to it. */
-  #boothLayout select{ -webkit-appearance:none; appearance:none; }
-  /* All 3 controls' own text is made fully transparent — their pill
-     outline AND label ("start strip", "b&w vintage ▼", "reset") are
-     already drawn into the art, so the real (functional, still-focusable/
-     readable-by-screen-reader) control underneath is a click target only,
-     not a second visible label competing with the art's own. This was a
-     real trade-off for #filterSelect specifically, since unlike the other
-     two its text can genuinely change (a different filter picked, or a
-     non-English locale) and the drawn "b&w vintage ▼" won't update to
-     match — tried keeping its real label visible first, but two similar-
-     length strings stacked on the same baseline just rendered as
-     unreadable garbled overlap, worse than a label that's merely stale.
-     Known limitation: the 3 button labels are permanently English
-     regardless of the app's own language setting, since they're pixels in
-     a static image, not live text — flagged rather than silently shipped. */
-  #boothLayout #startBtn, #boothLayout #resetBtn, #boothLayout #filterSelect{ color:transparent; }
-  #boothLayout #startBtn::selection, #boothLayout #resetBtn::selection{ background:transparent; }
-  /* Not drawn in the reference for any state, so it gets no measured
-     position of its own. Placed in the clear patch of the machine body to
-     the right of the torn-paper note and below the reset button — the
-     note's own art occupies the bottom-left corner (roughly x 16%-38%,
-     y 74%+), so this sits right of that, still above the frame's own
-     bottom edge. */
-  #boothLayout #reconnectBtn{
-    display:none; position:absolute; left:39%; top:71.8%; width:18%; height:4.1%;
-  }
-  #boothLayout #reconnectBtn.show{ display:flex; }
-  /* status-line is overlaid on the video feed itself now, nowhere near
-     here, but it's still hidden while reconnecting — the baked "Your
-     partner has been disconnected!" heading already says the one thing
-     that matters at that moment. */
-  #boothLayout:has(#reconnectBtn.show) .status-line{ display:none; }
-  /* #reconnectBtn and the picking-controls buttons have no drawn pill to
-     sit inside (see the comments above each), so — unlike the 3 main
-     controls — they need a real visible outline of their own to read as
-     buttons at all. Kept to the same black-on-white palette as the art
-     rather than reintroducing coral fills. */
-  #boothLayout #reconnectBtn,
-  #boothLayout .picking-controls .btn-primary,
-  #boothLayout .picking-controls .btn-ghost{
-    background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:999px;
-    padding:8px 14px; box-shadow:0 3px 0 var(--ink-warm);
-  }
-  #boothLayout #reconnectBtn:hover:not(:disabled),
-  #boothLayout .picking-controls .btn-primary:hover:not(:disabled),
-  #boothLayout .picking-controls .btn-ghost:hover:not(:disabled){
-    background:#fff;
-  }
-  #boothLayout #reconnectBtn:active:not(:disabled),
-  #boothLayout .picking-controls .btn-primary:active:not(:disabled),
-  #boothLayout .picking-controls .btn-ghost:active:not(:disabled){
-    transform:translateY(1px); box-shadow:0 1px 0 var(--ink-warm);
-  }
+  .booth-card .leave-link{ color:rgba(49,49,49,0.55); }
+  .booth-card .leave-link:hover{ color:var(--ink-warm); }
   .countdown-choice{margin-top:14px; text-align:center; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
-  .choice-label{ font-family:'Kalam',cursive; font-size:1.1rem; color:var(--coral-deep); margin:0 0 10px; }
+  .booth-card .choice-label{ font-family:'Kalam',cursive; font-size:1.1rem; color:var(--coral-deep); margin:0 0 10px; }
   .choice-options{display:flex; gap:10px; justify-content:center;}
   .choice-card{
     position:relative; flex:1; max-width:110px; display:flex; flex-direction:column; align-items:center;
@@ -839,57 +753,77 @@
   .thumb.selected{ border-color:var(--coral); box-shadow:0 0 0 2px rgba(239,101,98,0.4); }
   .thumb-badge{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:var(--coral); color:#fff; font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.35); border:2px solid var(--ink-warm); font-family:'Poppins',sans-serif;}
   .selection-actions{display:flex; flex-direction:column; gap:8px;}
-  /* The numbered instructions note is now baked directly into
-     assets/InsideBooth_*.png (the torn-paper "1. We capture 10 photos…"
-     corner note, present in all 4 states) — the separate .hint-list <ol>
-     it used to be is gone from the DOM entirely rather than hidden. */
+  /* The reference mockup shows this as a slightly-tilted handwritten
+     receipt tucked at the corner of the camera frame. */
+  .hint-list{
+    text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
+    line-height:1.6; margin:20px auto 0; padding:14px 14px 14px 30px; max-width:280px;
+    background:var(--cream); border:2px solid var(--ink-warm); border-radius:3px;
+    box-shadow:0 5px 12px rgba(49,49,49,0.22);
+    transform:rotate(-1.4deg);
+  }
+  .hint-list li{margin-bottom:4px;}
+  .hint-list li:last-child{margin-bottom:0;}
   .leave-row{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;}
   .leave-row .btn-ghost{width:auto;}
   .leave-link{background:none; border:none; color:rgba(251,243,231,0.4); font-size:0.7rem; text-decoration:underline; padding:4px; width:auto;}
   .leave-link:hover{ color:rgba(251,243,231,0.7); }
-  /* Overrides the pale (near-white) base .leave-link color above, which
-     was tuned for the app's old dark page background — booth screens sit
-     on the light cream page background now, same reasoning as the gate's
-     own .gate .leave-link override. */
-  #boothLayout .leave-link{ color:rgba(49,49,49,0.55); }
-  #boothLayout .leave-link:hover{ color:var(--ink-warm); }
 
-  /* The "your photo will appear here" sign is baked into
-     assets/InsideBooth_front.png/InsideBooth_disconnect.png directly now
-     (as is the arch/window itself — there's no more separate
-     assets/dropper.png overlay). This tag element is unused dead weight
-     visually but kept in the DOM (hidden) since JS still writes to it. */
-  .output-slot-tag{ display:none; }
-  /* The output-slot arch is now part of the state background art, at a
-     DIFFERENT position/size per state — assets/InsideBooth_photos.png
-     draws a wider, more prominent live-preview arch (used while picking)
-     than assets/InsideBooth_aftermath.png's narrower one (matching the
-     same arch width as the idle/disconnected states' empty arch, just
-     taller with 4 filled slots) — measured independently off each image
-     rather than assumed identical. Hidden entirely for idle/disconnected,
-     where the arch has no slots to fill (just the baked "photo will
-     appear here" note). PHOTO_W/PHOTO_H/GAP in the script below are tuned
-     to the shared ~2.44 height:width ratio both these slot blocks turned
-     out to have (verified independently, not coincidence-assumed), so one
-     canvas fits either box just by changing which box it's positioned in. */
-  .output-slot{ display:none; position:absolute; }
-  #boothLayout[data-state="photos"] .output-slot{ display:block; left:64.44%; top:29.95%; width:16.16%; }
-  #boothLayout[data-state="aftermath"] .output-slot{ display:block; left:68.48%; top:42.05%; width:8.6%; }
-  .strip-print-frame{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .output-column{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px;}
+  .strip-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:230px;}
+  /* The mockup's "your photo will appear here" sign, permanently visible
+     above the output slot — the app doesn't have a signal for "the strip
+     genuinely has content yet" available in pure CSS other than the
+     existing #downloadBtn disabled state, which is already exactly the
+     right proxy (JS already flips it the moment a strip exists). */
+  .output-slot-tag{
+    font-family:'Kalam',cursive; font-size:0.8rem; color:var(--ink-warm);
+    background:var(--cream); border:2px solid var(--ink-warm); border-radius:8px;
+    padding:6px 12px; text-align:center; max-width:200px; margin:0;
+  }
+  .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
+  /* Wraps .strip-print-frame in the real illustrated arch/window artwork
+     (assets/dropper.png, cropped to content + colorized wood-tan with a
+     transparent background — see the asset itself for provenance), purely
+     as an outer decorative layer so none of the existing print-out-
+     animation positioning math changes. */
+  /* .output-slot deliberately has NO forced aspect-ratio of its own — the
+     frame image is a normal in-flow block (width:100%, height:auto), which
+     sizes .output-slot to the image's real intrinsic 185x439 ratio by
+     construction, with zero chance of the box and the art disagreeing
+     about their shape (an earlier version pinned a separate aspect-ratio
+     on .output-slot and stretched the image to fill it via object-fit,
+     which silently distorted/cropped the art if the two ever drifted).
+     strip-print-frame is positioned absolutely at the exact pixel bounds
+     of the illustrated WINDOW's own outer border — not each individual
+     slot rect's own (tighter) border, which an earlier version used: that
+     made photos fill precisely into the 4 small drawn rectangles, but the
+     canvas's own border stroke (needed since nothing else framed the
+     strip) sat in the ~9px gap of frame "matting" between those rects and
+     the window's outer line, reading as two separate, disconnected
+     borders rather than one. Using the window's own border-box instead
+     means the photos (bigger now, covering the individual rects and the
+     matting completely, evenly on every side) sit flush against that
+     thicker illustrated line directly, and no canvas-drawn border is
+     needed at all — see drawStripBase()'s comment. Measured directly off
+     assets/dropper.png (185x439): window border at x:34–153 (64.32% wide,
+     left 18.38%), y:113.5–377.5 (top 25.85%). The strip canvas's own
+     internal geometry (PHOTO_W/PHOTO_H/GAP/SIDE/TOP/BOTTOM in the script
+     below) is scaled to that same box with zero margin of its own, so
+     positioning this wrapper at the box's left/top/width — height comes
+     from the canvas's own matching aspect ratio — fills it edge to edge. */
+  .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
+  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; }
+  .strip-print-frame{
+    position:absolute; left:18.38%; top:25.85%; width:64.32%;
+    display:flex; flex-direction:column; align-items:center;
+  }
   /* No box-shadow — the strip is no longer a distinct card floating above
      the frame art (see drawStripBase()'s comment), so a drop shadow would
      just draw an unwanted rectangular silhouette around the transparent
      canvas, the same double-border problem as the border/background it
      replaced. */
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
-  /* The picking-state arch (InsideBooth_photos.png) must stay an empty
-     placeholder — spec explicitly rules out showing the strip building up
-     live as each favorite is tapped — even though redrawStrip() keeps
-     rendering picks into the canvas underneath for its own bookkeeping.
-     Hiding just the canvas (not the whole .output-slot) keeps the arch
-     bezel/note visible while the growing selection stays invisible until
-     buildStripFrom() finishes and data-state flips to "aftermath". */
-  #boothLayout[data-state="photos"] #stripCanvas{ visibility:hidden; }
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
   #stripCanvas.print-out{ animation:stripPrintOut 1.3s both; transform-origin:50% 0%; }
   #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
@@ -967,48 +901,18 @@
      door icon, hint note, and the output-slot's live strip preview all
      stay visible and in the same spot the whole time, across connected,
      disconnected, picking, and aftermath alike. */
-  /* Sits on the 10-slot grid drawn into assets/InsideBooth_photos.png
-     (measured bbox x:612-1396/y:390-1508 of the shared 2500x2000 canvas) —
-     only shown during picking, when the video frame/3-button controls are
-     hidden and this background is active instead. */
-  #boothLayout .picking-frame{
-    display:none; position:absolute; left:24.48%; top:19.5%; width:31.36%; height:55.9%;
-    box-sizing:border-box; border-radius:0; background:none; border:none; box-shadow:none; padding:0;
+  .picking-frame{
+    display:none; position:relative; width:100%; box-sizing:border-box;
+    border-radius:14px; background:#000; border:8px solid var(--machine-tan);
+    box-shadow:0 0 0 3px var(--ink-warm), 0 10px 30px rgba(49,49,49,0.3);
+    padding:8px;
   }
-  #boothLayout .picking-frame.show{ display:block; }
-  #boothLayout #thumbGrid{ width:100%; height:100%; margin:0; max-height:none; padding:0; gap:2.75% 9.69%; overflow:visible; }
-  /* Each cell's own outline is the rounded rect drawn into the grid art
-     (measured per-cell 354x199, ratio matched here) — no border of its own
-     pre-selection, same reasoning as the strip photos not drawing their
-     own border inside the output-slot arch. Selection still needs a real
-     visible border since nothing in the static art can show *which* 4 of
-     10 are picked. */
-  #boothLayout .thumb{ aspect-ratio:354/199; border:none; border-radius:3%; }
-  #boothLayout .thumb.selected{ border:4px solid var(--ink-warm); box-shadow:none; }
-  /* Not drawn in the reference (which only shows the empty 10-slot grid),
-     so — like #reconnectBtn — this gets a simple functional position
-     rather than one matched to art that doesn't depict it: the open space
-     below #downloadBtn (bottom ~89.65% during picking, nothing else drawn
-     underneath it there, confirmed blank all the way to the canvas's own
-     bottom edge) rather than below the grid, which would collide with the
-     torn-paper instructions note baked into that corner. Buttons stack in
-     a single column (not side-by-side) and everything is cqw/rem-clamped
-     so the whole block reliably fits the ~10% of height available below
-     the download button instead of overflowing past the illustration. */
-  #boothLayout .picking-controls{
-    display:none; position:absolute; left:61%; top:90.3%; width:34%;
-    flex-direction:column; align-items:center; gap:4px;
-  }
-  #boothLayout .picking-controls.show{ display:flex; }
-  #boothLayout .picking-controls .choice-label{
-    font-family:'Kalam',cursive; color:var(--ink-warm); margin:0; text-align:center;
-    font-size:clamp(0.5rem, 1.5cqw, 0.7rem); line-height:1.15;
-  }
-  #boothLayout .picking-controls .selection-actions{
-    display:flex; flex-direction:column; gap:4px; width:100%; align-items:stretch;
-  }
-  #boothLayout .picking-controls .btn-primary,
-  #boothLayout .picking-controls .btn-ghost{ padding:1.5% 4%; }
+  .picking-frame.show{ display:block; }
+  .picking-frame .thumb-grid{ margin:0; max-height:none; padding:0; }
+  .picking-controls{ display:none; flex-direction:column; align-items:center; gap:10px; margin-top:14px; }
+  .picking-controls.show{ display:flex; }
+  .picking-controls .choice-label{ font-family:'Kalam',cursive; color:var(--coral-deep); margin:0; text-align:center; }
+  .picking-controls .selection-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
   @keyframes modalBackdropIn{
     from{ opacity:0; }
@@ -1053,50 +957,46 @@
     45%{ transform:scale(1.06); box-shadow:0 22px 50px rgba(215,162,74,0.35); }
     100%{ transform:scale(1); }
   }
-  /* assets/InsideBooth_photos.png draws its own "download strip" pill
-     (measured x:1584-2016/y:1678-1793) — same double-text problem as the 3
-     main buttons, fixed the same way (transparent real text/background,
-     baked art is the entire visible control). InsideBooth_aftermath.png
-     has no equivalent of its own; the gap of undrawn space directly under
-     the arch and above the recap square (x:1650-1981/y:1440-1491) is
-     reused for it there instead, so THAT position needs a real visible
-     pill + label since nothing is drawn under it. */
-  #boothLayout #downloadBtn{ display:none; position:absolute; }
-  #boothLayout[data-state="photos"] #downloadBtn{
-    display:flex; left:63.36%; top:83.9%; width:17.28%; height:5.75%;
-    background:transparent; border:none; color:transparent;
-  }
-  #boothLayout[data-state="aftermath"] #downloadBtn{
-    /* height is intentionally not pinned to the measured "gap" box —
-       that box was only ~2.55% of .layout's height, which is legible-ish
-       on desktop but shrinks to a few px tall on mobile since it doesn't
-       scale with font size; auto height (padding-driven) plus a cqw-
-       clamped font keeps the label readable at every width instead. */
-    display:flex; left:66%; top:71.5%; width:13.24%; height:auto;
-    background:var(--cream); color:var(--ink-warm); border:2px solid var(--ink-warm); border-radius:14%;
-    font-family:'Kalam',cursive; font-weight:700; font-size:clamp(0.42rem, 1.7cqw, 0.7rem);
-    line-height:1.2; padding:2.2% 4%;
-  }
-  #boothLayout[data-state="aftermath"] #downloadBtn:hover:not(:disabled){ background:#fff; }
-  #boothLayout .btn-gold:disabled{ opacity:0.4; }
-  /* Positioned at InsideBooth_aftermath.png's recap-square + watch-recap
-     button (measured x:1670-1963/y:1542-1820 and x:1642-1983/y:1867-1940)
-     — only ever relevant in the aftermath state, so no separate idle/
-     picking position is needed the way #downloadBtn has one. */
-  #boothLayout .recap-panel{
-    display:none; position:absolute; left:65.68%; top:77.1%; width:13.64%;
-    flex-direction:column; align-items:center; gap:4px; background:none; border:none; padding:0; animation:none;
-  }
-  #boothLayout .recap-panel.show{ display:flex; }
-  #recapQr{border-radius:4%; background:#fff; padding:4%; border:2px solid var(--ink-warm); width:85%; height:auto; aspect-ratio:1/1;}
-  #boothLayout .recap-watch-btn{
-    width:100%; font-size:0.6rem; padding:5px 4px; background:var(--cream);
-    color:var(--ink-warm); border:2px solid var(--ink-warm); border-radius:999px;
-  }
-  #boothLayout .recap-watch-btn:hover{ background:#fff; }
+  .strip-wrap .btn-gold{width:100%; max-width:230px;}
+  /* Stacked directly under the output slot (as a column item in
+     .output-column) rather than requiring a scroll further down the page —
+     matches the strip's own width instead of being a separate sidebar. */
+  .recap-panel{display:none; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:230px; background:var(--cream); border:2.5px solid var(--ink-warm); border-radius:14px; padding:12px 10px; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
+  .recap-panel.show{display:flex;}
+  .recap-title{font-family:'Kalam',cursive; font-weight:700; font-size:1rem; color:var(--coral-deep); margin:0; text-align:center;}
+  #recapQr{border-radius:8px; background:#fff; padding:6px; border:2px solid var(--ink-warm); width:110px; height:110px;}
   a.btn-ghost, a.btn-gold, a.btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:600; border-radius:999px; padding:11px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .2s ease, filter .2s ease, background-color .2s ease, border-color .2s ease;}
   a.btn-ghost:hover, a.btn-gold:hover, a.btn-primary:hover{ filter:brightness(1.08); transform:translateY(-1px); }
   a.btn-ghost:active, a.btn-gold:active, a.btn-primary:active{ transform:scale(0.96) translateY(0); transition-duration:.08s; }
+  /* .btn-gold/.btn-ghost are shared with the admin modal (not redesigned
+     yet) — scoped to .output-column rather than restyled globally. */
+  .output-column .btn-gold{
+    background:var(--coral); color:#fff; border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
+  }
+  .output-column .btn-gold:hover:not(:disabled){ background:var(--coral-deep); box-shadow:0 6px 0 var(--ink-warm); filter:none; }
+  .output-column .btn-gold:active:not(:disabled){ transform:translateY(2px) scale(1); box-shadow:0 2px 0 var(--ink-warm); }
+  .output-column .btn-ghost{ background:var(--cream); color:var(--ink-warm); border:2.5px solid var(--ink-warm); }
+  .output-column .btn-ghost:hover{ background:#fff; }
+  .recap-watch-btn{width:100%; font-size:0.7rem; padding:8px 6px;}
+  .recap-expiry{font-size:0.6rem; color:rgba(49,49,49,0.5); margin:0; text-align:center;}
+  /* Strip and recap panel both shrink a bit on phone-width screens to
+     leave more room for the picture-frame/grid above them. Placed after
+     the base rules above so it wins at matching widths regardless of
+     source order. */
+  @media (max-width:500px){
+    .output-column{ gap:10px; }
+    .strip-wrap{ max-width:180px; }
+    .strip-wrap .btn-gold{ max-width:180px; font-size:0.78rem; padding:11px 8px; }
+    .output-slot, .theme-picker{ max-width:180px; }
+    /* No separate strip-print-frame/#stripCanvas override needed here —
+       both are percentage-sized off .output-slot now, so they scale down
+       with it automatically at any width instead of needing a matching
+       fixed px value at every breakpoint. */
+    .recap-panel{ max-width:180px; padding:10px 7px; }
+    .recap-title{ font-size:0.82rem; }
+    #recapQr{ width:88px; height:88px; padding:4px; }
+  }
   .recap-viewer{display:none; position:fixed; inset:0; z-index:300; background:radial-gradient(circle at 50% 42%, var(--bg-deep2), var(--bg-deep) 68%); align-items:center; justify-content:center; padding:20px;}
   .recap-viewer.show{display:flex;}
   .recap-viewer-card{width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;}
@@ -1107,22 +1007,21 @@
   .recap-viewer-status-icon{font-size:1.8rem;}
   .recap-viewer-status-text{font-size:0.9rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
   .recap-viewer-spinner{width:24px; height:24px; border-radius:50%; border:3px solid rgba(251,243,231,0.25); border-top-color:var(--gold); animation:authSpin 0.7s linear infinite;}
-  /* Only drawn (as "Strip Style" + a "frameless ▼" pill) in
-     assets/InsideBooth_photos.png — measured pill bbox x:1604-2040/
-     y:400-512; the label sits directly above it, so the whole picker
-     is positioned a little taller to include both. Not shown in any other
-     state, matching the reference. */
-  .theme-picker{ display:none; position:absolute; flex-direction:column; align-items:center; gap:2px; }
-  #boothLayout[data-state="photos"] .theme-picker{ display:flex; left:64.16%; top:17.5%; width:17.44%; }
-  /* Both made transparent, same reasoning/lesson as the 3 main buttons —
-     the label text and the "frameless ▼" pill are already drawn into the
-     art at this position, so a second visible copy just garbled into an
-     unreadable overlap rather than reading as two lines. */
-  .theme-label{ color:transparent; font-size:0.6rem; letter-spacing:1px; text-transform:uppercase; font-weight:600; }
-  .theme-select{ width:100%; height:100%; }
-  #boothLayout .theme-select{ color:transparent; }
+  .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
+  .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(49,49,49,0.6); font-weight:600;}
+  .theme-select{width:100%;}
+  .output-column select{
+    background-color:var(--cream); color:var(--ink-warm);
+    background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M0 0l5 6 5-6z%22 fill=%22%23313131%22/></svg>');
+    border:2.5px solid var(--ink-warm); font-family:'Poppins',sans-serif;
+  }
 
+  @media (max-width: 480px){
+    .controls{ flex-direction:column; }
+    .controls button, .controls select{ width:100%; }
+  }
   @media (max-width: 380px){
+    .booth-card{ padding:16px; }
     .marquee{ letter-spacing:0; }
   }
   @media (prefers-reduced-motion: reduce){
@@ -1262,122 +1161,128 @@
    </div>
   </div>
 
-  <!-- Booth screens redesign: the machine chrome, barber poles, output-slot
-       arch, and per-state headline/status copy are now ONE illustrated
-       raster background (assets/InsideBooth_*.png — front.png doubles as
-       both the idle "connected, about to shoot" state and the still-live
-       shooting state, since only the fullscreen countdown overlay changes
-       during an actual shoot, which this redesign doesn't touch) swapped
-       per booth state by setBoothBackground() in the script below, instead
-       of the previous hand-coded CSS/SVG machine + barber-pole + dropper.png
-       arch. Every element below is a real functional control positioned as
-       an absolute-percentage overlay on top of that image, at coordinates
-       measured directly off each PNG's own pixels (not eyeballed) — see the
-       matching CSS comment block for the full pixel/percentage breakdown
-       per state. .layout itself is the positioning root: it has no forced
-       aspect-ratio of its own, since #boothBgImg is a normal block image
-       (width:100%, height:auto) that sizes the container from its own
-       real intrinsic dimensions, the same robust pattern used for the
-       output-slot arch earlier — no separate declared ratio to ever drift
-       out of sync with the art. -->
   <div class="layout" id="boothLayout" style="display:none;">
-    <picture class="booth-bg">
-      <source id="boothBgSource" type="image/webp">
-      <img id="boothBgImg" class="booth-bg-img" alt="" aria-hidden="true" draggable="false" decoding="async">
-    </picture>
-
-    <div class="room-tag" id="roomTag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
-    <div class="code-row" id="codeRow" style="display:none;">
-      <button class="copy-btn" id="copyBtn" type="button" data-i18n="copyCode">copy code</button>
+    <div class="barber-pole" aria-hidden="true">
+      <svg class="bp-cap bp-cap-top" viewBox="0 0 42 24" preserveAspectRatio="none">
+        <rect class="bp-cap-collar" x="0" y="13" width="42" height="11" rx="3"/>
+        <path class="bp-cap-dome" d="M4 14 L4 8 A17 8 0 0 1 38 8 L38 14 Z"/>
+      </svg>
+      <div class="barber-pole-body"></div>
+      <svg class="bp-cap bp-cap-bottom" viewBox="0 0 42 24" preserveAspectRatio="none">
+        <rect class="bp-cap-collar" x="0" y="0" width="42" height="11" rx="3"/>
+        <path class="bp-cap-dome" d="M4 10 L4 16 A17 8 0 0 0 38 16 L38 10 Z"/>
+      </svg>
     </div>
-
-    <div class="viewfinder" id="viewfinder">
-      <div class="half mirror">
-        <video id="localVideo" autoplay playsinline muted></video>
-        <div class="video-vignette" id="localVignette"></div>
-        <div class="video-grain" id="localGrain"></div>
-        <video id="localVideoGlow" class="video-glow" autoplay playsinline muted></video>
+    <div class="booth-card">
+      <div class="room-tag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
+      <div class="code-row" id="codeRow" style="display:none;">
+        <button class="copy-btn" id="copyBtn" type="button" data-i18n="copyCode">copy code</button>
       </div>
-      <div class="divider"></div>
-      <div class="half" id="remoteHalf">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <div class="video-vignette" id="remoteVignette"></div>
-        <div class="video-grain" id="remoteGrain"></div>
-        <video id="remoteVideoGlow" class="video-glow" autoplay playsinline muted></video>
-        <div class="waiting-label" id="waitingLabel"><span class="waiting-heart" aria-hidden="true">🤍</span><span id="waitingLabelText" data-i18n="waitingForThem">waiting for them<br>to join…</span></div>
-      </div>
-      <div id="countdown" class="countdown">3</div>
-      <div id="flash" class="flash"></div>
-    </div>
-
-    <div class="picking-frame" id="pickingFrame">
-      <div class="thumb-grid" id="thumbGrid"></div>
-    </div>
-
-    <div class="camera-permission-banner" id="cameraPermissionBanner" role="alert">
-      <span class="camera-permission-icon" aria-hidden="true">🚫🎥</span>
-      <p class="camera-permission-text" id="cameraPermissionText" data-i18n="cameraPermissionDenied">camera access is required to use Luv Booth — please allow camera access in your browser settings and refresh the page.</p>
-    </div>
-    <div class="status-line" id="statusLine" aria-live="polite" data-i18n="sayCheese">say cheese whenever you're ready</div>
-    <p class="sync-note" id="syncNote" role="status" style="display:none;">live sync lost — filter, theme, and countdown changes won't update for both of you until it's back</p>
-
-    <div class="controls" id="mainControls">
-      <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">start strip</button>
-      <select id="filterSelect">
-        <option value="grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)" data-i18n="filterBwVintage">black and white vintage</option>
-        <option value="sepia(0.35) saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-5deg)" data-i18n="filterWarmVintage">warm vintage</option>
-        <option value="bw-glow" data-i18n="filterBwGlow">black and white vintage with a little glow</option>
-      </select>
-      <button class="btn-ghost" id="resetBtn" data-i18n="reset">reset</button>
-    </div>
-    <button class="btn-reconnect" id="reconnectBtn" type="button" data-i18n="reconnect">reconnect</button>
-
-    <div class="countdown-choice" id="countdownChoice" style="display:none;">
-      <p class="choice-label" data-i18n="countdownChoiceLabel">how long should the countdown be before each of your 10 shots?</p>
-      <div class="choice-options">
-        <button class="choice-card is-default" data-seconds="3" type="button">
-          <span class="choice-num">3</span><span class="choice-unit" data-i18n="sec">sec</span>
-          <span class="choice-tag" data-i18n="defaultTag">default</span>
-        </button>
-        <button class="choice-card" data-seconds="5" type="button">
-          <span class="choice-num">5</span><span class="choice-unit" data-i18n="sec">sec</span>
-        </button>
-        <button class="choice-card" data-seconds="10" type="button">
-          <span class="choice-num">10</span><span class="choice-unit" data-i18n="sec">sec</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="picking-controls" id="pickingControls">
-      <p class="choice-label" id="selectionCounter">0 of 4 selected — tap your favorites</p>
-      <div class="selection-actions">
-        <button class="btn-primary" id="buildStripBtn" disabled data-i18n="buildStrip">build my strip</button>
-        <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
-      </div>
-    </div>
-
-    <div class="theme-picker" id="themePicker">
-      <label for="themeSelect" class="theme-label" data-i18n="stripStyle">strip style</label>
-      <select id="themeSelect" class="theme-select"></select>
-    </div>
-    <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
-    <div class="output-slot" id="outputSlot">
-      <div class="strip-print-frame">
-        <div class="printing-indicator" id="printingIndicator">
-          <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
+      <div class="viewfinder">
+        <div class="half mirror">
+          <video id="localVideo" autoplay playsinline muted></video>
+          <div class="video-vignette" id="localVignette"></div>
+          <div class="video-grain" id="localGrain"></div>
+          <video id="localVideoGlow" class="video-glow" autoplay playsinline muted></video>
         </div>
-        <canvas id="stripCanvas" width="300" height="506"></canvas>
+        <div class="divider"></div>
+        <div class="half" id="remoteHalf">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <div class="video-vignette" id="remoteVignette"></div>
+          <div class="video-grain" id="remoteGrain"></div>
+          <video id="remoteVideoGlow" class="video-glow" autoplay playsinline muted></video>
+          <div class="waiting-label" id="waitingLabel"><span class="waiting-heart" aria-hidden="true">🤍</span><span id="waitingLabelText" data-i18n="waitingForThem">waiting for them<br>to join…</span></div>
+        </div>
+        <div id="countdown" class="countdown">3</div>
+        <div id="flash" class="flash"></div>
+      </div>
+      <div class="picking-frame" id="pickingFrame">
+        <div class="thumb-grid" id="thumbGrid"></div>
+      </div>
+      <div class="camera-permission-banner" id="cameraPermissionBanner" role="alert">
+        <span class="camera-permission-icon" aria-hidden="true">🚫🎥</span>
+        <p class="camera-permission-text" id="cameraPermissionText" data-i18n="cameraPermissionDenied">camera access is required to use Luv Booth — please allow camera access in your browser settings and refresh the page.</p>
+      </div>
+      <div class="status-line" id="statusLine" aria-live="polite" data-i18n="sayCheese">say cheese whenever you're ready</div>
+      <p class="sync-note" id="syncNote" role="status" style="display:none;">live sync lost — filter, theme, and countdown changes won't update for both of you until it's back</p>
+      <div class="controls" id="mainControls">
+        <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">📸 start strip</button>
+        <select id="filterSelect">
+          <option value="grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)" data-i18n="filterBwVintage">black and white vintage</option>
+          <option value="sepia(0.35) saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-5deg)" data-i18n="filterWarmVintage">warm vintage</option>
+          <option value="bw-glow" data-i18n="filterBwGlow">black and white vintage with a little glow</option>
+        </select>
+        <button class="btn-ghost" id="resetBtn" data-i18n="reset">reset</button>
+        <button class="btn-reconnect" id="reconnectBtn" type="button" data-i18n="reconnect">reconnect</button>
+      </div>
+      <div class="countdown-choice" id="countdownChoice" style="display:none;">
+        <p class="choice-label" data-i18n="countdownChoiceLabel">how long should the countdown be before each of your 10 shots?</p>
+        <div class="choice-options">
+          <button class="choice-card is-default" data-seconds="3" type="button">
+            <span class="choice-num">3</span><span class="choice-unit" data-i18n="sec">sec</span>
+            <span class="choice-tag" data-i18n="defaultTag">default</span>
+          </button>
+          <button class="choice-card" data-seconds="5" type="button">
+            <span class="choice-num">5</span><span class="choice-unit" data-i18n="sec">sec</span>
+          </button>
+          <button class="choice-card" data-seconds="10" type="button">
+            <span class="choice-num">10</span><span class="choice-unit" data-i18n="sec">sec</span>
+          </button>
+        </div>
+      </div>
+      <div class="picking-controls" id="pickingControls">
+        <p class="choice-label" id="selectionCounter">0 of 4 selected — tap your favorites</p>
+        <div class="selection-actions">
+          <button class="btn-primary" id="buildStripBtn" disabled data-i18n="buildStrip">🖤 build my strip</button>
+          <button class="btn-ghost" id="retakeAllBtn" type="button" data-i18n="retakeAll">retake all 10</button>
+        </div>
+      </div>
+      <ol class="hint-list">
+        <li data-i18n="hintStep1">We capture 10 photos of both of you together</li>
+        <li data-i18n="hintStep2">You pick your favorite 4 to build the strip</li>
+        <li data-i18n="hintStep3">Leaving or refreshing ends the room — you'd start fresh</li>
+      </ol>
+      <div class="leave-row">
+        <button class="leave-link" id="countdownBackBtn" type="button" data-i18n="back" style="display:none;">back</button>
       </div>
     </div>
-    <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">download strip</button>
 
-    <div class="recap-panel" id="recapPanel">
-      <canvas id="recapQr" width="150" height="150"></canvas>
-      <a class="btn-ghost recap-watch-btn" id="recapLink" href="#" target="_blank" rel="noopener" data-i18n="watchRecapBtn">watch the recap</a>
+    <div class="output-column">
+      <div class="strip-wrap">
+        <div class="theme-picker" id="themePicker">
+          <label for="themeSelect" class="theme-label" data-i18n="stripStyle">strip style</label>
+          <select id="themeSelect" class="theme-select"></select>
+        </div>
+        <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
+        <div class="output-slot">
+          <picture><source srcset="assets/dropper.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
+          <div class="strip-print-frame">
+            <div class="printing-indicator" id="printingIndicator">
+              <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
+            </div>
+            <canvas id="stripCanvas" width="300" height="506"></canvas>
+          </div>
+        </div>
+        <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
+      </div>
+
+      <div class="recap-panel" id="recapPanel">
+        <p class="recap-title" data-i18n="recapTitle">session recap</p>
+        <canvas id="recapQr" width="150" height="150"></canvas>
+        <a class="btn-ghost recap-watch-btn" id="recapLink" href="#" target="_blank" rel="noopener" data-i18n="watchRecapBtn">🎬 watch the recap</a>
+        <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
+      </div>
     </div>
-
-    <div class="leave-row">
-      <button class="leave-link" id="countdownBackBtn" type="button" data-i18n="back" style="display:none;">back</button>
+    <div class="barber-pole" aria-hidden="true">
+      <svg class="bp-cap bp-cap-top" viewBox="0 0 42 24" preserveAspectRatio="none">
+        <rect class="bp-cap-collar" x="0" y="13" width="42" height="11" rx="3"/>
+        <path class="bp-cap-dome" d="M4 14 L4 8 A17 8 0 0 1 38 8 L38 14 Z"/>
+      </svg>
+      <div class="barber-pole-body"></div>
+      <svg class="bp-cap bp-cap-bottom" viewBox="0 0 42 24" preserveAspectRatio="none">
+        <rect class="bp-cap-collar" x="0" y="0" width="42" height="11" rx="3"/>
+        <path class="bp-cap-dome" d="M4 10 L4 16 A17 8 0 0 0 38 16 L38 10 Z"/>
+      </svg>
     </div>
   </div>
 </div>
@@ -1986,38 +1891,6 @@ const joinConfirmBtn = document.getElementById('joinConfirmBtn');
 const joinBackBtn = document.getElementById('joinBackBtn');
 const gateError = document.getElementById('gateError');
 const boothLayout = document.getElementById('boothLayout');
-const boothBgSource = document.getElementById('boothBgSource');
-const boothBgImg = document.getElementById('boothBgImg');
-/* One of these 4 illustrated raster backgrounds is shown at a time (see
-   the big CSS comment on .layout for how the interactive overlays are
-   positioned against each one). "front" doubles as both the idle,
-   about-to-shoot state and the state while a shoot is actually in
-   progress — the separate #fullscreenShoot countdown overlay handles that
-   moment and isn't part of this redesign, so nothing needs to change here
-   for it. Only .webp is set directly; the PNG fallback is derived by
-   swapping the extension so there's one source of truth per state. */
-const BOOTH_BG = {
-  front: 'assets/InsideBooth_front.webp',
-  disconnect: 'assets/InsideBooth_disconnect.webp',
-  photos: 'assets/InsideBooth_photos.webp',
-  aftermath: 'assets/InsideBooth_aftermath.webp',
-};
-function setBoothBackground(state){
-  const webp = BOOTH_BG[state] || BOOTH_BG.front;
-  boothBgSource.srcset = webp;
-  boothBgImg.src = webp.replace(/\.webp$/, '.png');
-  boothLayout.dataset.state = state;
-}
-/* Derived from the same flags/classes that already drive the rest of the
-   booth UI, rather than tracked as separate state of its own, so the
-   background can never drift out of sync with what those flags say is
-   actually happening — called after any of them change. */
-function refreshBoothBackground(){
-  if(reconnectBtn.classList.contains('show')) setBoothBackground('disconnect');
-  else if(pickingFrame.classList.contains('show')) setBoothBackground('photos');
-  else if(!downloadBtn.disabled) setBoothBackground('aftermath');
-  else setBoothBackground('front');
-}
 const codeRow = document.getElementById('codeRow');
 const copyBtn = document.getElementById('copyBtn');
 const countdownBackBtn = document.getElementById('countdownBackBtn');
@@ -2797,8 +2670,7 @@ createCard.addEventListener('click', async ()=>{
   photosStartedThisRoom = false;
   gate.style.display = 'none';
   marquee.classList.add('show');
-  boothLayout.style.display = 'block';
-  setBoothBackground('front');
+  boothLayout.style.display = 'flex';
   startAsHost(code);
 });
 
@@ -2829,8 +2701,7 @@ joinConfirmBtn.addEventListener('click', ()=>{
   photosStartedThisRoom = false;
   gate.style.display = 'none';
   marquee.classList.add('show');
-  boothLayout.style.display = 'block';
-  setBoothBackground('front');
+  boothLayout.style.display = 'flex';
   startAsGuest(code);
 });
 roomInput.addEventListener('animationend', ()=> roomInput.classList.remove('invalid'));
@@ -3001,11 +2872,10 @@ function showSelectionPanel(){
   pickingFrame.classList.add('show');
   pickingControls.classList.add('show');
   renderThumbGrid();
-  refreshBoothBackground();
 }
 
 function hideSelectionPanel(){
-  mainControls.style.display = '';
+  mainControls.style.display = 'flex';
   if(!pickingActive) return;
   pickingActive = false;
   viewfinderEl.style.display = '';
@@ -3015,7 +2885,6 @@ function hideSelectionPanel(){
     pendingPrintAnimation = false;
     beginStripPrintSequence();
   }
-  refreshBoothBackground();
 }
 
 /* Instant version — same as hideSelectionPanel now that there's no fade
@@ -3234,24 +3103,22 @@ filterSelect.addEventListener('change', ()=>{
 });
 applyLiveFilter();
 
-/* These proportions are measured directly off the two illustrated arch
-   "slot blocks" the live strip actually sits inside now — the wide,
-   prominent one in assets/InsideBooth_photos.png (4 slots, union block
-   404x985px) used while picking, and the narrower one reused from the
-   idle/disconnected arch shape in assets/InsideBooth_aftermath.png (4
-   slots, union block 215x524px) used once the strip is built. Measured
-   independently, these two blocks turned out to share almost exactly the
-   same height:width ratio (2.438 vs 2.437) despite being drawn at very
-   different sizes, so one canvas aspect ratio fits either just by
-   changing which CSS box (.output-slot) it's positioned in — see that
-   class's comment. SIDE/TOP/BOTTOM are 0 so the 4 photos, as a block,
-   fill whichever box edge to edge with no margin of their own; GAP is
-   scaled by the same factor as PHOTO_W (260/119-per-old-dropper.png-era
-   factor no longer applies — now roughly 260/175, the two blocks' shared
-   width:height-implied scale). Photos are cropped (not stretched) to this
-   shape when drawn — see drawSlot(). No corner rounding: both arch shapes
-   have near-square corners. */
-const PHOTO_W = 260, PHOTO_H = 146, SIDE = 0, GAP = 17, TOP = 0, BOTTOM = 0;
+/* These proportions are measured directly off the illustrated window's own
+   OUTER border-box in assets/dropper.png (185x439 image; window border at
+   x:34-153/y:113.5-377.5 — see the CSS comment on .strip-print-frame for
+   the full pixel/percentage breakdown), not the 4 individual slot rects
+   drawn inside it. SIDE/TOP/BOTTOM are 0 so all 4 photos, as a block, fill
+   that window edge to edge with no margin of their own — the individual
+   rects and the matting around them get fully covered (photos are bigger
+   than those inner rects on every side, so nothing peeks out unevenly),
+   and what's left showing is only the window's own thicker outer line,
+   which reads as the strip's border with no separate stroke of its own
+   competing with or duplicating it (see drawStripBase()'s comment). GAP
+   is scaled the same way PHOTO_W is (260/119, window-width-based, not the
+   old 260/102.5 rect-width-based factor). Photos are cropped (not
+   stretched) to this shape when drawn — see drawSlot(). No corner
+   rounding: the window's own corners are already near-square. */
+const PHOTO_W = 260, PHOTO_H = 136, SIDE = 0, GAP = 11, TOP = 0, BOTTOM = 0;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3270,8 +3137,8 @@ const STRIP_SLOTS = 4;
    captured photo or, until then, a shared illustrated sky/cloud/hill
    placeholder. There's no borderWidth here (there used to be, for a
    canvas-drawn outer border) — the strip's outer edge sits flush against
-   the illustrated arch border baked into the booth background art (see
-   the .output-slot CSS comment), which reads as the strip's border for
+   the illustrated window border baked into assets/dropper.png (see the
+   .strip-print-frame CSS comment), which reads as the strip's border for
    every theme without a separate stroke competing with it. */
 const THEMES = [
   {
@@ -3535,7 +3402,6 @@ function setStatus(text, live, waiting){
 function showReconnect(show){
   reconnectBtn.classList.toggle('show', !!show);
   if(!show){ reconnectBtn.disabled = false; reconnectBtn.textContent = t('reconnect'); }
-  refreshBoothBackground();
 }
 
 function setCodeBadge(code){
@@ -4027,7 +3893,7 @@ function teardownAndReturnToGate(){
   countdownChoice.style.display = 'none';
   countdownBackBtn.style.display = 'none';
   forceHideSelectionPanel();
-  mainControls.style.display = '';
+  mainControls.style.display = 'flex';
   redrawStrip();
 }
 
@@ -4159,7 +4025,10 @@ function redrawStrip(){
 }
 
 /* Keeps the printing-wait overlay consistent with whatever theme is
-   currently active. */
+   currently active. The decorative print-slot bar itself is hidden now
+   that the strip sits inside the illustrated dropper.png window instead
+   (see .print-slot in the stylesheet), but the element and this function
+   are left in place rather than torn out piecemeal. */
 function updatePrintSlotTheme(){
   const theme = getTheme();
   printingIndicator.style.background = theme.ink;
@@ -4446,7 +4315,7 @@ function showCountdownChoice(){
    ending the room or disconnecting from the other person. */
 function hideCountdownChoice(){
   countdownChoice.style.display = 'none';
-  mainControls.style.display = '';
+  mainControls.style.display = 'flex';
   countdownBackBtn.style.display = 'none';
 }
 
@@ -4585,7 +4454,6 @@ function buildStripFrom(indices){
   startBtn.disabled = false;
   stripCanvas.classList.add('swappable');
   statusLine.textContent = t('allDoneDownload');
-  refreshBoothBackground();
 }
 
 buildStripBtn.addEventListener('click', ()=>{
@@ -4625,7 +4493,6 @@ resetBtn.addEventListener('click', ()=>{
   downloadBtn.disabled = true;
   startBtn.disabled = !connected;
   statusLine.textContent = connected ? t('inFrame') : t('waitingToConnect');
-  refreshBoothBackground();
 });
 downloadBtn.addEventListener('click', ()=>{
   const link = document.createElement('a');
