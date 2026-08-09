@@ -810,10 +810,24 @@
   }
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
   /* Wraps .strip-print-frame in the real illustrated arch/window artwork
-     (assets/dropper-arch.png — plain black linework on white, no color fill,
-     matching the room-screens B&W theme), purely as an outer decorative
-     layer so none of the existing print-out-animation positioning math
-     changes. */
+     (assets/dropper-arch.png — plain black linework, no color fill,
+     matching the room-screens B&W theme). Painted AFTER .strip-print-frame
+     in DOM order (see the HTML), not before, and the PNG's own background
+     is genuinely transparent (converted from the source's opaque white via
+     a luminance->alpha remap — flat #313131 ink at full opacity fading to
+     0 opacity at white) rather than just visually white. That combination
+     means the arch's linework — including the window's own border and the
+     legs at the bottom — always paints on top of and stays visible over
+     the strip canvas beneath it, regardless of exactly how the canvas is
+     sized/positioned. This replaced an earlier version where the image
+     painted first and the canvas (fully opaque) painted over it: any
+     canvas edge that landed even a hair past the true inner edge of the
+     hand-drawn (slightly wavy, non-pixel-perfect) border silently painted
+     over and hid that whole stretch of border/leg line — which is what
+     was actually causing the "no border / disconnected legs" bug, not the
+     fit math itself. Now the canvas can safely fill flush to the window's
+     own outer measurements with no visible consequence even if it's a
+     pixel or two off in either direction. */
   /* .output-slot deliberately has NO forced aspect-ratio of its own — the
      frame image is a normal in-flow block (width:100%, height:auto), which
      sizes .output-slot to the image's real intrinsic 223x472 ratio by
@@ -838,9 +852,9 @@
      left/top/width — height comes from the canvas's own matching aspect
      ratio — fills it edge to edge. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
-  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; }
+  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
   .strip-print-frame{
-    position:absolute; left:11.66%; top:20.55%; width:78.03%;
+    position:absolute; left:11.66%; top:20.55%; width:78.03%; z-index:0;
     display:flex; flex-direction:column; align-items:center;
   }
   /* No box-shadow — the strip is no longer a distinct card floating above
@@ -1285,13 +1299,13 @@
         </div>
         <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
         <div class="output-slot">
-          <picture><source srcset="assets/dropper-arch.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper-arch.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
           <div class="strip-print-frame">
             <div class="printing-indicator" id="printingIndicator">
               <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
             </div>
             <canvas id="stripCanvas" width="300" height="506"></canvas>
           </div>
+          <picture><source srcset="assets/dropper-arch.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper-arch.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
         </div>
         <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
       </div>
