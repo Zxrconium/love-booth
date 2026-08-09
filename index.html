@@ -10,6 +10,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- The two heaviest assets visible on first paint (page background, then
+     the gate/login machine art right after) — preloaded as WebP so the
+     browser starts fetching them immediately instead of discovering them
+     only once the CSS/DOM referencing them is parsed. fetchpriority="high"
+     on the background since it paints before anything else. -->
+<link rel="preload" as="image" href="assets/street-bg.webp" type="image/webp" fetchpriority="high">
+<link rel="preload" as="image" href="assets/front_booth.webp" type="image/webp">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="vendor/qrcode-generator.min.js"></script>
@@ -44,10 +51,18 @@
        doubled/duplicated seam wherever it wrapped. One cover-sized,
        non-repeating instance avoids that entirely; cover crops rather than
        stretches, so the illustration stays proportional at any viewport
-       size, anchored to the bottom so the sidewalk stays in view. */
-    background:
+       size, anchored to the bottom so the sidewalk stays in view.
+       WebP (image-set) with a plain PNG declaration first as the fallback
+       for browsers without image-set support — this is the very first
+       thing painted, so it's the highest-impact asset to shrink (419KB
+       PNG down to ~287KB WebP at visually identical quality; also
+       preloaded, see <head>). */
+    background-image:
       linear-gradient(180deg, rgba(255,232,194,0.4), rgba(255,217,153,0.45)),
       url('assets/street-bg.png');
+    background-image:
+      linear-gradient(180deg, rgba(255,232,194,0.4), rgba(255,217,153,0.45)),
+      image-set(url('assets/street-bg.webp') type('image/webp'), url('assets/street-bg.png') type('image/png'));
     background-size:auto, cover;
     background-repeat:no-repeat, no-repeat;
     background-position:center, center bottom;
@@ -1043,7 +1058,7 @@
 </style>
 </head>
 <body>
-<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon"><img src="assets/coin-purse.png" alt="" aria-hidden="true"><span class="coin-sparkle s1" aria-hidden="true">✦</span><span class="coin-sparkle s2" aria-hidden="true">✦</span><span class="coin-sparkle s3" aria-hidden="true">✦</span></span><span id="coinBadgeCount">0</span></div>
+<div class="coin-badge" id="coinBadge"><span class="coin-badge-icon"><picture><source srcset="assets/coin-purse.webp" type="image/webp"><img src="assets/coin-purse.png" alt="" aria-hidden="true" decoding="async"></picture><span class="coin-sparkle s1" aria-hidden="true">✦</span><span class="coin-sparkle s2" aria-hidden="true">✦</span><span class="coin-sparkle s3" aria-hidden="true">✦</span></span><span id="coinBadgeCount">0</span></div>
 <!-- Single logout control, shown fixed in the same screen corner on every
      screen (gate and booth alike) whenever someone's logged in — replaces
      both the old hard-to-see "log out" text link and the booth screen's
@@ -1077,8 +1092,8 @@
 
   <div class="gate" id="gate">
    <div class="gate-machine">
-    <img class="gate-art show" id="gateArtBooth" src="assets/front_booth.png" alt="" aria-hidden="true" draggable="false">
-    <img class="gate-art" id="gateArtLogin" src="assets/log_in.png" alt="" aria-hidden="true" draggable="false">
+    <picture><source srcset="assets/front_booth.webp" type="image/webp"><img class="gate-art show" id="gateArtBooth" src="assets/front_booth.png" alt="" aria-hidden="true" draggable="false" decoding="async"></picture>
+    <picture><source srcset="assets/log_in.webp" type="image/webp"><img class="gate-art" id="gateArtLogin" src="assets/log_in.png" alt="" aria-hidden="true" draggable="false" decoding="async"></picture>
     <div class="gate-content">
       <div class="gate-cards" id="gateCards" style="display:none;">
         <button class="gate-card gate-card-create" id="createCard" type="button">
@@ -1240,7 +1255,7 @@
         </div>
         <p class="output-slot-tag" id="outputSlotTag" aria-hidden="true" data-i18n="photoWillAppearIdle">your strip will show up here</p>
         <div class="output-slot">
-          <img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false">
+          <picture><source srcset="assets/dropper.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
           <div class="strip-print-frame">
             <div class="printing-indicator" id="printingIndicator">
               <span data-i18n="printingStrip">printing your strip</span><span class="printing-dots"><span></span><span></span><span></span></span>
