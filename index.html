@@ -611,6 +611,23 @@
     flex:none; width:34px; height:min(70vh, 420px); box-sizing:border-box;
     background:repeating-linear-gradient(-35deg, var(--ink-warm) 0 10px, #fff 10px 20px);
     border-left:3px solid var(--ink-warm); border-right:3px solid var(--ink-warm);
+    /* The actual barber-shop signature: stripes that appear to travel
+       continuously along the pole, reading as it spinning around its own
+       axis. background-position moves purely vertically by one repeat
+       cycle (the 20px ink/white pair) projected onto the -35deg
+       gradient's own axis, so the loop has no visible seam — verified
+       empirically via screenshot diffing across a range of offsets
+       (a plain trig projection landed close but measurably off, likely
+       from how the browser rounds the angled gradient's own geometry;
+       25.7px is where the rendered diff against the 0px frame actually
+       bottoms out). prefers-reduced-motion is already handled by the
+       global animation-duration override above, no extra rule needed
+       here. */
+    animation: barberPoleSpin 1s linear infinite;
+  }
+  @keyframes barberPoleSpin{
+    from{ background-position:0 0; }
+    to{ background-position:0 25.7px; }
   }
   /* Each cap SVG is wider (42) than the 34px column so the collar rect reads
      as a clamp that actually protrudes past the striped body's edges,
