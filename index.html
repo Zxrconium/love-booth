@@ -1011,8 +1011,12 @@
   .fs-print-next{
     width:auto; padding:12px 28px; opacity:0; transform:translateY(6px);
     pointer-events:none; transition:opacity 0.35s ease, transform 0.35s ease;
+    background:#fff; color:var(--ink-warm); border:3px solid var(--ink-warm);
+    box-shadow:0 4px 0 var(--ink-warm); font-family:'Kalam',cursive; font-weight:700;
   }
   .fs-print-next.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .fs-print-next:hover{ background:#fff; box-shadow:0 6px 0 var(--ink-warm); }
+  .fs-print-next.show:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--ink-warm); }
 
   /* Photo-picking now happens in place of the live camera view, inside the
      exact same picture-frame position/size/border as .viewfinder (instead
@@ -4581,7 +4585,7 @@ async function runCountdown(seconds){
    then never be un-cancelled by a later session resetting a shared boolean. */
 let shootSessionId = 0;
 
-async function runCaptureSequence(seconds){
+async function runCaptureSequence(seconds, isRemoteTriggered){
   if(busy || !connected) return;
   const mySessionId = ++shootSessionId;
   lastCountdownSeconds = seconds;
@@ -4599,6 +4603,15 @@ async function runCaptureSequence(seconds){
   showSelectionPanel();
   enterFullscreenShoot();
   startRecapRecording();
+
+  // Held visible for a beat before the "photo 1 of 10" text takes over —
+  // otherwise this and the loop's very first statusLine update below both
+  // run synchronously in the same tick (nothing yields to the browser
+  // between them), so the "starting your Nsecond countdown…" confirmation
+  // got overwritten before a single frame ever painted it.
+  statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown', { n: seconds });
+  await wait(900);
+  if(shootSessionId !== mySessionId) return;
 
   for(let i=0;i<SHOOT_COUNT;i++){
     if(shootSessionId !== mySessionId) return;
@@ -4624,8 +4637,7 @@ async function runCaptureSequence(seconds){
 
 function beginSyncedSession(seconds, isRemoteTriggered){
   const secs = seconds || 3;
-  statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown', { n: secs });
-  runCaptureSequence(secs);
+  runCaptureSequence(secs, isRemoteTriggered);
 }
 
 function showCountdownChoice(){
