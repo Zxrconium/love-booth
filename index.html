@@ -3250,39 +3250,40 @@ const STRIP_SLOTS = 4;
    the only theme where ink stays a real contrasting color, since it's
    the one theme whose whole point is a visible outline + dividers.
 
-   borderWidth is the same 4px across all three themes rather than each
-   theme picking its own, matching drawDivider()'s own 3px stroke — a
-   16px border (an earlier attempt at "border at least as heavy as the
-   dividers") overcorrected into a thick black block on Bordered White,
-   the only theme where the border is actually a visible contrasting
-   color rather than invisible-by-design. 4px keeps it a clean, thin
-   photo-strip-style outline while still reading as marginally heavier
-   than the 3px divider rather than thinner. (On Black/White the divider
-   between photos also reads as a full GAP-width band since the
-   background fill and the divider stroke share one color — but border
-   width there is moot either way, since ink there matches background
-   too and paints over itself regardless of thickness.) */
+   borderWidth is the same 8px across all three themes rather than each
+   theme picking its own. A 4px border technically drew on all 4 sides
+   (verified against the canvas's own raw pixel data), but the left/right
+   edges only get the strip's own stroke to read against — no reinforcing
+   same-color GAP band the way the horizontal dividers get — so at the
+   canvas's real on-screen size (roughly 40% of its native 260x794, since
+   .strip-print-frame sizes it well below native resolution) a 4px stroke
+   downscales to under 2 real pixels and the left/right edges become easy
+   to miss entirely, even though the top/bottom read fine. 8px keeps
+   comfortable margin above that threshold on every side while still
+   reading as a thin outline rather than the earlier 16px block. (On
+   Black/White this is moot either way, since ink there matches
+   background and paints over itself regardless of thickness.) */
 const THEMES = [
   {
     id: 'frameless',
     labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#ffffff',
-    borderWidth: 4
+    borderWidth: 8
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#ffffff',
     ink: '#000000',
-    borderWidth: 4
+    borderWidth: 8
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#000000',
     ink: '#000000',
-    borderWidth: 4
+    borderWidth: 8
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
