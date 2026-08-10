@@ -1509,7 +1509,7 @@ const TRANSLATIONS = {
     reconnecting: 'reconnecting…', waitingToConnect: 'waiting to connect…',
     photoOfGetReady: 'photo {i} of {n} — get ready!', photoCaptured: 'photo {i} captured 🤍',
     pickFavorite: 'nice! pick your favorite {n} below',
-    theyStarted: 'they started the countdown!', startingCountdown: 'starting the countdown…',
+    theyStarted: 'they started the countdown!', startingCountdown: 'starting your {n}-second countdown…',
     allDoneDownload: 'all done! download your strip below', printingStrip: 'printing your strip',
     photoWillAppear: 'your photo will appear here in a few seconds.',
     photoWillAppearIdle: 'your strip will show up here',
@@ -1597,7 +1597,7 @@ const TRANSLATIONS = {
     reconnecting: 'kumokonekta ulit…', waitingToConnect: 'hinihintay kumonekta…',
     photoOfGetReady: 'larawan {i} ng {n} — humanda ka!', photoCaptured: 'nakuha ang larawan {i} 🤍',
     pickFavorite: 'ayos! piliin ang {n} paborito mo sa baba',
-    theyStarted: 'sinimulan niya ang countdown!', startingCountdown: 'sinisimulan ang countdown…',
+    theyStarted: 'sinimulan niya ang countdown!', startingCountdown: 'sinisimulan ang {n}-segundong countdown…',
     allDoneDownload: 'tapos na! i-download ang strip mo sa baba', printingStrip: 'nagpi-print ang strip mo',
     photoWillAppear: 'lalabas dito ang litrato mo sa loob ng ilang segundo.',
     photoWillAppearIdle: 'dito lalabas ang strip mo',
@@ -1685,7 +1685,7 @@ const TRANSLATIONS = {
     reconnecting: 'reconectando…', waitingToConnect: 'esperando conexión…',
     photoOfGetReady: 'foto {i} de {n} — ¡prepárate!', photoCaptured: 'foto {i} capturada 🤍',
     pickFavorite: '¡genial! elige tus {n} favoritas abajo',
-    theyStarted: '¡empezó la cuenta regresiva!', startingCountdown: 'iniciando la cuenta regresiva…',
+    theyStarted: '¡empezó la cuenta regresiva!', startingCountdown: 'iniciando tu cuenta regresiva de {n} segundos…',
     allDoneDownload: '¡listo! descarga tu tira abajo', printingStrip: 'imprimiendo tu tira',
     photoWillAppear: 'tu foto aparecerá aquí en unos segundos.',
     photoWillAppearIdle: 'tu tira aparecerá aquí',
@@ -1773,7 +1773,7 @@ const TRANSLATIONS = {
     reconnecting: '재연결 중…', waitingToConnect: '연결을 기다리는 중…',
     photoOfGetReady: '{n}장 중 {i}번째 사진 — 준비하세요!', photoCaptured: '{i}번째 사진 촬영 완료 🤍',
     pickFavorite: '좋아요! 마음에 드는 {n}장을 아래에서 골라주세요',
-    theyStarted: '상대방이 카운트다운을 시작했어요!', startingCountdown: '카운트다운을 시작하는 중…',
+    theyStarted: '상대방이 카운트다운을 시작했어요!', startingCountdown: '{n}초 카운트다운을 시작하는 중…',
     allDoneDownload: '완성했어요! 아래에서 스트립을 다운로드하세요', printingStrip: '스트립 인쇄 중',
     photoWillAppear: '잠시 후 여기에 사진이 나타납니다.',
     photoWillAppearIdle: '여기에 스트립이 표시됩니다',
@@ -1861,7 +1861,7 @@ const TRANSLATIONS = {
     reconnecting: '再接続中…', waitingToConnect: '接続を待っています…',
     photoOfGetReady: '{n}枚中{i}枚目 — 準備してください！', photoCaptured: '{i}枚目を撮影しました 🤍',
     pickFavorite: 'いいですね！お気に入りの{n}枚を下から選んでください',
-    theyStarted: '相手がカウントダウンを開始しました！', startingCountdown: 'カウントダウンを開始しています…',
+    theyStarted: '相手がカウントダウンを開始しました！', startingCountdown: '{n}秒のカウントダウンを開始しています…',
     allDoneDownload: '完成です！下からストリップをダウンロードしてください', printingStrip: 'ストリップを印刷中',
     photoWillAppear: '数秒後にここに写真が表示されます。',
     photoWillAppearIdle: 'ここにストリップが表示されます',
@@ -2070,9 +2070,17 @@ let photosStartedThisRoom = false;
 // false in devtools after actually using a paid room and then claim a
 // refund anyway. Fire-and-forget: nothing in the UI depends on this having
 // landed, it only matters that it eventually does.
-function markSpendUsedOnServer(){
+async function markSpendUsedOnServer(){
   if(!sbClient || !currentUser) return;
-  sbClient.rpc('mark_last_spend_used').catch(()=>{});
+  // sbClient.rpc(...) returns a PostgrestFilterBuilder, not a real Promise —
+  // it's thenable (awaitable) but has no .catch()/.finally() of its own, so
+  // calling .catch() on it directly throws synchronously instead of ever
+  // reaching a rejection handler. That synchronous throw was escaping all
+  // the way up through runCaptureSequence() (its only caller never awaits
+  // this, but a synchronous throw doesn't care) and silently killing the
+  // whole capture sequence after the very first photo. await + try/catch
+  // gets a real rejection to catch instead.
+  try{ await sbClient.rpc('mark_last_spend_used'); }catch(e){ /* best-effort — nothing else to do if this fails */ }
 }
 
 async function refundCoinIfUnused(){
@@ -4472,8 +4480,9 @@ async function runCaptureSequence(seconds){
 }
 
 function beginSyncedSession(seconds, isRemoteTriggered){
-  statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown');
-  runCaptureSequence(seconds || 3);
+  const secs = seconds || 3;
+  statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown', { n: secs });
+  runCaptureSequence(secs);
 }
 
 function showCountdownChoice(){
