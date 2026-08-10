@@ -23,6 +23,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Inject Metered TURN credentials
+        env:
+          METERED_TURN_USERNAME: ${{ secrets.METERED_TURN_USERNAME }}
+          METERED_TURN_CREDENTIAL: ${{ secrets.METERED_TURN_CREDENTIAL }}
+        run: |
+          if [ -z "$METERED_TURN_USERNAME" ] || [ -z "$METERED_TURN_CREDENTIAL" ]; then
+            echo "::warning::METERED_TURN_USERNAME/METERED_TURN_CREDENTIAL repo secrets are not set — deploying with TURN placeholders still in index.html, so room connections will fall back to STUN-only."
+          fi
+          sed -i \
+            -e "s/__METERED_TURN_USERNAME__/${METERED_TURN_USERNAME}/g" \
+            -e "s/__METERED_TURN_CREDENTIAL__/${METERED_TURN_CREDENTIAL}/g" \
+            index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:

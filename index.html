@@ -3517,6 +3517,28 @@ if(HAS_FINE_POINTER){
   });
 }
 
+/* STUN alone only gets each side's public IP/port — plenty of networks
+   (corporate Wi-Fi, some mobile carriers, symmetric NATs) can't complete a
+   direct P2P path from that alone and need a TURN relay as a fallback, or
+   the connection fails outright with no way to retry past it (see the ICE
+   'failed' diagnostic below). METERED_TURN_USERNAME/CREDENTIAL are build-
+   time placeholders — .github/workflows/deploy-pages.yml substitutes them
+   from repository secrets before the static files are uploaded to Pages,
+   so the real values never live in git history. They're still visible to
+   anyone inspecting the deployed page's source, same as SUPABASE_ANON_KEY
+   above; that's expected for both — Metered scopes usage per-credential,
+   same as Supabase's own anon key is meant to be public. */
+const METERED_TURN_USERNAME = '__METERED_TURN_USERNAME__';
+const METERED_TURN_CREDENTIAL = '__METERED_TURN_CREDENTIAL__';
+const PEER_ICE_SERVERS = [
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: 'turn:global.relay.metered.ca:80', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
+  { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
+  { urls: 'turn:global.relay.metered.ca:443', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
+  { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
+];
+const PEER_OPTIONS = { config: { iceServers: PEER_ICE_SERVERS } };
+
 let shots = [];
 let tenShots = [];
 let selectedIndices = [];
@@ -3884,7 +3906,7 @@ async function startAsHost(code){
   const ok = await getCamera();
   if(!ok) return;
 
-  peer = new Peer('booth-' + code + '-host');
+  peer = new Peer('booth-' + code + '-host', PEER_OPTIONS);
   logConnEvent('starting as host, room', code);
   peer.on('open', ()=>{
     logConnEvent('peer signaling open, id=', peer.id);
@@ -3921,7 +3943,7 @@ async function startAsGuest(code){
   const ok = await getCamera();
   if(!ok) return;
 
-  peer = new Peer();
+  peer = new Peer(PEER_OPTIONS);
   logConnEvent('starting as guest, room', code);
   peer.on('open', ()=>{
     logConnEvent('peer signaling open, id=', peer.id);
