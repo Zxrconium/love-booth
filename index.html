@@ -123,11 +123,11 @@
      untouched. */
   body.room-screen .scene{ max-width:1180px; }
   /* The "LUV BOOTH" plaque sign started as a floating pill shown on every
-     screen. The gate/login machine now grows its own sign, physically
-     mounted on a post as part of that illustration (see .gate-sign), so
-     this floating version is hidden whenever the gate is showing and only
-     shown for the screens that don't have their own sign yet (booth,
-     picking, etc.) — toggled via .show alongside gate.style.display in JS. */
+     screen, then was scoped to only the room screens once the gate/login
+     machine grew its own sign (see .gate-sign) — the room screens never
+     start showing it now (nothing sets .show on it), so it stays
+     display:none everywhere. Left in place (markup, CSS, and the .show
+     rule) rather than torn out, in case a future screen wants it back. */
   .marquee{
     display:none; align-items:center; gap:10px;
     font-family:'Kalam',cursive; font-weight:700; color:var(--ink-warm);
@@ -2781,7 +2781,6 @@ createCard.addEventListener('click', async ()=>{
   isHost = true;
   photosStartedThisRoom = false;
   gate.style.display = 'none';
-  marquee.classList.add('show');
   boothLayout.style.display = 'flex';
   setRoomScreenActive(true);
   startAsHost(code);
@@ -2813,7 +2812,6 @@ joinConfirmBtn.addEventListener('click', ()=>{
   isHost = false;
   photosStartedThisRoom = false;
   gate.style.display = 'none';
-  marquee.classList.add('show');
   boothLayout.style.display = 'flex';
   setRoomScreenActive(true);
   startAsGuest(code);
