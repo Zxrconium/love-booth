@@ -3965,9 +3965,13 @@ function handleRemoteMessage(msg){
     // lock onto their filter + theme before the countdown even begins, so
     // both sides capture with the same settings regardless of whether
     // this device's own filter/theme picks had fully propagated yet.
+    // msg.startAt is that device's shared countdown anchor (see
+    // beginSyncedSession()) — passed through as-is rather than generating
+    // a new one here, so both peers target the exact same wall-clock
+    // instant instead of each picking their own.
     if(msg.filter) applyRemoteFilter(msg.filter);
     if(msg.theme) applyRemoteTheme(msg.theme);
-    beginSyncedSession(msg.seconds, true);
+    beginSyncedSession(msg.seconds, true, msg.startAt);
   }else if(msg.type === 'selection'){
     applyRemoteSelection(msg.indices);
   }else if(msg.type === 'buildStrip'){
@@ -4736,14 +4740,37 @@ function flash(){
 }
 function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
-async function runCountdown(seconds){
+/* Waits until a shared absolute Date.now()-style timestamp rather than a
+   relative duration — the building block for keeping the two peers'
+   countdowns from drifting apart (see the long comment above
+   runCaptureSequence()). Math.max(0, ...) means a target already in the
+   past (e.g. this device was too slow to even get here in time) just
+   resolves immediately instead of "waiting" a negative amount, catching
+   back up to the schedule rather than compounding the lateness further. */
+function waitUntil(targetTime){
+  return new Promise(r=>setTimeout(r, Math.max(0, targetTime - Date.now())));
+}
+
+/* startTime is an absolute Date.now()-style timestamp for this countdown's
+   very first tick, already reached by the time this is called (the caller
+   waits for it) — each subsequent tick is scheduled by adding fixed
+   offsets to that same anchor and waiting for the absolute result, rather
+   than chaining relative wait(650)/wait(150) calls. Returns the schedule
+   position it left off at, so the caller can keep extending the same
+   anchored timeline for what comes after the countdown (the photo
+   capture, the pause before the next round). */
+async function runCountdown(seconds, startTime){
+  let at = startTime;
   for(let i=seconds;i>0;i--){
     countdownEl.textContent = i;
     countdownEl.classList.add('show');
-    await wait(650);
+    at += 650;
+    await waitUntil(at);
     countdownEl.classList.remove('show');
-    await wait(150);
+    at += 150;
+    await waitUntil(at);
   }
+  return at;
 }
 
 /* Each shoot gets its own incrementing token instead of a shared cancelled
@@ -4751,7 +4778,28 @@ async function runCountdown(seconds){
    then never be un-cancelled by a later session resetting a shared boolean. */
 let shootSessionId = 0;
 
-async function runCaptureSequence(seconds, isRemoteTriggered){
+/* startAt is a shared absolute Date.now()-style timestamp, generated once
+   by whichever device actually triggered the shoot and sent to the other
+   peer alongside the sessionStart broadcast (see beginSyncedSession() and
+   its two call sites) — both devices schedule their entire 10-round
+   countdown+capture sequence against this exact same wall-clock instant
+   rather than each starting "whenever it's locally ready," and rather
+   than the old approach of chaining relative wait(ms) calls after each
+   step. Chained relative waits compound: if one device's setTimeout fires
+   even a little late (a busy tab, a heavier photo filter, a slower
+   device), every subsequent wait in that device's own chain starts late
+   too, and the gap between the two devices only grows over the ~30s
+   session. Scheduling against a fixed absolute anchor instead means a
+   single late tick is self-correcting — the next scheduled time is still
+   computed from the original anchor, not from "whenever this device
+   happened to finish the last step," so a delay on one tick doesn't drag
+   every following tick down with it. This can't produce frame-perfect
+   sync (it still assumes both devices' system clocks agree within a
+   reasonable margin, and can't compensate for one-way network latency
+   between the trigger and the broadcast actually arriving), but it
+   removes the specific mechanism that let the two sides' countdowns
+   visibly diverge over a session. */
+async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
   if(busy || !connected) return;
   const mySessionId = ++shootSessionId;
   lastCountdownSeconds = seconds;
@@ -4770,19 +4818,20 @@ async function runCaptureSequence(seconds, isRemoteTriggered){
   enterFullscreenShoot();
   startRecapRecording();
 
-  // Held visible for a beat before the "photo 1 of 10" text takes over —
-  // otherwise this and the loop's very first statusLine update below both
-  // run synchronously in the same tick (nothing yields to the browser
-  // between them), so the "starting your Nsecond countdown…" confirmation
-  // got overwritten before a single frame ever painted it.
+  // Set immediately, then held visible until startAt (typically ~1s out,
+  // see SESSION_START_BUFFER_MS) rather than a flat wait(900) — same
+  // "give the browser a beat to paint this before the loop's first
+  // statusLine update overwrites it" effect as before, just now doing
+  // double duty as the anchor both devices count down to.
   statusLine.textContent = isRemoteTriggered ? t('theyStarted') : t('startingCountdown', { n: seconds });
-  await wait(900);
+  let at = startAt;
+  await waitUntil(at);
   if(shootSessionId !== mySessionId) return;
 
   for(let i=0;i<SHOOT_COUNT;i++){
     if(shootSessionId !== mySessionId) return;
     statusLine.textContent = t('photoOfGetReady', { i: i+1, n: SHOOT_COUNT });
-    await runCountdown(seconds);
+    at = await runCountdown(seconds, at);
     if(shootSessionId !== mySessionId) return;
     flash();
     const shot = capturePhoto(filterSelect.value);
@@ -4792,7 +4841,8 @@ async function runCaptureSequence(seconds, isRemoteTriggered){
     fillThumbSlot(i);
     fillFsThumb(i, shot);
     statusLine.textContent = t('photoCaptured', { i: i+1 });
-    await wait(500);
+    at += 500;
+    await waitUntil(at);
     if(shootSessionId !== mySessionId) return;
   }
   busy = false;
@@ -4801,9 +4851,18 @@ async function runCaptureSequence(seconds, isRemoteTriggered){
   exitFullscreenShoot();
 }
 
-function beginSyncedSession(seconds, isRemoteTriggered){
+/* How far out (from whichever device generates it) the shared startAt
+   anchor is set — needs enough slack to comfortably cover typical P2P
+   data-channel transit time for the sessionStart broadcast to actually
+   reach the other peer before that timestamp arrives, on top of the
+   original ~900ms "let the starting message be visible for a beat"
+   pause it's replacing. */
+const SESSION_START_BUFFER_MS = 1000;
+
+function beginSyncedSession(seconds, isRemoteTriggered, startAt){
   const secs = seconds || 3;
-  runCaptureSequence(secs, isRemoteTriggered);
+  const at = startAt || (Date.now() + SESSION_START_BUFFER_MS);
+  runCaptureSequence(secs, isRemoteTriggered, at);
 }
 
 function showCountdownChoice(){
@@ -4881,8 +4940,13 @@ confirmCountdownBtn.addEventListener('click', async ()=>{
     return;
   }
   hideCountdownChoice();
-  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
-  beginSyncedSession(seconds, false);
+  // Generated once here rather than letting the broadcast side and the
+  // local beginSyncedSession() call each pick their own — both this
+  // device and the peer need to target the exact same startAt instant
+  // (see the runCaptureSequence() comment).
+  const startAt = Date.now() + SESSION_START_BUFFER_MS;
+  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId, startAt });
+  beginSyncedSession(seconds, false, startAt);
 });
 
 /* ---------------- Pick-your-favorites selection grid ---------------- */
@@ -5002,8 +5066,9 @@ retakeAllBtn.addEventListener('click', async ()=>{
     selectionCounter.textContent = charge.reason === 'outOfCoins' ? t('outOfCoins') : t('couldNotCheckBalance');
     return;
   }
-  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
-  beginSyncedSession(seconds, false);
+  const startAt = Date.now() + SESSION_START_BUFFER_MS;
+  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId, startAt });
+  beginSyncedSession(seconds, false, startAt);
 });
 
 startBtn.addEventListener('click', showCountdownChoice);
