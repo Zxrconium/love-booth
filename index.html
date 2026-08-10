@@ -899,7 +899,7 @@
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:0; }
   .strip-print-frame{
-    position:absolute; left:26.50%; top:16.95%; width:47%; z-index:2;
+    position:absolute; left:26.50%; top:21.36%; width:47%; z-index:2;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3219,7 +3219,7 @@ applyLiveFilter();
    PHOTO_H is. Photos are cropped (not stretched) to this shape when
    drawn — see drawSlot(). No corner rounding: the window's own corners
    are already near-square. */
-const PHOTO_W = 260, PHOTO_H = 188, SIDE = 0, GAP = 14, TOP = 0, BOTTOM = 0;
+const PHOTO_W = 260, PHOTO_H = 188, SIDE = 14, GAP = 14, TOP = 14, BOTTOM = 14;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
