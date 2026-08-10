@@ -899,7 +899,7 @@
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:0; }
   .strip-print-frame{
-    position:absolute; left:26.50%; top:16.95%; width:47%; z-index:2;
+    position:absolute; left:26.50%; top:21.36%; width:47%; z-index:2;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3219,7 +3219,7 @@ applyLiveFilter();
    PHOTO_H is. Photos are cropped (not stretched) to this shape when
    drawn — see drawSlot(). No corner rounding: the window's own corners
    are already near-square. */
-const PHOTO_W = 260, PHOTO_H = 188, SIDE = 0, GAP = 14, TOP = 0, BOTTOM = 0;
+const PHOTO_W = 260, PHOTO_H = 188, SIDE = 14, GAP = 14, TOP = 14, BOTTOM = 14;
 const SHOOT_COUNT = 10;
 const STRIP_SLOTS = 4;
 
@@ -3269,21 +3269,21 @@ const THEMES = [
     labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#ffffff',
-    borderWidth: 6
+    borderWidth: 4
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#ffffff',
     ink: '#000000',
-    borderWidth: 6
+    borderWidth: 4
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#000000',
     ink: '#000000',
-    borderWidth: 6
+    borderWidth: 4
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
@@ -4082,7 +4082,7 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
 function drawDivider(theme){
   stripCtx.save();
   stripCtx.strokeStyle = theme.ink;
-  stripCtx.lineWidth = 6;
+  stripCtx.lineWidth = 4;
   for(let i = 0; i < STRIP_SLOTS - 1; i++){
     const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
     stripCtx.beginPath();
