@@ -1160,35 +1160,27 @@
     .recap-title{ font-size:0.82rem; }
     #recapQr{ width:88px; height:88px; padding:4px; }
   }
-  /* Matches the gate/booth-card "hand-drawn photobooth-machine" palette
-     (warm peach backdrop, white bordered card, coral accents) rather than
-     the old dark-plum tokens every other still-unredesigned screen falls
-     back to — this is a standalone destination people land on straight
-     from a shared link, so it needs to look like the rest of the app on
-     its own, not just inside a session. */
+  /* Plain black stage rather than a card on a colored backdrop — just the
+     video (auto-downloaded on load, see loadRecapViewer()) and nothing
+     decorative around it. No title text: the page has exactly one purpose,
+     so a "session recap" caption above the video would be redundant. The
+     status/spinner text below stays, since those states have no video to
+     show yet and need SOME explanation, not because they're decorative. */
   .recap-viewer{
     display:none; position:fixed; inset:0; z-index:300;
-    background:linear-gradient(180deg, var(--peach-bg), var(--peach-bg2));
-    align-items:center; justify-content:center; padding:20px;
+    background:#000; align-items:center; justify-content:center; padding:20px;
   }
   .recap-viewer.show{display:flex;}
   .recap-viewer-card{
     width:100%; max-width:420px; box-sizing:border-box;
     display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;
-    background:#fff; border:3px solid var(--ink-warm); border-radius:28px;
-    padding:28px 24px; color:var(--ink-warm);
-    box-shadow:0 8px 0 rgba(49,49,49,0.18), 0 14px 26px rgba(49,49,49,0.22);
-    animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both;
   }
-  .recap-viewer-title{font-family:'Caveat',cursive; font-size:1.8rem; color:var(--coral-deep); margin:0;}
   .recap-viewer-video-wrap{width:100%;}
-  .recap-viewer-video-wrap video{width:100%; border-radius:14px; border:2.5px solid var(--ink-warm); box-shadow:0 6px 0 rgba(49,49,49,0.18); display:block;}
+  .recap-viewer-video-wrap video{width:100%; border-radius:10px; display:block;}
   .recap-viewer-status{display:flex; flex-direction:column; align-items:center; gap:10px;}
-  .recap-viewer-status-icon{font-size:1.8rem; color:var(--ink-warm);}
-  .recap-viewer-status-text{font-size:0.9rem; color:var(--ink-warm); line-height:1.4; margin:0;}
-  .recap-viewer-spinner{width:24px; height:24px; border-radius:50%; border:3px solid rgba(49,49,49,0.15); border-top-color:var(--coral); animation:authSpin 0.7s linear infinite;}
-  .recap-viewer .leave-link{ color:rgba(49,49,49,0.55); }
-  .recap-viewer .leave-link:hover{ color:var(--ink-warm); }
+  .recap-viewer-status-icon{font-size:1.8rem; color:rgba(251,243,231,0.85);}
+  .recap-viewer-status-text{font-size:0.9rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
+  .recap-viewer-spinner{width:24px; height:24px; border-radius:50%; border:3px solid rgba(251,243,231,0.25); border-top-color:var(--gold); animation:authSpin 0.7s linear infinite;}
   .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
   .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(49,49,49,0.6); font-weight:600;}
   .theme-select{width:100%;}
@@ -1257,7 +1249,6 @@
 </button>
 <div class="recap-viewer" id="recapViewer">
   <div class="recap-viewer-card">
-    <p class="recap-viewer-title" data-i18n="recapTitle">session recap</p>
     <div class="recap-viewer-video-wrap" id="recapViewerVideoWrap" style="display:none;">
       <video id="recapViewerVideo" controls playsinline></video>
     </div>
@@ -2809,12 +2800,34 @@ adminCoinsInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') adminCr
    prepared" state (with auto-retry) instead of a broken/blank page if
    someone opens it before the upload + DB insert have both landed, and so
    the recordings.expires_at column (previously unused by any client code)
-   actually gets enforced. */
+   actually gets enforced. Both the recap panel's "watch the recap" link and
+   its QR code encode this exact same URL, so this one code path covers
+   whichever way someone gets here. */
 let RECAP_POLL_INTERVAL_MS = 3000;
 let RECAP_POLL_MAX_ATTEMPTS = 10;
+const RECAP_DOWNLOAD_FILENAME = 'luv-booth-session-recap.webm';
 
 function detectRecapView(){
   return new URLSearchParams(window.location.search).get('recap');
+}
+
+/* One best-effort auto-download the moment the recap video resolves — the
+   ask was "tap watch the recap or scan the QR and it saves to my device",
+   not "...and then also find a download button on the page it opens".
+   Points at Supabase's own download-flagged URL (getPublicUrl's `download`
+   option, which makes the storage response itself carry
+   Content-Disposition: attachment) rather than a blob/object-URL trick,
+   since that's driven by the response headers rather than a fresh click of
+   its own — the one approach that reliably survives firing from page-load
+   code instead of a direct button press. */
+function triggerFileDownload(url, filename){
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 async function loadRecapViewer(recapId){
@@ -2843,6 +2856,8 @@ async function loadRecapViewer(recapId){
       recapViewerVideo.src = urlData.publicUrl;
       recapViewerVideoWrap.style.display = 'block';
       recapViewerStatus.style.display = 'none';
+      const { data: downloadUrlData } = sbClient.storage.from('session-recaps').getPublicUrl(data.storage_path, { download: RECAP_DOWNLOAD_FILENAME });
+      triggerFileDownload(downloadUrlData.publicUrl, RECAP_DOWNLOAD_FILENAME);
       return;
     }
     recapViewerSpinner.style.display = 'block';
