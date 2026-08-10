@@ -1160,16 +1160,35 @@
     .recap-title{ font-size:0.82rem; }
     #recapQr{ width:88px; height:88px; padding:4px; }
   }
-  .recap-viewer{display:none; position:fixed; inset:0; z-index:300; background:radial-gradient(circle at 50% 42%, var(--bg-deep2), var(--bg-deep) 68%); align-items:center; justify-content:center; padding:20px;}
+  /* Matches the gate/booth-card "hand-drawn photobooth-machine" palette
+     (warm peach backdrop, white bordered card, coral accents) rather than
+     the old dark-plum tokens every other still-unredesigned screen falls
+     back to — this is a standalone destination people land on straight
+     from a shared link, so it needs to look like the rest of the app on
+     its own, not just inside a session. */
+  .recap-viewer{
+    display:none; position:fixed; inset:0; z-index:300;
+    background:linear-gradient(180deg, var(--peach-bg), var(--peach-bg2));
+    align-items:center; justify-content:center; padding:20px;
+  }
   .recap-viewer.show{display:flex;}
-  .recap-viewer-card{width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;}
-  .recap-viewer-title{font-family:'Caveat',cursive; font-size:1.8rem; color:var(--blush); margin:0;}
+  .recap-viewer-card{
+    width:100%; max-width:420px; box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;
+    background:#fff; border:3px solid var(--ink-warm); border-radius:28px;
+    padding:28px 24px; color:var(--ink-warm);
+    box-shadow:0 8px 0 rgba(49,49,49,0.18), 0 14px 26px rgba(49,49,49,0.22);
+    animation:riseIn 0.4s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .recap-viewer-title{font-family:'Caveat',cursive; font-size:1.8rem; color:var(--coral-deep); margin:0;}
   .recap-viewer-video-wrap{width:100%;}
-  .recap-viewer-video-wrap video{width:100%; border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.45);}
+  .recap-viewer-video-wrap video{width:100%; border-radius:14px; border:2.5px solid var(--ink-warm); box-shadow:0 6px 0 rgba(49,49,49,0.18); display:block;}
   .recap-viewer-status{display:flex; flex-direction:column; align-items:center; gap:10px;}
-  .recap-viewer-status-icon{font-size:1.8rem;}
-  .recap-viewer-status-text{font-size:0.9rem; color:rgba(251,243,231,0.75); line-height:1.4; margin:0;}
-  .recap-viewer-spinner{width:24px; height:24px; border-radius:50%; border:3px solid rgba(251,243,231,0.25); border-top-color:var(--gold); animation:authSpin 0.7s linear infinite;}
+  .recap-viewer-status-icon{font-size:1.8rem; color:var(--ink-warm);}
+  .recap-viewer-status-text{font-size:0.9rem; color:var(--ink-warm); line-height:1.4; margin:0;}
+  .recap-viewer-spinner{width:24px; height:24px; border-radius:50%; border:3px solid rgba(49,49,49,0.15); border-top-color:var(--coral); animation:authSpin 0.7s linear infinite;}
+  .recap-viewer .leave-link{ color:rgba(49,49,49,0.55); }
+  .recap-viewer .leave-link:hover{ color:var(--ink-warm); }
   .theme-picker{display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:230px;}
   .theme-label{font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:rgba(49,49,49,0.6); font-weight:600;}
   .theme-select{width:100%;}
@@ -3225,9 +3244,10 @@ function forceHideSelectionPanel(){
    Only the host records (one canonical recap per session, not one per
    peer) and uploads — recording is a live composite of both video feeds
    drawn to an offscreen canvas, captured via canvas.captureStream(), so
-   it reuses the exact same drawVideoCover() compositing already used for
-   still photos. Covers only the active shoot window: started right after
-   entering full-screen, stopped and uploaded right before leaving it
+   it reuses the exact same drawFilteredComposite() compositing already
+   used for still photos (see capturePhoto()), including whatever filter is
+   currently selected. Covers only the active shoot window: started right
+   after entering full-screen, stopped and uploaded right before leaving it
    normally, or stopped and discarded (no upload) on cancel/leave. */
 const RECORD_FPS = 30;
 let mediaRecorder = null;
@@ -3257,9 +3277,7 @@ function startRecapRecording(){
   // the rendering pipeline and keeps the canvas redrawn on a steady cadence
   // regardless of what else is animating on the page.
   function drawFrame(){
-    const halfW = recordCanvas.width / 2;
-    drawVideoCover(recordCtx, localVideo, 0, 0, halfW, recordCanvas.height, true);
-    drawVideoCover(recordCtx, remoteVideo, halfW, 0, halfW, recordCanvas.height, false);
+    drawFilteredComposite(recordCtx, recordCanvas.width, recordCanvas.height, filterSelect.value);
   }
   drawFrame();
   recordTimer = setInterval(drawFrame, 1000 / RECORD_FPS);
@@ -4606,22 +4624,23 @@ function drawVideoCover(ctx, video, x, y, w, h, mirror){
   ctx.restore();
 }
 
-function capturePhoto(filterValue){
-  const c = document.createElement('canvas');
-  c.width = PHOTO_W; c.height = PHOTO_H;
-  const ctx = c.getContext('2d');
-  const halfW = PHOTO_W / 2;
+/* Shared by capturePhoto() and the recap recording's per-frame draw (see
+   startRecapRecording()) so the two can never drift apart the way they did
+   before — the recording used to draw the raw video feeds straight through
+   with no filter at all. */
+function drawFilteredComposite(ctx, w, h, filterValue){
+  const halfW = w / 2;
   const isBw = (filterValue === BW_VINTAGE_FILTER || filterValue === GLOW_FILTER_VALUE);
 
   if(isBw){
     // Base layer: grayscale + contrast + warm-toned shadows.
     ctx.filter = BW_VINTAGE_FILTER;
-    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
-    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+    drawVideoCover(ctx, localVideo, 0, 0, halfW, h, true);
+    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, h, false);
     ctx.filter = 'none';
 
-    applyVignette(ctx, c.width, c.height);
-    applyGrain(ctx, c.width, c.height);
+    applyVignette(ctx, w, h);
+    applyGrain(ctx, w, h);
 
     if(filterValue === GLOW_FILTER_VALUE){
       // Glow layer: a blurred, brightened pass screened on top at low
@@ -4629,17 +4648,24 @@ function capturePhoto(filterValue){
       ctx.filter = GLOW_OVERLAY_FILTER;
       ctx.globalCompositeOperation = 'screen';
       ctx.globalAlpha = 0.35;
-      drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
-      drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+      drawVideoCover(ctx, localVideo, 0, 0, halfW, h, true);
+      drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, h, false);
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
     }
   }else{
     ctx.filter = filterValue;
-    drawVideoCover(ctx, localVideo, 0, 0, halfW, PHOTO_H, true);
-    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, PHOTO_H, false);
+    drawVideoCover(ctx, localVideo, 0, 0, halfW, h, true);
+    drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, h, false);
   }
   ctx.filter = 'none';
+}
+
+function capturePhoto(filterValue){
+  const c = document.createElement('canvas');
+  c.width = PHOTO_W; c.height = PHOTO_H;
+  const ctx = c.getContext('2d');
+  drawFilteredComposite(ctx, PHOTO_W, PHOTO_H, filterValue);
   return c;
 }
 
