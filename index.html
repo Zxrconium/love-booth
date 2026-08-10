@@ -1067,11 +1067,17 @@
      rather than floating in front of it as a separate object. That means
      the arch's own decorative crossbar (its opaque stroke sits at ~y:227
      of the 223x472 art, measured directly off the PNG) now paints over
-     whatever's behind it — top is nudged up from the normal 21.36% to
-     16.4% so that stroke lands on the strip's own row2/row3 gap seam
-     instead of cutting across a photo. */
+     whatever's behind it — top is nudged up from the normal 21.36%, and
+     back down slightly to 17.8% (a ~10px lower resting spot at this
+     view's max ~340px width, closer to the bottom of the dropper's
+     window) from the original 16.4%. That 10px is wider than the strip's
+     own row2/row3 gap seam (~8px rendered at this size), so the crossbar
+     no longer lands precisely in the gap — it now just grazes the bottom
+     edge of row 2's photo instead of cutting across the middle of one,
+     which reads close enough given the hand-drawn line art already isn't
+     pixel-crisp anywhere else. */
   .fullscreen-print .output-slot-frame{ z-index:1; }
-  .fullscreen-print .strip-print-frame{ z-index:0; top:16.4%; }
+  .fullscreen-print .strip-print-frame{ z-index:0; top:17.8%; }
   .fs-print-next{
     width:auto; padding:12px 28px; opacity:0; transform:translateY(6px);
     pointer-events:none; transition:opacity 0.35s ease, transform 0.35s ease;
