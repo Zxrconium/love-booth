@@ -821,18 +821,13 @@
   .hint-list{
     position:relative;
     /* Rough hand-torn silhouette instead of a clean rectangle — small
-       jitter in/out along every edge. Shared via custom property so the
-       depth-stack card behind it (::before) and this card use the exact
-       same outline; if the two ever drifted the "peeking out behind"
-       sliver would read as a mismatched shape instead of one card sitting
-       on another. */
-    --hint-clip: polygon(
+       jitter in/out along every edge. */
+    clip-path: polygon(
       2% 2%, 20% 0%, 40% 3%, 60% 0%, 80% 2%, 100% 0%,
       98% 20%, 100% 40%, 97% 60%, 100% 80%, 100% 100%,
       80% 98%, 60% 100%, 40% 97%, 20% 100%, 0% 100%,
       3% 80%, 0% 60%, 2% 40%, 0% 20%, 0% 2%
     );
-    clip-path: var(--hint-clip);
     text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
     line-height:1.6; margin:0; padding:14px 14px 14px 30px; width:100%; max-width:240px;
     background:#fff; border:2px solid var(--ink-warm);
@@ -840,28 +835,12 @@
     transform:rotate(-1.4deg);
     align-self:center; order:3;
   }
-  /* Sticker/card-stack depth: a second identical card sitting behind the
-     real one, offset down-right and tilted the opposite way so a sliver
-     of it peeks out along two edges — reads as the note having physical
-     thickness rather than being a flat rectangle. z-index:-1 keeps it
-     behind the real card's own background within .hint-list's own
-     stacking context (established by position:relative above) without
-     touching how .hint-list itself stacks against its page siblings. */
-  .hint-list::before{
-    content:''; position:absolute; inset:0; z-index:-1;
-    clip-path: var(--hint-clip);
-    background:#fff; border:2px solid var(--ink-warm);
-    box-shadow:0 3px 6px rgba(49,49,49,0.18);
-    transform:translate(6px, 7px) rotate(2.6deg);
-  }
   /* A strip of tape straddling the note's bottom-left corner, hanging
      off both edges — reads as stuck onto whatever's behind it rather
      than floating free. Sized/positioned to stay pinned right at the
      corner (45deg, centered on the corner point) rather than stretching
      diagonally across the card, which read as a stray line slicing
-     through the text instead of a small piece of tape. z-index above
-     both cards (::before sits at -1) so it visually sits on top of the
-     paper, the way real tape does. */
+     through the text instead of a small piece of tape. */
   .hint-list::after{
     content:''; position:absolute; z-index:1;
     left:-9px; bottom:-9px; width:42px; height:16px;
