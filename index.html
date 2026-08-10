@@ -1137,6 +1137,12 @@
     100%{ transform:scale(1); }
   }
   .strip-wrap .btn-gold{width:100%; max-width:230px;}
+  /* Nothing to download yet at room start (or mid-shoot, or while picking)
+     — disabled-but-visible read as broken/greyed-out rather than "not
+     applicable yet". Only appears once a strip actually exists, same
+     #downloadBtn:not(:disabled) signal already used for the output-slot
+     tag and the "all done" layout changes above. */
+  #downloadBtn:disabled{ display:none; }
   /* Stacked directly under the output slot (as a column item in
      .output-column) rather than requiring a scroll further down the page —
      matches the strip's own width instead of being a separate sidebar. */
