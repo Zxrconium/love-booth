@@ -589,65 +589,6 @@
     background:#fff; border:3px solid var(--ink-warm); border-radius:28px;
     padding:20px 20px 16px;
   }
-  /* Purely decorative, flanks the whole two-column booth layout — hidden
-     below 900px where there's no longer room beside both columns without
-     cramping them (the shooting/picking screens are already the widest,
-     most content-dense screens in the app). Built as three stacked pieces
-     (dome cap, collar clamp, striped body) rather than one rounded box, to
-     match the sketch's separate-pieces finial detail — the margin pushes
-     each pole out from the center content beyond the .layout gap it already
-     sits in, which is the "more breathing room" ask. Ramps from 0 extra
-     margin right at the 900px show/hide threshold up to 22px by ~1200px
-     (rather than a flat 22px) because a flat value was wide enough to push
-     .layout past 900px wide and wrap the right pole onto its own row right
-     at the edge of the breakpoint it's supposed to appear at. */
-  .barber-pole{
-    display:none; flex:none; flex-direction:column; align-items:center;
-    width:34px; align-self:center;
-    margin:0 clamp(0px, calc((100vw - 900px) * 0.0733), 22px);
-  }
-  @media (min-width:900px){ .barber-pole{ display:flex; } }
-  .barber-pole-body{
-    flex:none; width:34px; height:min(70vh, 420px); box-sizing:border-box;
-    background:repeating-linear-gradient(-35deg, var(--ink-warm) 0 10px, #fff 10px 20px);
-    border-left:3px solid var(--ink-warm); border-right:3px solid var(--ink-warm);
-    /* The actual barber-shop signature: stripes that appear to travel
-       continuously along the pole, reading as it spinning around its own
-       axis. background-position moves purely vertically by one repeat
-       cycle (the 20px ink/white pair) projected onto the -35deg
-       gradient's own axis, so the loop has no visible seam — verified
-       empirically via screenshot diffing across a range of offsets
-       (a plain trig projection landed close but measurably off, likely
-       from how the browser rounds the angled gradient's own geometry;
-       25.7px is where the rendered diff against the 0px frame actually
-       bottoms out). prefers-reduced-motion is already handled by the
-       global animation-duration override above, no extra rule needed
-       here. */
-    animation: barberPoleSpin 1s linear infinite;
-    /* A straight top/bottom edge cutting through a moving diagonal
-       pattern exposes a partial stripe fragment whose shape keeps
-       changing as the pattern slides — reads as flickering/glitching
-       right where the body meets each cap. Pulled up under the caps'
-       opaque collar (see the z-index bump on .bp-cap below) so that
-       fragment is physically hidden behind solid fill instead of
-       visible. */
-    margin:-12px 0;
-  }
-  @keyframes barberPoleSpin{
-    from{ background-position:0 0; }
-    to{ background-position:0 25.7px; }
-  }
-  /* Each cap SVG is wider (42) than the 34px column so the collar rect reads
-     as a clamp that actually protrudes past the striped body's edges,
-     matching the sketch — centered for free by the column's own
-     align-items:center. position+z-index lifts it above .barber-pole-body
-     in their overlapping region (12px, from the negative margin above) —
-     a static sibling always sits below any positioned one regardless of
-     DOM order, so this alone is enough even though .bp-cap-top comes
-     before .barber-pole-body in the markup. */
-  .bp-cap{ flex:none; width:42px; height:24px; display:block; overflow:visible; position:relative; z-index:1; }
-  .bp-cap-dome{ fill:#fff; stroke:var(--ink-warm); stroke-width:3; stroke-linejoin:round; }
-  .bp-cap-collar{ fill:var(--ink-warm); stroke:var(--ink-warm); stroke-width:3; }
   .room-tag{display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--ink-warm); margin-bottom:6px; flex-wrap:wrap; text-align:center;}
   /* B&W room theme: connected/waiting is communicated by fill vs. hollow
      outline instead of a red/green color swap — solid ink-warm dot once
@@ -839,9 +780,9 @@
      "wrap everything in one machine box, note stays outside/beside it"
      mockup) rather than just another item stacked inside the box. Order
      is swapped between breakpoints rather than reordering the DOM itself:
-     .layout is flex+wrap, so on wide viewports (room for barber-pole,
-     note, box, and the output column all in one row) order:1 pulls it
-     in front of .booth-card (order:2 there) to sit at the box's left;
+     .layout is flex+wrap, so on wide viewports (room for note, box, and
+     the output column all in one row) order:1 pulls it in front of
+     .booth-card (order:2 there) to sit at the box's left;
      below that, order resets to after .booth-card so it stacks below the
      box like every other item instead — never off to the side with no
      room to actually show the box beside it. align-self:center keeps it
@@ -857,8 +798,6 @@
   }
   .booth-card{ order:2; }
   .output-column{ order:4; }
-  .layout > .barber-pole:first-child{ order:1; }
-  .layout > .barber-pole:last-child{ order:5; }
   @media (min-width:900px){
     .hint-list{ order:1; }
     .booth-card{ order:2; }
@@ -875,11 +814,10 @@
      signal as the hint-list rule above), pull the recap panel up beside
      the strip instead of stacked below it — mainly so "download strip"
      and "session recap" are both on-screen together without scrolling.
-     Threshold is 1000px rather than matching the 900px barber-pole
-     breakpoint above deliberately — .layout's items (booth-card,
-     barber-poles once they're visible, and output-column now widened by
-     going row-wise) stop fitting on one flex row right around 900-950px
-     and wrap booth-card above output-column instead, which is *taller*
+     Threshold is 1000px rather than 900px deliberately — .layout's items
+     (booth-card and output-column now widened by going row-wise) stop
+     fitting on one flex row right around 900-950px and wrap booth-card
+     above output-column instead, which is *taller*
      stacked than the plain single-column recap layout it was trying to
      replace, defeating the whole point. 1000px keeps clear of that
      wrapping edge with real margin; narrower viewports keep the normal
@@ -1105,9 +1043,9 @@
 
   /* Photo-picking now happens in place of the live camera view, inside the
      exact same picture-frame position/size/border as .viewfinder (instead
-     of a separate full-viewport overlay screen) — so the barber-poles,
-     door icon, hint note, and the output-slot's live strip preview all
-     stay visible and in the same spot the whole time, across connected,
+     of a separate full-viewport overlay screen) — so the door icon, hint
+     note, and the output-slot's live strip preview all stay visible and
+     in the same spot the whole time, across connected,
      disconnected, picking, and aftermath alike. */
   .picking-frame{
     display:none; position:relative; width:100%; box-sizing:border-box;
@@ -1387,17 +1325,6 @@
   </div>
 
   <div class="layout" id="boothLayout" style="display:none;">
-    <div class="barber-pole" aria-hidden="true">
-      <svg class="bp-cap bp-cap-top" viewBox="0 0 42 24" preserveAspectRatio="none">
-        <rect class="bp-cap-collar" x="0" y="13" width="42" height="11" rx="3"/>
-        <path class="bp-cap-dome" d="M4 14 L4 8 A17 8 0 0 1 38 8 L38 14 Z"/>
-      </svg>
-      <div class="barber-pole-body"></div>
-      <svg class="bp-cap bp-cap-bottom" viewBox="0 0 42 24" preserveAspectRatio="none">
-        <rect class="bp-cap-collar" x="0" y="0" width="42" height="11" rx="3"/>
-        <path class="bp-cap-dome" d="M4 10 L4 16 A17 8 0 0 0 38 16 L38 10 Z"/>
-      </svg>
-    </div>
     <div class="booth-card">
       <div class="room-tag"><span class="dot" id="statusDot"></span><span id="statusText" aria-live="polite" data-i18n="connecting">connecting…</span></div>
       <div class="code-row" id="codeRow" style="display:none;">
@@ -1512,17 +1439,6 @@
         <a class="btn-ghost recap-watch-btn" id="recapLink" href="#" target="_blank" rel="noopener" data-i18n="watchRecapBtn">🎬 watch the recap</a>
         <p class="recap-expiry" data-i18n="recapExpiry">link expires in 7 days</p>
       </div>
-    </div>
-    <div class="barber-pole" aria-hidden="true">
-      <svg class="bp-cap bp-cap-top" viewBox="0 0 42 24" preserveAspectRatio="none">
-        <rect class="bp-cap-collar" x="0" y="13" width="42" height="11" rx="3"/>
-        <path class="bp-cap-dome" d="M4 14 L4 8 A17 8 0 0 1 38 8 L38 14 Z"/>
-      </svg>
-      <div class="barber-pole-body"></div>
-      <svg class="bp-cap bp-cap-bottom" viewBox="0 0 42 24" preserveAspectRatio="none">
-        <rect class="bp-cap-collar" x="0" y="0" width="42" height="11" rx="3"/>
-        <path class="bp-cap-dome" d="M4 10 L4 16 A17 8 0 0 0 38 16 L38 10 Z"/>
-      </svg>
     </div>
   </div>
 </div>
@@ -3248,8 +3164,8 @@ function forceExitFullscreenPrint(){
    The picking grid swaps in for .viewfinder, and its own control row swaps
    in for .mainControls, in place — no more full-viewport overlay, so the
    theme picker/output-slot/strip canvas just stay where they always live
-   and keep updating live as photos are picked, and the barber-poles/door
-   icon/hint note never have to disappear and reappear. */
+   and keep updating live as photos are picked, and the door icon/hint
+   note never have to disappear and reappear. */
 let pickingActive = false;
 /* Set by buildStripFrom() right before leaving picking mode, so the
    "print out" reveal plays once the strip is actually visible in the
