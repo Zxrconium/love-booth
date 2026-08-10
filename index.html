@@ -845,23 +845,25 @@
   .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
   /* Wraps .strip-print-frame in the real illustrated arch/window artwork
      (assets/dropper-arch.png — plain black linework, no color fill,
-     matching the room-screens B&W theme). Painted AFTER .strip-print-frame
-     in DOM order (see the HTML), not before, and the PNG's own background
-     is genuinely transparent (converted from the source's opaque white via
-     a luminance->alpha remap — flat #313131 ink at full opacity fading to
-     0 opacity at white) rather than just visually white. That combination
-     means the arch's linework — including the window's own border and the
-     legs at the bottom — always paints on top of and stays visible over
-     the strip canvas beneath it, regardless of exactly how the canvas is
-     sized/positioned. This replaced an earlier version where the image
-     painted first and the canvas (fully opaque) painted over it: any
-     canvas edge that landed even a hair past the true inner edge of the
-     hand-drawn (slightly wavy, non-pixel-perfect) border silently painted
-     over and hid that whole stretch of border/leg line — which is what
-     was actually causing the "no border / disconnected legs" bug, not the
-     fit math itself. Now the canvas can safely fill flush to the window's
-     own outer measurements with no visible consequence even if it's a
-     pixel or two off in either direction. */
+     matching the room-screens B&W theme). The PNG's own background is
+     genuinely transparent (converted from the source's opaque white via a
+     luminance->alpha remap — flat #313131 ink at full opacity fading to 0
+     opacity at white), so the dome/side-walls/legs stay visible framing
+     the strip no matter how .strip-print-frame is sized/positioned inside
+     the window opening — they sit outside the strip's own rectangle, so
+     nothing about the stacking order affects them either way.
+     .strip-print-frame (z-index 2) now paints ABOVE .output-slot-frame
+     (z-index 0, despite coming first in DOM order — see the HTML) rather
+     than below it. It used to be the reverse, back when the strip relied
+     on the arch art's own window-border line as its actual visible frame
+     (any canvas edge landing past that hand-drawn line would silently
+     paint over and hide it — see the strip-print-frame comment below for
+     the fuller history). The strip draws its own complete border now
+     (drawStripChrome()), so it no longer needs the arch on top for
+     framing — and the arch's own decorative crossbar/mullion, drawn
+     across the middle of the window opening, was landing right on top of
+     the strip's photos, which is exactly the "something bleeding through
+     the strip" this reorder now avoids. */
   /* .output-slot deliberately has NO forced aspect-ratio of its own — the
      frame image is a normal in-flow block (width:100%, height:auto), which
      sizes .output-slot to the image's real intrinsic 223x472 ratio by
@@ -895,9 +897,9 @@
      top 16.95%, width 47%. Height comes from the canvas's own matching
      aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
-  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:1; }
+  .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:0; }
   .strip-print-frame{
-    position:absolute; left:26.50%; top:16.95%; width:47%; z-index:0;
+    position:absolute; left:26.50%; top:16.95%; width:47%; z-index:2;
     display:flex; flex-direction:column; align-items:center;
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
@@ -3250,17 +3252,15 @@ const STRIP_SLOTS = 4;
    the only theme where ink stays a real contrasting color, since it's
    the one theme whose whole point is a visible outline + dividers.
 
-   borderWidth is the same 8px across all three themes rather than each
-   theme picking its own. A 4px border technically drew on all 4 sides
-   (verified against the canvas's own raw pixel data), but the left/right
-   edges only get the strip's own stroke to read against — no reinforcing
-   same-color GAP band the way the horizontal dividers get — so at the
-   canvas's real on-screen size (roughly 40% of its native 260x794, since
-   .strip-print-frame sizes it well below native resolution) a 4px stroke
-   downscales to under 2 real pixels and the left/right edges become easy
-   to miss entirely, even though the top/bottom read fine. 8px keeps
-   comfortable margin above that threshold on every side while still
-   reading as a thin outline rather than the earlier 16px block. (On
+   borderWidth is the same 6px across all three themes, and exactly
+   matches drawDivider()'s own 6px stroke — a genuinely plain photo-strip
+   look calls for one uniform line weight everywhere, border included,
+   rather than the border and dividers picking different thicknesses.
+   6px clears the ~2 real on-screen pixel threshold the border needs to
+   reliably show on the left/right edges (the canvas renders at roughly
+   40% of its native 260x794 size, so anything much thinner risks
+   disappearing there — see drawDivider()'s own comment) while still
+   reading as a thin, plain strip border rather than a block. (On
    Black/White this is moot either way, since ink there matches
    background and paints over itself regardless of thickness.) */
 const THEMES = [
@@ -3269,21 +3269,21 @@ const THEMES = [
     labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#ffffff',
-    borderWidth: 8
+    borderWidth: 6
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#ffffff',
     ink: '#000000',
-    borderWidth: 8
+    borderWidth: 6
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#000000',
     ink: '#000000',
-    borderWidth: 8
+    borderWidth: 6
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
@@ -4074,10 +4074,15 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
   ctx.restore();
 }
 
+// 6px matches the outer border's own THEMES[].borderWidth exactly — see
+// that comment for why both need to clear a real-pixel visibility floor
+// at the strip's on-screen display size, and why a plain strip reads
+// best with one consistent line weight rather than divider/border
+// picking different thicknesses.
 function drawDivider(theme){
   stripCtx.save();
   stripCtx.strokeStyle = theme.ink;
-  stripCtx.lineWidth = 3;
+  stripCtx.lineWidth = 6;
   for(let i = 0; i < STRIP_SLOTS - 1; i++){
     const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
     stripCtx.beginPath();
