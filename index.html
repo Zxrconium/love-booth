@@ -907,9 +907,11 @@
      present statusLine text is the actual accessible source of this
      info), pinned just above the dropper's own top edge specifically
      while the strip is printing out — shown in enterFullscreenPrint(),
-     hidden the moment the print-out reveal finishes (see the stripCanvas
-     animationend listener near playStripPrintAnimation()). Lives inside
-     .output-slot (rather than as a sibling next to it, where
+     and deliberately stays up through the whole reveal (including the
+     finished, fully-visible strip) rather than disappearing the instant
+     the print-out animation ends — only hidden once "next" is actually
+     pressed (see exitFullscreenPrint()). Lives inside .output-slot
+     (rather than as a sibling next to it, where
      .output-slot-tag sits) so it reparents along with the arch+canvas
      into #fullscreenPrint during printing instead of being left behind in
      the now-hidden room layout — a plain sibling placement doesn't travel
@@ -3203,6 +3205,7 @@ function enterFullscreenPrint(){
 function exitFullscreenPrint(){
   if(!fullscreenPrintActive) return;
   fullscreenPrintActive = false;
+  printSticker.classList.remove('show');
   fullscreenPrint.classList.remove('show');
   fullscreenPrint.classList.add('hide');
   // animationend bubbles up from descendants (the strip's own print-out
@@ -4546,11 +4549,13 @@ function cancelStripPrintSequence(){
    strip has actually finished visibly printing out, not the instant the
    overlay opens — covers both the normal feed-out/drop/bounce reveal
    (stripPrintOut) and the prefers-reduced-motion fallback
-   (stripFadeReduced), since playStripPrintAnimation() can trigger either. */
+   (stripFadeReduced), since playStripPrintAnimation() can trigger either.
+   The sticker deliberately stays up through this — it hides once "next"
+   is actually pressed (see exitFullscreenPrint()), not the moment the
+   reveal animation itself finishes. */
 stripCanvas.addEventListener('animationend', (e)=>{
   if(e.target !== stripCanvas || !fullscreenPrintActive) return;
   if(e.animationName === 'stripPrintOut' || e.animationName === 'stripFadeReduced'){
-    printSticker.classList.remove('show');
     fsPrintNextBtn.classList.add('show');
   }
 });
