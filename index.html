@@ -901,6 +901,35 @@
      aspect ratio. */
   .output-slot{ position:relative; width:100%; max-width:230px; margin-top:14px; }
   .output-slot-frame{ display:block; width:100%; height:auto; pointer-events:none; position:relative; z-index:0; }
+  /* The "your photo will appear here" sticker (assets/image.png, a hand-
+     drawn PNG rather than built from real text/SVG — decorative and
+     aria-hidden, same as .output-slot-frame below, since the always-
+     present statusLine text is the actual accessible source of this
+     info), pinned just above the dropper's own top edge specifically
+     while the strip is printing out — shown in enterFullscreenPrint(),
+     hidden the moment the print-out reveal finishes (see the stripCanvas
+     animationend listener near playStripPrintAnimation()). Lives inside
+     .output-slot (rather than as a sibling next to it, where
+     .output-slot-tag sits) so it reparents along with the arch+canvas
+     into #fullscreenPrint during printing instead of being left behind in
+     the now-hidden room layout — a plain sibling placement doesn't travel
+     with that move. Positioned via translateY(-100%) off the slot's own
+     top:0 rather than overlapping the strip content, so it reads as taped
+     above the machine, not on top of the photos themselves. max-width is
+     sized for the big fullscreen .output-slot (up to 340px, see that
+     rule) since printing — and therefore this sticker — only ever
+     happens there, never at the small in-room slot size; kept close to
+     the source PNG's native 218px width rather than scaled larger, so it
+     stays crisp instead of visibly upscaled. */
+  .print-sticker{
+    display:none; position:absolute; left:50%; top:0; width:74%; max-width:220px; z-index:3;
+    transform:translate(-50%, calc(-100% - 10px)) rotate(-2.5deg);
+  }
+  .print-sticker.show{ display:block; }
+  .print-sticker-img{
+    display:block; width:100%; height:auto;
+    filter:drop-shadow(0 3px 4px rgba(49,49,49,0.28));
+  }
   .strip-print-frame{
     position:absolute; left:26.50%; top:21.36%; width:47%; z-index:2;
     display:flex; flex-direction:column; align-items:center;
@@ -929,10 +958,23 @@
      now sits snug against the new arch's own window border with no
      matting margin to spare — the old, larger overshoot could nudge the
      strip visibly past that line or leave a gap above the arch's legs
-     for a couple of frames mid-bounce. */
+     for a couple of frames mid-bounce.
+
+     The feed-out's two segments (0-68%, 68-80%) use steps() instead of a
+     smooth curve — a real thermal/dot-matrix printer advances paper in
+     small mechanical increments, not a continuous glide, so a stepped
+     clip-path reads as "zip zip zip" printing rather than a strip simply
+     sliding into view. Both segments target ~5px per step at the strip's
+     typical rendered size (roughly 350px tall): 64 steps across the first
+     92 percentage-points (100%→8% remaining hidden) and 6 steps across
+     the last 8 (8%→0%) — same ~5px-per-step rate, just split at the
+     existing segment boundary so the two easing curves it replaces still
+     line up. The drop+bounce transform keeps its original smooth
+     cubic-beziers below — steps() is only on these two, since a
+     mechanical drop shouldn't look jerky. */
   @keyframes stripPrintOut{
-    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.25,.46,.45,.94); }
-    68%{ clip-path:inset(0 0 8% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
+    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(64, end); }
+    68%{ clip-path:inset(0 0 8% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(6, end); }
     80%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
     86%{ clip-path:inset(0 0 0% 0); transform:translateY(10px) rotate(0.3deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
     91%{ clip-path:inset(0 0 0% 0); transform:translateY(-4px) rotate(-0.25deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
@@ -1009,6 +1051,16 @@
      budget for this overlay's own padding/gap/button before dividing the
      rest by that ratio (1/2.117 ≈ 0.472) to get a matching width cap. */
   .fullscreen-print .output-slot{ width:100%; max-width:min(60vw, 340px, calc((100vh - 200px) * 0.472)); margin-top:0; }
+  /* Reserves room above the arch for .print-sticker specifically while
+     it's showing (see the .print-sticker comment) — the overlay's own top
+     padding alone (~14-32px) isn't enough for the sticker's full height
+     once it's translated entirely above .output-slot's top edge, which
+     otherwise pushed it off the top of the page. 165px covers the
+     sticker's rendered height at its max-width (220 × 149/218 ≈ 150px)
+     plus its 10px gap, with a little slack. Scoped to :has(.show) so this
+     space is only reserved while the sticker is actually up, not for the
+     rest of the print-out overlay's lifetime once it's hidden. */
+  .fullscreen-print:has(.print-sticker.show) .output-slot{ margin-top:165px; }
   /* Inside this overlay only, the strip sits BEHIND the arch art (opposite
      of its normal small room-view stacking, see the long comment above)
      so it reads as tucked inside the dropper's window like a real print,
@@ -1425,6 +1477,9 @@
             <canvas id="stripCanvas" width="300" height="506"></canvas>
           </div>
           <picture><source srcset="assets/dropper-arch.webp" type="image/webp"><img class="output-slot-frame" src="assets/dropper-arch.png" alt="" aria-hidden="true" draggable="false" loading="lazy" decoding="async"></picture>
+          <div class="print-sticker" id="printSticker" aria-hidden="true">
+            <img class="print-sticker-img" src="assets/image.png" alt="" draggable="false" loading="lazy" decoding="async">
+          </div>
         </div>
         <button class="btn-gold" id="downloadBtn" disabled data-i18n="downloadStrip">⬇ download strip</button>
       </div>
@@ -3003,6 +3058,7 @@ const buildStripBtn = document.getElementById('buildStripBtn');
 const retakeAllBtn = document.getElementById('retakeAllBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const outputSlotTag = document.getElementById('outputSlotTag');
+const printSticker = document.getElementById('printSticker');
 const themeSelect = document.getElementById('themeSelect');
 const stripCanvas = document.getElementById('stripCanvas');
 const stripCtx = stripCanvas.getContext('2d');
@@ -3134,6 +3190,7 @@ function enterFullscreenPrint(){
   fullscreenPrint.insertBefore(outputSlot, fsPrintNextBtn);
   fullscreenPrint.classList.remove('hide');
   fullscreenPrint.classList.add('show');
+  printSticker.classList.add('show');
   playStripPrintAnimation();
 }
 
@@ -4471,9 +4528,12 @@ function playStripPrintAnimation(){
 
 /* Defensive cleanup for leave/reset/retake happening mid print-out, so the
    canvas doesn't stay stuck mid-transform/mid-clip if it's redrawn and
-   reused before the animation would otherwise have finished on its own. */
+   reused before the animation would otherwise have finished on its own —
+   and so the print-out sticker doesn't stay stuck showing over a room that
+   no longer has anything printing. */
 function cancelStripPrintSequence(){
   stripCanvas.classList.remove('print-out', 'print-fade-reduced');
+  printSticker.classList.remove('show');
 }
 
 /* The fullscreen print-out overlay's "next" button only appears once the
@@ -4484,6 +4544,7 @@ function cancelStripPrintSequence(){
 stripCanvas.addEventListener('animationend', (e)=>{
   if(e.target !== stripCanvas || !fullscreenPrintActive) return;
   if(e.animationName === 'stripPrintOut' || e.animationName === 'stripFadeReduced'){
+    printSticker.classList.remove('show');
     fsPrintNextBtn.classList.add('show');
   }
 });
