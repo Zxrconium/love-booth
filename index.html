@@ -819,35 +819,12 @@
      vertically centered against the box's own height when they're side
      by side. */
   .hint-list{
-    position:relative;
-    /* Rough hand-torn silhouette instead of a clean rectangle — small
-       jitter in/out along every edge. */
-    clip-path: polygon(
-      2% 2%, 20% 0%, 40% 3%, 60% 0%, 80% 2%, 100% 0%,
-      98% 20%, 100% 40%, 97% 60%, 100% 80%, 100% 100%,
-      80% 98%, 60% 100%, 40% 97%, 20% 100%, 0% 100%,
-      3% 80%, 0% 60%, 2% 40%, 0% 20%, 0% 2%
-    );
     text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
     line-height:1.6; margin:0; padding:14px 14px 14px 30px; width:100%; max-width:240px;
-    background:#fff; border:2px solid var(--ink-warm);
+    background:#fff; border:2px solid var(--ink-warm); border-radius:3px;
     box-shadow:0 5px 12px rgba(49,49,49,0.22);
     transform:rotate(-1.4deg);
     align-self:center; order:3;
-  }
-  /* A strip of tape straddling the note's bottom-left corner, hanging
-     off both edges — reads as stuck onto whatever's behind it rather
-     than floating free. Sized/positioned to stay pinned right at the
-     corner (45deg, centered on the corner point) rather than stretching
-     diagonally across the card, which read as a stray line slicing
-     through the text instead of a small piece of tape. */
-  .hint-list::after{
-    content:''; position:absolute; z-index:1;
-    left:-9px; bottom:-9px; width:42px; height:16px;
-    background:rgba(255,250,240,0.8);
-    border:1px solid rgba(49,49,49,0.28);
-    box-shadow:0 1px 3px rgba(49,49,49,0.18);
-    transform:rotate(-45deg);
   }
   .booth-card{ order:2; }
   .output-column{ order:4; }
