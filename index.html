@@ -751,6 +751,8 @@
   .countdown-choice{margin-top:14px; text-align:center; animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both;}
   .booth-card .choice-label{ font-family:'Kalam',cursive; font-size:1.1rem; color:var(--ink-warm); margin:0 0 10px; }
   .choice-options{display:flex; gap:10px; justify-content:center;}
+  .countdown-confirm{ animation:riseIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
+  .countdown-confirm .selection-actions{ flex-direction:row; flex-wrap:wrap; justify-content:center; }
   .choice-card{
     position:relative; flex:1; max-width:110px; display:flex; flex-direction:column; align-items:center;
     gap:2px; padding:16px 8px; border-radius:16px; cursor:pointer;
@@ -1024,15 +1026,33 @@
   .fullscreen-print{
     display:none; position:fixed; inset:0; z-index:200;
     background:#fff;
-    flex-direction:column; align-items:center; justify-content:center;
-    padding:clamp(14px,3vw,32px); gap:24px; overflow-y:auto;
+    flex-direction:column; align-items:center;
+    /* flex-start, not center: the arch (up to 340px wide -> ~720px tall at
+       its ~1:2.117 intrinsic ratio) plus the button plus this padding can
+       exceed a phone's visible height once the browser's own address/nav
+       bars are accounted for. Centering an overflowing flex container
+       anchors the overflow at BOTH ends, so the natural scroll range often
+       can't reach the bottom-most item (the "next" button, reported as
+       barely visible/half cut off) — anchoring at the top instead means
+       the overflow is only ever at the bottom, which overflow-y:auto can
+       always scroll to reach. */
+    justify-content:flex-start;
+    padding:clamp(14px,3vw,32px);
+    padding-bottom:max(clamp(14px,3vw,32px), env(safe-area-inset-bottom));
+    gap:24px; overflow-y:auto;
   }
   .fullscreen-print.show{ display:flex; animation:fsIn 0.35s cubic-bezier(.2,.8,.3,1) both; }
   .fullscreen-print.hide{ display:flex; animation:fsOut 0.25s ease both; }
   /* Bigger than the .output-slot's normal home in .strip-wrap (max-width
      230px there) — this view exists specifically to showcase the print
-     reveal, so the arch gets real room to be the whole show. */
-  .fullscreen-print .output-slot{ width:100%; max-width:min(60vw, 340px); margin-top:0; }
+     reveal, so the arch gets real room to be the whole show. Also capped
+     by viewport HEIGHT (not just width): the arch's own intrinsic ratio
+     is ~1:2.117 (h:w), so a width cap alone doesn't stop it from getting
+     tall enough to push the "next" button below the fold on short/
+     landscape phone screens — the calc() reserves ~200px of vertical
+     budget for this overlay's own padding/gap/button before dividing the
+     rest by that ratio (1/2.117 ≈ 0.472) to get a matching width cap. */
+  .fullscreen-print .output-slot{ width:100%; max-width:min(60vw, 340px, calc((100vh - 200px) * 0.472)); margin-top:0; }
   /* Inside this overlay only, the strip sits BEHIND the arch art (opposite
      of its normal small room-view stacking, see the long comment above)
      so it reads as tucked inside the dropper's window like a real print,
@@ -1376,7 +1396,7 @@
       </div>
       <div class="countdown-choice" id="countdownChoice" style="display:none;">
         <p class="choice-label" data-i18n="countdownChoiceLabel">how long should the countdown be before each of your 10 shots?</p>
-        <div class="choice-options">
+        <div class="choice-options" id="choiceOptions">
           <button class="choice-card is-default" data-seconds="3" type="button">
             <span class="choice-num">3</span><span class="choice-unit" data-i18n="sec">sec</span>
             <span class="choice-tag" data-i18n="defaultTag">default</span>
@@ -1387,6 +1407,16 @@
           <button class="choice-card" data-seconds="10" type="button">
             <span class="choice-num">10</span><span class="choice-unit" data-i18n="sec">sec</span>
           </button>
+        </div>
+        <!-- Swapped in for .choice-options once a duration is tapped, instead
+             of starting the (coin-charging, on retakes) shoot immediately —
+             gives a beat to back out of a mis-tap before it commits. -->
+        <div class="countdown-confirm" id="countdownConfirm" style="display:none;">
+          <p class="choice-label" id="countdownConfirmLabel"></p>
+          <div class="selection-actions">
+            <button class="btn-primary" id="confirmCountdownBtn" type="button" data-i18n="confirmCountdownBtn">📸 let's go!</button>
+            <button class="btn-ghost" id="changeCountdownBtn" type="button" data-i18n="changeCountdown">change</button>
+          </div>
         </div>
       </div>
       <div class="picking-controls" id="pickingControls">
@@ -1557,6 +1587,8 @@ const TRANSLATIONS = {
     startStrip: '📸 start strip', filterBwVintage: 'black and white vintage', filterWarmVintage: 'warm vintage', filterBwGlow: 'black and white vintage + glow',
     reset: 'reset', reconnect: 'reconnect',
     countdownChoiceLabel: 'choose your countdown',
+    countdownConfirmLabel: 'start a {n}-second countdown?',
+    confirmCountdownBtn: '📸 let\'s go!', changeCountdown: 'change',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 build my strip', retakeAll: 'retake all 10 (costs 1 coin)',
     hintStep1: 'We capture 10 photos of both of you together', hintStep2: 'You pick your favorite 4 to build the strip', hintStep3: "Leaving or refreshing ends the room — you'd start fresh",
@@ -1645,6 +1677,8 @@ const TRANSLATIONS = {
     startStrip: '📸 simulan ang strip', filterBwVintage: 'itim at puti na vintage', filterWarmVintage: 'mainit na vintage', filterBwGlow: 'itim at puti na vintage na may glow',
     reset: 'i-reset', reconnect: 'kumonekta ulit',
     countdownChoiceLabel: 'piliin ang countdown mo',
+    countdownConfirmLabel: 'simulan ang {n}-segundong countdown?',
+    confirmCountdownBtn: '📸 sige na!', changeCountdown: 'palitan',
     sec: 'sec', defaultTag: 'default',
     buildStrip: '🖤 gawin ang strip', retakeAll: 'kunin ulit lahat ng 10 (1 coin)',
     hintStep1: 'Kukunan namin kayo ng 10 larawan nang sabay', hintStep2: 'Pipiliin mo ang paborito mong 4 para gawin ang strip', hintStep3: 'Kapag umalis o nag-refresh, matatapos ang room — magsisimula ulit',
@@ -1733,6 +1767,8 @@ const TRANSLATIONS = {
     startStrip: '📸 iniciar la tira', filterBwVintage: 'blanco y negro vintage', filterWarmVintage: 'cálido vintage', filterBwGlow: 'blanco y negro vintage con brillo',
     reset: 'reiniciar', reconnect: 'reconectar',
     countdownChoiceLabel: 'elige tu cuenta regresiva',
+    countdownConfirmLabel: '¿iniciar una cuenta regresiva de {n} segundos?',
+    confirmCountdownBtn: '📸 ¡vamos!', changeCountdown: 'cambiar',
     sec: 'seg', defaultTag: 'predeterminado',
     buildStrip: '🖤 armar mi tira', retakeAll: 'repetir las 10 fotos (1 moneda)',
     hintStep1: 'Tomamos 10 fotos de ambos juntos', hintStep2: 'Eliges tus 4 favoritas para armar la tira', hintStep3: 'Si sales o recargas la página, la sala termina — empezarías de nuevo',
@@ -1821,6 +1857,8 @@ const TRANSLATIONS = {
     startStrip: '📸 스트립 시작', filterBwVintage: '빈티지 흑백', filterWarmVintage: '빈티지 웜톤', filterBwGlow: '빈티지 흑백 + 글로우',
     reset: '초기화', reconnect: '재연결',
     countdownChoiceLabel: '카운트다운 선택',
+    countdownConfirmLabel: '{n}초 카운트다운을 시작할까요?',
+    confirmCountdownBtn: '📸 시작할게요!', changeCountdown: '변경',
     sec: '초', defaultTag: '기본',
     buildStrip: '🖤 스트립 만들기', retakeAll: '10장 다시 찍기 (1코인)',
     hintStep1: '두 사람이 함께 나온 사진을 10장 찍어요', hintStep2: '마음에 드는 4장을 골라 스트립을 만들어요', hintStep3: '나가거나 새로고침하면 방이 종료되며 다시 시작해야 해요',
@@ -1909,6 +1947,8 @@ const TRANSLATIONS = {
     startStrip: '📸 撮影開始', filterBwVintage: 'ヴィンテージ白黒', filterWarmVintage: 'ヴィンテージウォーム', filterBwGlow: 'ヴィンテージ白黒＋グロー',
     reset: 'リセット', reconnect: '再接続',
     countdownChoiceLabel: 'カウントダウンを選ぼう',
+    countdownConfirmLabel: '{n}秒のカウントダウンを始めますか？',
+    confirmCountdownBtn: '📸 スタート！', changeCountdown: '変更',
     sec: '秒', defaultTag: '標準',
     buildStrip: '🖤 ストリップを作成', retakeAll: '10枚すべて撮り直す（1コイン）',
     hintStep1: 'お二人一緒の写真を10枚撮影します', hintStep2: 'お気に入りの4枚を選んでストリップを作ります', hintStep3: '退出したりページを更新するとルームは終了し、最初からやり直しになります',
@@ -2922,6 +2962,11 @@ const reconnectBtn = document.getElementById('reconnectBtn');
 const filterSelect = document.getElementById('filterSelect');
 const mainControls = document.getElementById('mainControls');
 const countdownChoice = document.getElementById('countdownChoice');
+const choiceOptions = document.getElementById('choiceOptions');
+const countdownConfirm = document.getElementById('countdownConfirm');
+const countdownConfirmLabel = document.getElementById('countdownConfirmLabel');
+const confirmCountdownBtn = document.getElementById('confirmCountdownBtn');
+const changeCountdownBtn = document.getElementById('changeCountdownBtn');
 const pickingFrame = document.getElementById('pickingFrame');
 const pickingControls = document.getElementById('pickingControls');
 const themePicker = document.getElementById('themePicker');
@@ -3123,6 +3168,7 @@ function showSelectionPanel(){
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'none';
   countdownBackBtn.style.display = 'none';
+  resetCountdownConfirm();
   pickingActive = true;
   pendingPrintAnimation = false;
   cancelStripPrintSequence();
@@ -4229,6 +4275,7 @@ function teardownAndReturnToGate(){
   statusDot.classList.remove('live', 'waiting');
   countdownChoice.style.display = 'none';
   countdownBackBtn.style.display = 'none';
+  resetCountdownConfirm();
   forceHideSelectionPanel();
   mainControls.style.display = 'flex';
   redrawStrip();
@@ -4681,6 +4728,7 @@ function showCountdownChoice(){
   mainControls.style.display = 'none';
   countdownChoice.style.display = 'block';
   countdownBackBtn.style.display = 'inline-block';
+  resetCountdownConfirm();
 }
 
 /* Lighter-weight than "leave room": returns to the setup screen without
@@ -4689,9 +4737,24 @@ function hideCountdownChoice(){
   countdownChoice.style.display = 'none';
   mainControls.style.display = 'flex';
   countdownBackBtn.style.display = 'none';
+  resetCountdownConfirm();
+}
+
+/* Back to the duration grid — used both by "change" on the confirm step
+   and as the baseline state whenever countdown-choice opens/closes, so a
+   confirm screen never lingers stale across the various exit paths
+   (back link, connection drop, teardown) that don't all route through
+   hideCountdownChoice() above. */
+let pendingCountdownSeconds = null;
+function resetCountdownConfirm(){
+  pendingCountdownSeconds = null;
+  countdownConfirm.style.display = 'none';
+  choiceOptions.style.display = '';
+  document.querySelectorAll('.choice-card').forEach(c=> c.classList.remove('is-chosen'));
 }
 
 countdownBackBtn.addEventListener('click', hideCountdownChoice);
+changeCountdownBtn.addEventListener('click', resetCountdownConfirm);
 
 /* The very first 10-shot round in a room is already paid for by the coin
    spent creating the room — every round after that (retaking from either
@@ -4715,17 +4778,28 @@ document.querySelectorAll('.choice-card').forEach(card=>{
     document.querySelectorAll('.choice-card').forEach(c=> c.classList.toggle('is-chosen', c === card));
     const seconds = Number(card.dataset.seconds);
     await wait(380);
-    document.querySelectorAll('.choice-card').forEach(c=> c.classList.remove('is-chosen'));
-    const charge = await trySpendRetakeCoin();
-    if(!charge.ok){
-      hideCountdownChoice();
-      statusLine.textContent = charge.reason === 'outOfCoins' ? t('outOfCoins') : t('couldNotCheckBalance');
-      return;
-    }
-    hideCountdownChoice();
-    broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
-    beginSyncedSession(seconds, false);
+    // A beat to back out of a mis-tap before it commits (retakes spend a
+    // coin) instead of starting the shoot immediately off the tap.
+    pendingCountdownSeconds = seconds;
+    choiceOptions.style.display = 'none';
+    countdownConfirmLabel.textContent = t('countdownConfirmLabel', { n: seconds });
+    countdownConfirm.style.display = 'block';
   });
+});
+
+confirmCountdownBtn.addEventListener('click', async ()=>{
+  const seconds = pendingCountdownSeconds;
+  if(seconds == null) return;
+  resetCountdownConfirm();
+  const charge = await trySpendRetakeCoin();
+  if(!charge.ok){
+    hideCountdownChoice();
+    statusLine.textContent = charge.reason === 'outOfCoins' ? t('outOfCoins') : t('couldNotCheckBalance');
+    return;
+  }
+  hideCountdownChoice();
+  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId });
+  beginSyncedSession(seconds, false);
 });
 
 /* ---------------- Pick-your-favorites selection grid ---------------- */
