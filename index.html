@@ -624,6 +624,14 @@
        global animation-duration override above, no extra rule needed
        here. */
     animation: barberPoleSpin 1s linear infinite;
+    /* A straight top/bottom edge cutting through a moving diagonal
+       pattern exposes a partial stripe fragment whose shape keeps
+       changing as the pattern slides — reads as flickering/glitching
+       right where the body meets each cap. Pulled up under the caps'
+       opaque collar (see the z-index bump on .bp-cap below) so that
+       fragment is physically hidden behind solid fill instead of
+       visible. */
+    margin:-12px 0;
   }
   @keyframes barberPoleSpin{
     from{ background-position:0 0; }
@@ -632,8 +640,12 @@
   /* Each cap SVG is wider (42) than the 34px column so the collar rect reads
      as a clamp that actually protrudes past the striped body's edges,
      matching the sketch — centered for free by the column's own
-     align-items:center. */
-  .bp-cap{ flex:none; width:42px; height:24px; display:block; overflow:visible; }
+     align-items:center. position+z-index lifts it above .barber-pole-body
+     in their overlapping region (12px, from the negative margin above) —
+     a static sibling always sits below any positioned one regardless of
+     DOM order, so this alone is enough even though .bp-cap-top comes
+     before .barber-pole-body in the markup. */
+  .bp-cap{ flex:none; width:42px; height:24px; display:block; overflow:visible; position:relative; z-index:1; }
   .bp-cap-dome{ fill:#fff; stroke:var(--ink-warm); stroke-width:3; stroke-linejoin:round; }
   .bp-cap-collar{ fill:var(--ink-warm); stroke:var(--ink-warm); stroke-width:3; }
   .room-tag{display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--ink-warm); margin-bottom:6px; flex-wrap:wrap; text-align:center;}
