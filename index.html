@@ -3269,21 +3269,21 @@ const THEMES = [
     labelKey: 'themeWhite',
     background: '#ffffff',
     ink: '#ffffff',
-    borderWidth: 6
+    borderWidth: 9
   },
   {
     id: 'framed',
     labelKey: 'themeBorderedWhite',
     background: '#ffffff',
     ink: '#000000',
-    borderWidth: 6
+    borderWidth: 9
   },
   {
     id: 'solid',
     labelKey: 'themeBlack',
     background: '#000000',
     ink: '#000000',
-    borderWidth: 6
+    borderWidth: 9
   }
 ];
 // Explicit id rather than THEMES[0].id — keeps the default theme stable
@@ -4082,7 +4082,7 @@ function drawSkyPlaceholder(ctx, x, y, w, h){
 function drawDivider(theme){
   stripCtx.save();
   stripCtx.strokeStyle = theme.ink;
-  stripCtx.lineWidth = 6;
+  stripCtx.lineWidth = 9;
   for(let i = 0; i < STRIP_SLOTS - 1; i++){
     const y = TOP + (i + 1) * PHOTO_H + i * GAP + GAP / 2;
     stripCtx.beginPath();
