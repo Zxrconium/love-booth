@@ -104,6 +104,15 @@
      untouched. */
   body.room-screen{ background-image:none; background-color:#fff; }
   body.room-screen::before{ display:none; }
+  /* The coin badge, the logout/door icon, and any <select> inside the
+     room screens (theme/filter pickers) otherwise inherit the warm
+     cream/paper tone tuned for the peach gate/login screens (see
+     .coin-badge, .logout-icon-btn, and the generic select{} rule below).
+     Scoped here rather than changing those shared rules directly, so the
+     gate screen — which never gets body.room-screen — keeps its own
+     matching warm palette untouched. */
+  body.room-screen .coin-badge, body.room-screen .logout-icon-btn{ background:#fff; }
+  body.room-screen select{ background-color:#fff; }
   .scene{position:relative; z-index:1; width:100%; max-width:1000px; display:flex; flex-direction:column; align-items:center; gap:24px;}
   /* The gate/login screen's .scene is deliberately narrow (max-width:1000)
      to match its own centered single-column art. Room screens instead lay
@@ -810,7 +819,7 @@
   .hint-list{
     text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
     line-height:1.6; margin:0; padding:14px 14px 14px 30px; width:100%; max-width:240px;
-    background:var(--cream); border:2px solid var(--ink-warm); border-radius:3px;
+    background:#fff; border:2px solid var(--ink-warm); border-radius:3px;
     box-shadow:0 5px 12px rgba(49,49,49,0.22);
     transform:rotate(-1.4deg);
     align-self:center; order:3;
