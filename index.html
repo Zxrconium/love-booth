@@ -1008,6 +1008,17 @@
      230px there) — this view exists specifically to showcase the print
      reveal, so the arch gets real room to be the whole show. */
   .fullscreen-print .output-slot{ width:100%; max-width:min(60vw, 340px); margin-top:0; }
+  /* Inside this overlay only, the strip sits BEHIND the arch art (opposite
+     of its normal small room-view stacking, see the long comment above)
+     so it reads as tucked inside the dropper's window like a real print,
+     rather than floating in front of it as a separate object. That means
+     the arch's own decorative crossbar (its opaque stroke sits at ~y:227
+     of the 223x472 art, measured directly off the PNG) now paints over
+     whatever's behind it — top is nudged up from the normal 21.36% to
+     16.4% so that stroke lands on the strip's own row2/row3 gap seam
+     instead of cutting across a photo. */
+  .fullscreen-print .output-slot-frame{ z-index:1; }
+  .fullscreen-print .strip-print-frame{ z-index:0; top:16.4%; }
   .fs-print-next{
     width:auto; padding:12px 28px; opacity:0; transform:translateY(6px);
     pointer-events:none; transition:opacity 0.35s ease, transform 0.35s ease;
