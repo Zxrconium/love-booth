@@ -819,12 +819,26 @@
      vertically centered against the box's own height when they're side
      by side. */
   .hint-list{
+    position:relative;
     text-align:left; font-family:'Kalam',cursive; font-size:0.85rem; color:var(--ink-warm);
     line-height:1.6; margin:0; padding:14px 14px 14px 30px; width:100%; max-width:240px;
     background:#fff; border:2px solid var(--ink-warm); border-radius:3px;
     box-shadow:0 5px 12px rgba(49,49,49,0.22);
     transform:rotate(-1.4deg);
     align-self:center; order:3;
+  }
+  /* Sticker/card-stack depth: a second identical card sitting behind the
+     real one, offset down-right and tilted the opposite way so a sliver
+     of it peeks out along two edges — reads as the note having physical
+     thickness rather than being a flat rectangle. z-index:-1 keeps it
+     behind the real card's own background within .hint-list's own
+     stacking context (established by position:relative above) without
+     touching how .hint-list itself stacks against its page siblings. */
+  .hint-list::before{
+    content:''; position:absolute; inset:0; z-index:-1;
+    background:#fff; border:2px solid var(--ink-warm); border-radius:3px;
+    box-shadow:0 3px 6px rgba(49,49,49,0.18);
+    transform:translate(6px, 7px) rotate(2.6deg);
   }
   .booth-card{ order:2; }
   .output-column{ order:4; }
