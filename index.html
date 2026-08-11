@@ -677,7 +677,11 @@
      disconnected!" headline — the actual copy is still whatever the
      existing JS/i18n logic puts here (sayCheese, disconnected, photo X of
      10, etc.); only the presentation changes. */
-  .status-line{text-align:center; font-family:'Kalam',cursive; font-weight:700; font-size:1.3rem; color:var(--ink-warm); margin-top:10px; min-height:24px;}
+  /* clamp() rather than a flat 1.3rem — the longer status strings (e.g.
+     "all done! download your strip below") were wrapping and crowding the
+     button right below them on narrower cards/windows, since nothing
+     here previously scaled down at all. */
+  .status-line{text-align:center; font-family:'Kalam',cursive; font-weight:700; font-size:clamp(1rem, 4.5vw, 1.3rem); color:var(--ink-warm); margin-top:10px; min-height:24px;}
   /* Camera-permission-denied banner keeps a plain black border/text instead
      of the old red alert styling, per the room screens' B&W-only chrome —
      the icon + "camera blocked"-style copy still reads as an alert without
@@ -822,8 +826,17 @@
      replace, defeating the whole point. 1000px keeps clear of that
      wrapping edge with real margin; narrower viewports keep the normal
      stacked column, which fits fine on its own already. */
+  /* .strip-ready is a plain JS-toggled class on #boothLayout (see every
+     downloadBtn.disabled assignment in the script), rather than
+     :has(#downloadBtn:not(:disabled)) directly against the DOM state —
+     :has() only reached broad browser support in 2022/2023-ish versions
+     (Safari 15.4+), so on anything older every rule below would silently
+     never match, with no visible error: the recap panel would never move
+     beside the strip, the orientation note would never hide, the "your
+     strip will show up here" tag would stay up forever. A plain class
+     works everywhere .layout itself already needs to work. */
   @media (min-width:1000px){
-    .output-column:has(#downloadBtn:not(:disabled)){
+    .layout.strip-ready .output-column{
       flex-direction:row; align-items:center; justify-content:center;
     }
   }
@@ -838,14 +851,14 @@
     background:#fff; border:2px solid var(--ink-warm); border-radius:8px;
     padding:6px 12px; text-align:center; max-width:200px; margin:0;
   }
-  .strip-wrap:has(#downloadBtn:not(:disabled)) .output-slot-tag{ display:none; }
-  /* Same #downloadBtn:not(:disabled) signal as above — it's only ever
-     enabled once the finished strip is genuinely back in the room view
+  .layout.strip-ready .output-slot-tag{ display:none; }
+  /* Same "strip genuinely finished" signal as above — .strip-ready is only
+     ever added once the finished strip is genuinely back in the room view
      (see exitFullscreenPrint() in the script), so it doubles as "the
      'all done' state specifically" for hiding the now-redundant
      orientation note and pulling the recap panel up beside the strip
      instead of stacked below it (see .output-column below). */
-  .layout:has(#downloadBtn:not(:disabled)) .hint-list{ display:none; }
+  .layout.strip-ready .hint-list{ display:none; }
   /* Wraps .strip-print-frame in the real illustrated arch/window artwork
      (assets/dropper-arch.png — plain black linework, no color fill,
      matching the room-screens B&W theme). The PNG's own background is
@@ -1059,10 +1072,17 @@
      once it's translated entirely above .output-slot's top edge, which
      otherwise pushed it off the top of the page. 165px covers the
      sticker's rendered height at its max-width (220 × 149/218 ≈ 150px)
-     plus its 10px gap, with a little slack. Scoped to :has(.show) so this
-     space is only reserved while the sticker is actually up, not for the
-     rest of the print-out overlay's lifetime once it's hidden. */
-  .fullscreen-print:has(.print-sticker.show) .output-slot{ margin-top:165px; }
+     plus its 10px gap, with a little slack. Driven by a plain JS-toggled
+     class (.has-sticker, set/cleared alongside .print-sticker's own
+     .show class — see enterFullscreenPrint()/exitFullscreenPrint()/
+     cancelStripPrintSequence()) rather than :has(.print-sticker.show)
+     directly — :has() only reached broad support in 2023/2022-ish
+     browser versions (Safari 15.4+), so on anything older this rule
+     would silently never match at all: the sticker would still show
+     (its own .show toggle doesn't need :has()) but with no reserved
+     space above it, shifting everything below — arch, strip, "next"
+     button — up out of alignment with no visible error. */
+  .fullscreen-print.has-sticker .output-slot{ margin-top:165px; }
   /* Inside this overlay only, the strip sits BEHIND the arch art (opposite
      of its normal small room-view stacking, see the long comment above)
      so it reads as tucked inside the dropper's window like a real print,
@@ -3199,6 +3219,7 @@ function enterFullscreenPrint(){
   fullscreenPrint.classList.remove('hide');
   fullscreenPrint.classList.add('show');
   printSticker.classList.add('show');
+  fullscreenPrint.classList.add('has-sticker');
   playStripPrintAnimation();
 }
 
@@ -3206,6 +3227,7 @@ function exitFullscreenPrint(){
   if(!fullscreenPrintActive) return;
   fullscreenPrintActive = false;
   printSticker.classList.remove('show');
+  fullscreenPrint.classList.remove('has-sticker');
   fullscreenPrint.classList.remove('show');
   fullscreenPrint.classList.add('hide');
   // animationend bubbles up from descendants (the strip's own print-out
@@ -3226,6 +3248,7 @@ function exitFullscreenPrint(){
     // the "it's ready" affordances (download, per-slot swap, recap) turn
     // on. See buildStripFrom(), which deliberately does NOT set these.
     downloadBtn.disabled = false;
+    boothLayout.classList.add('strip-ready');
     stripCanvas.classList.add('swappable');
     revealPendingRecapIfAny();
   };
@@ -4376,6 +4399,7 @@ function teardownAndReturnToGate(){
   waitingLabelText.innerHTML = t('waitingForThem');
   startBtn.disabled = true;
   downloadBtn.disabled = true;
+  boothLayout.classList.remove('strip-ready');
   statusLine.textContent = t('sayCheese');
   showReconnect(false);
   statusDot.classList.remove('live', 'waiting');
@@ -4547,6 +4571,7 @@ function playStripPrintAnimation(){
 function cancelStripPrintSequence(){
   stripCanvas.classList.remove('print-out', 'print-fade-reduced');
   printSticker.classList.remove('show');
+  fullscreenPrint.classList.remove('has-sticker');
 }
 
 /* The fullscreen print-out overlay's "next" button only appears once the
@@ -4807,6 +4832,7 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
   selecting = true;
   startBtn.disabled = true;
   downloadBtn.disabled = true;
+  boothLayout.classList.remove('strip-ready');
   shots = [];
   tenShots = [];
   selectedIndices = [];
@@ -5099,6 +5125,7 @@ resetBtn.addEventListener('click', ()=>{
   forceHideSelectionPanel();
   redrawStrip();
   downloadBtn.disabled = true;
+  boothLayout.classList.remove('strip-ready');
   startBtn.disabled = !connected;
   statusLine.textContent = connected ? t('inFrame') : t('waitingToConnect');
 });
