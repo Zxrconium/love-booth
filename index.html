@@ -951,48 +951,60 @@
   }
   #stripCanvas{width:100%; height:auto; touch-action:none; position:relative; z-index:0;}
   #stripCanvas.celebrate{ animation:celebrate 700ms cubic-bezier(.34,1.56,.64,1); }
-  #stripCanvas.print-out{ animation:stripPrintOut 3s both; transform-origin:50% 0%; }
+  #stripCanvas.print-out{ animation:stripPrintOut 4.2s both; transform-origin:50% 0%; }
   #stripCanvas.print-fade-reduced{ animation:stripFadeReduced 0.2s ease both; }
   /* No separate "printing your strip…" waiting state anymore — the
      feed-out itself (below) IS the wait, a slow deliberate clip-path
      reveal that reads as the printer actually dispensing the strip,
      rather than a static text box followed by a quick reveal once the
-     wait timer runs out. Feeds out of the print slot (0-80%, stretched
-     slower than the old 0-56%/1.3s-total version specifically so it
-     reads as gradual paper-feed rather than an near-instant reveal — the
-     strip stays pinned under the slot while it "grows" downward, no
-     movement yet), then drops free under its own weight (80-86%,
-     accelerating ease-in like gravity) and lands with a decaying bounce
-     — overshoot past rest, rebound past rest the other way, then two
-     smaller settling wobbles — rather than sliding smoothly into place.
-     The drop+bounce portion (80-100%) keeps the same absolute timing as
-     the original 1.3s version (roughly 0.6s) even though the overall
-     animation is now much longer, so the actual "drop" still snaps
-     rather than feeling slow-motion. Overshoot amounts trimmed down from
-     the pre-dropper-swap version (20px/-8px/4px/-1.5px) since the strip
-     now sits snug against the new arch's own window border with no
-     matting margin to spare — the old, larger overshoot could nudge the
-     strip visibly past that line or leave a gap above the arch's legs
-     for a couple of frames mid-bounce.
+     wait timer runs out. Feeds out one photo at a time with a real pause
+     at each photo boundary (0-85%, see the per-segment breakdown below)
+     — rather than one continuous reveal top-to-bottom, which read as the
+     whole strip just dropping out in one go — then drops free under its
+     own weight (85-89%, accelerating ease-in like gravity) and lands
+     with a decaying bounce — overshoot past rest, rebound past rest the
+     other way, then two smaller settling wobbles — rather than sliding
+     smoothly into place. The drop+bounce portion keeps the same absolute
+     timing as before (~0.6s) even though the overall animation is now
+     longer, so the actual "drop" still snaps rather than feeling
+     slow-motion. Overshoot amounts trimmed down from the pre-dropper-swap
+     version (20px/-8px/4px/-1.5px) since the strip now sits snug against
+     the new arch's own window border with no matting margin to spare —
+     the old, larger overshoot could nudge the strip visibly past that
+     line or leave a gap above the arch's legs for a couple of frames
+     mid-bounce.
 
-     The feed-out's two segments (0-68%, 68-80%) use steps() instead of a
-     smooth curve — a real thermal/dot-matrix printer advances paper in
-     small mechanical increments, not a continuous glide, so a stepped
-     clip-path reads as "zip zip zip" printing rather than a strip simply
-     sliding into view. Both segments target ~5px per step at the strip's
-     typical rendered size (roughly 350px tall): 64 steps across the first
-     92 percentage-points (100%→8% remaining hidden) and 6 steps across
-     the last 8 (8%→0%) — same ~5px-per-step rate, just split at the
-     existing segment boundary so the two easing curves it replaces still
-     line up. The drop+bounce transform keeps its original smooth
-     cubic-beziers below — steps() is only on these two, since a
-     mechanical drop shouldn't look jerky. */
+     Each reveal segment (0-13%, 24-37%, 48-61%, 71-85%) uses steps()
+     instead of a smooth curve — a real thermal/dot-matrix printer
+     advances paper in small mechanical increments, not a continuous
+     glide, so a stepped clip-path reads as "zip zip zip" printing rather
+     than gliding into view. 14 steps per segment lands close to ~5-8px
+     per step at the strip's typical rendered size. The clip-path targets
+     between segments are the strip's own actual photo-row boundaries —
+     computed from the layout constants in the script (TOP/PHOTO_H/GAP/
+     STRIP_SLOTS, canvas height 822px): row 1 ends at y:202 (75.43%
+     still hidden), row 2 at y:404 (50.85%), row 3 at y:606 (26.28%),
+     row 4 at y:808 (fully revealed, rounds down to 0% — the last 14px
+     BOTTOM margin is imperceptible to fold into that same reveal step)
+     — so each pause genuinely lines up with "this photo just finished
+     printing," not an arbitrary fraction of the strip. The pause
+     segments (13-24%, 37-48%, 61-71%) hold the same clip-path value at
+     both ends — nothing animates during them, they're a real stop, not
+     just a slower glide — before the next reveal segment continues. The
+     drop+bounce transform keeps its original smooth cubic-beziers below
+     — steps() is only on the reveal segments, since a mechanical drop
+     shouldn't look jerky. */
   @keyframes stripPrintOut{
-    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(64, end); }
-    68%{ clip-path:inset(0 0 8% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(6, end); }
-    80%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
-    86%{ clip-path:inset(0 0 0% 0); transform:translateY(10px) rotate(0.3deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
-    91%{ clip-path:inset(0 0 0% 0); transform:translateY(-4px) rotate(-0.25deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
+    0%{ clip-path:inset(0 0 100% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(14, end); }
+    13%{ clip-path:inset(0 0 75.43% 0); transform:translateY(0) rotate(0deg); }
+    24%{ clip-path:inset(0 0 75.43% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(14, end); }
+    37%{ clip-path:inset(0 0 50.85% 0); transform:translateY(0) rotate(0deg); }
+    48%{ clip-path:inset(0 0 50.85% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(14, end); }
+    61%{ clip-path:inset(0 0 26.28% 0); transform:translateY(0) rotate(0deg); }
+    71%{ clip-path:inset(0 0 26.28% 0); transform:translateY(0) rotate(0deg); animation-timing-function:steps(14, end); }
+    85%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); animation-timing-function:cubic-bezier(.55,.06,.68,.19); }
+    89%{ clip-path:inset(0 0 0% 0); transform:translateY(10px) rotate(0.3deg); animation-timing-function:cubic-bezier(.17,.89,.32,1.49); }
+    92%{ clip-path:inset(0 0 0% 0); transform:translateY(-4px) rotate(-0.25deg); animation-timing-function:cubic-bezier(.36,.07,.19,.97); }
     95%{ clip-path:inset(0 0 0% 0); transform:translateY(2px) rotate(0.12deg); animation-timing-function:ease-out; }
     97%{ clip-path:inset(0 0 0% 0); transform:translateY(-1px) rotate(-0.05deg); animation-timing-function:ease-out; }
     100%{ clip-path:inset(0 0 0% 0); transform:translateY(0) rotate(0deg); }
