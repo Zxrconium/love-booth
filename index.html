@@ -1090,8 +1090,24 @@
      would silently never match at all: the sticker would still show
      (its own .show toggle doesn't need :has()) but with no reserved
      space above it, shifting everything below — arch, strip, "next"
-     button — up out of alignment with no visible error. */
-  .fullscreen-print.has-sticker .output-slot{ margin-top:165px; }
+     button — up out of alignment with no visible error.
+     Also re-derives the .output-slot max-width rule above with the same
+     165px folded into its own height budget (200px -> 365px): that
+     margin-top pushes the whole column down by 165px same as any other
+     content would, but the base rule's budget has no way to know about
+     it, so on shorter viewports (short desktop windows, iPhone 8-sized
+     phones) the arch kept sizing itself as if the sticker took no room
+     at all, overflowing the "next" button below the fold — reachable
+     only by scrolling this overlay's own overflow-y:auto, with no
+     scroll-hint shown, which read as the button being broken/missing
+     entirely. Shrinking the arch's own height budget by exactly the
+     margin reserved for the sticker keeps the full column (sticker +
+     arch + button) fit inside typical viewport heights without relying
+     on that scroll as anything but a safety net. */
+  .fullscreen-print.has-sticker .output-slot{
+    margin-top:165px;
+    max-width:min(60vw, 340px, calc((100vh - 365px) * 0.472));
+  }
   /* Inside this overlay only, the strip sits BEHIND the arch art (opposite
      of its normal small room-view stacking, see the long comment above)
      so it reads as tucked inside the dropper's window like a real print,
