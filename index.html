@@ -4783,6 +4783,21 @@ function waitUntil(targetTime){
   return new Promise(r=>setTimeout(r, Math.max(0, targetTime - Date.now())));
 }
 
+/* Advances the shared schedule by a fixed offset, but never lets it fall
+   further behind real time than "now" — a plain `at += ms` would let a
+   single step that runs long (a slow capturePhoto() with a heavier
+   filter, a GC pause, a backgrounded-tab timer throttle) leave the
+   schedule sitting in the past permanently, since every later waitUntil()
+   against a stale target just resolves instantly rather than actually
+   re-syncing. Clamping to Date.now() here means a slow step costs exactly
+   its own overrun and no more — it can't quietly become debt that a
+   later, perfectly-timed step still has to pay off, which is what let
+   ordinary per-round jitter compound into a multi-photo gap over a ~30s
+   session even after the schedule was anchored to a shared startAt. */
+function advance(at, deltaMs){
+  return Math.max(at + deltaMs, Date.now());
+}
+
 /* startTime is an absolute Date.now()-style timestamp for this countdown's
    very first tick, already reached by the time this is called (the caller
    waits for it) — each subsequent tick is scheduled by adding fixed
@@ -4796,10 +4811,10 @@ async function runCountdown(seconds, startTime){
   for(let i=seconds;i>0;i--){
     countdownEl.textContent = i;
     countdownEl.classList.add('show');
-    at += 650;
+    at = advance(at, 650);
     await waitUntil(at);
     countdownEl.classList.remove('show');
-    at += 150;
+    at = advance(at, 150);
     await waitUntil(at);
   }
   return at;
@@ -4874,7 +4889,7 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
     fillThumbSlot(i);
     fillFsThumb(i, shot);
     statusLine.textContent = t('photoCaptured', { i: i+1 });
-    at += 500;
+    at = advance(at, 500);
     await waitUntil(at);
     if(shootSessionId !== mySessionId) return;
   }
