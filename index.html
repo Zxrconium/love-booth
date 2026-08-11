@@ -4852,12 +4852,22 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
 }
 
 /* How far out (from whichever device generates it) the shared startAt
-   anchor is set — needs enough slack to comfortably cover typical P2P
-   data-channel transit time for the sessionStart broadcast to actually
-   reach the other peer before that timestamp arrives, on top of the
-   original ~900ms "let the starting message be visible for a beat"
-   pause it's replacing. */
-const SESSION_START_BUFFER_MS = 1000;
+   anchor is set. Whoever taps "start" reaches their own waitUntil(startAt)
+   almost immediately — no network hop, no incoming-message handling — so
+   they get to spend essentially the entire buffer as genuine slack. The
+   other device has to receive the broadcast over the P2P data channel,
+   run applyRemoteFilter()/applyRemoteTheme(), and get through all of
+   runCaptureSequence()'s own setup (entering fullscreen, starting the
+   recap recording, etc.) before it even reaches its own waitUntil() — all
+   of that eats into ITS buffer instead. If the buffer isn't generous
+   enough, the receiving device can end up with barely any slack left, or
+   even find startAt has already passed (at which point waitUntil()
+   resolves immediately rather than at the intended instant) — which
+   reads as "whoever tapped start is consistently ahead," not as a small
+   one-off timing blip. 2s gives real headroom for that whole pipeline
+   over an ordinary connection, at the cost of the countdown feeling a
+   little less instantaneous after tapping start. */
+const SESSION_START_BUFFER_MS = 2000;
 
 function beginSyncedSession(seconds, isRemoteTriggered, startAt){
   const secs = seconds || 3;
