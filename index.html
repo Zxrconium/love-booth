@@ -2294,11 +2294,17 @@ async function refundCoinIfUnused(){
 const SUPABASE_URL = 'https://psstxmiwxosjtywxpvdz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1V0O-RlEpotHCTgQxBDAOg_RNUDVoQ1';
 /* Single source of truth for where Supabase Auth emails (confirmation,
-   password reset, etc.) should send people back to. Passed explicitly on
+   password reset, etc.) should send people back to, and for the base URL
+   baked into every shareable recap QR code/link. Passed explicitly on
    every auth call that can send an email, rather than relying on the
    dashboard's Site URL default — a dashboard field can't drift out of sync
-   with the code if the code never depends on it in the first place. */
-const AUTH_REDIRECT_URL = 'https://zxrconium.github.io/love-booth/';
+   with the code if the code never depends on it in the first place.
+   luvbooth.me is a real custom domain wired up via the repo's CNAME file
+   (DNS already points at GitHub Pages' standard IPs) — but Supabase's own
+   Authentication > URL Configuration > Redirect URLs allowlist needs
+   https://luvbooth.me/ added there too, or password-reset emails will
+   still fail even though this constant now points at the right place. */
+const AUTH_REDIRECT_URL = 'https://luvbooth.me/';
 let sbClient = null;
 try{
   if(window.supabase && typeof window.supabase.createClient === 'function'){
