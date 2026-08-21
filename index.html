@@ -3393,7 +3393,7 @@ let recordCanvas = null;
 let recordCtx = null;
 let recordTimer = null;
 
-function startRecapRecording(){
+function startRecapRecording(filterValue){
   if(!isHost || !sbClient || !currentUser) return;
   if(typeof MediaRecorder === 'undefined') return;
   // Defensively clean up any still-running recorder from a prior/superseded
@@ -3414,7 +3414,7 @@ function startRecapRecording(){
   // the rendering pipeline and keeps the canvas redrawn on a steady cadence
   // regardless of what else is animating on the page.
   function drawFrame(){
-    drawFilteredComposite(recordCtx, recordCanvas.width, recordCanvas.height, filterSelect.value);
+    drawFilteredComposite(recordCtx, recordCanvas.width, recordCanvas.height, filterValue);
   }
   drawFrame();
   recordTimer = setInterval(drawFrame, 1000 / RECORD_FPS);
@@ -4027,10 +4027,13 @@ function applyRemoteSelection(indices){
 
 function handleRemoteMessage(msg){
   if(!msg || typeof msg !== 'object') return;
+
   if(msg.type === 'filter'){
-    applyRemoteFilter(msg.value);
+    if(!busy) applyRemoteFilter(msg.value);
+
   }else if(msg.type === 'theme'){
     applyRemoteTheme(msg.value);
+
   }else if(msg.type === 'sessionStart'){
     // Whoever starts the shoot is the authority for that shoot's look —
     // lock onto their filter + theme before the countdown even begins, so
@@ -4042,23 +4045,38 @@ function handleRemoteMessage(msg){
     // instant instead of each picking their own.
     if(msg.filter) applyRemoteFilter(msg.filter);
     if(msg.theme) applyRemoteTheme(msg.theme);
-    beginSyncedSession(msg.seconds, true, msg.startAt);
+
+    beginSyncedSession(
+      msg.seconds,
+      true,
+      msg.startAt,
+      msg.filter || filterSelect.value
+    );
+
   }else if(msg.type === 'selection'){
     applyRemoteSelection(msg.indices);
+
   }else if(msg.type === 'buildStrip'){
     buildStripFrom(msg.indices);
+
   }else if(msg.type === 'cursor'){
     applyRemoteCursor(msg.x, msg.y);
+
   }else if(msg.type === 'cursorHide'){
     hideRemoteCursor();
+
   }else if(msg.type === 'liveCursor'){
     applyRemoteLiveCursor(msg.x, msg.y);
+
   }else if(msg.type === 'liveCursorHide'){
     hideRemoteLiveCursor();
+
   }else if(msg.type === 'photoSwap'){
     applyPhotoSwap(msg.slot, msg.photoIndex);
+
   }else if(msg.type === 'recapReady'){
     applyRecapReady(msg.url);
+
   }else if(msg.type === 'roomEnded'){
     applyRemoteRoomEnded();
   }
@@ -4887,8 +4905,9 @@ let shootSessionId = 0;
    between the trigger and the broadcast actually arriving), but it
    removes the specific mechanism that let the two sides' countdowns
    visibly diverge over a session. */
-async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
-  if(busy || !connected) return;
+async function runCaptureSequence(seconds, isRemoteTriggered, startAt, filterValue){
+  if(busy || !connected) return
+  const lockedFilter = filterValue || filterSelect.value;
   const mySessionId = ++shootSessionId;
   lastCountdownSeconds = seconds;
   busy = true;
@@ -4905,7 +4924,7 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
   redrawStrip();
   showSelectionPanel();
   enterFullscreenShoot();
-  startRecapRecording();
+  startRecapRecording(lockedFilter);
 
   // Set immediately, then held visible until startAt (typically ~1s out,
   // see SESSION_START_BUFFER_MS) rather than a flat wait(900) — same
@@ -4923,7 +4942,7 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
     at = await runCountdown(seconds, at);
     if(shootSessionId !== mySessionId) return;
     flash();
-    const shot = capturePhoto(filterSelect.value);
+    const shot = capturePhoto(lockedFilter);
     tenShots.push(shot);
     if(!photosStartedThisRoom) markSpendUsedOnServer();
     photosStartedThisRoom = true;
@@ -4958,10 +4977,17 @@ async function runCaptureSequence(seconds, isRemoteTriggered, startAt){
    little less instantaneous after tapping start. */
 const SESSION_START_BUFFER_MS = 2000;
 
-function beginSyncedSession(seconds, isRemoteTriggered, startAt){
+function beginSyncedSession(seconds, isRemoteTriggered, startAt, filterValue){
   const secs = seconds || 3;
   const at = startAt || (Date.now() + SESSION_START_BUFFER_MS);
-  runCaptureSequence(secs, isRemoteTriggered, at);
+  const lockedFilter = filterValue || filterSelect.value;
+
+  runCaptureSequence(
+    secs,
+    isRemoteTriggered,
+    at,
+    lockedFilter
+  );
 }
 
 function showCountdownChoice(){
@@ -5044,8 +5070,9 @@ confirmCountdownBtn.addEventListener('click', async ()=>{
   // device and the peer need to target the exact same startAt instant
   // (see the runCaptureSequence() comment).
   const startAt = Date.now() + SESSION_START_BUFFER_MS;
-  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId, startAt });
-  beginSyncedSession(seconds, false, startAt);
+  const shootFilter = filterSelect.value;
+  broadcastData({ type:'sessionStart', seconds, filter: shootFilter, theme: currentThemeId, startAt });
+  beginSyncedSession(seconds, false, startAt, shootFilter);
 });
 
 /* ---------------- Pick-your-favorites selection grid ---------------- */
@@ -5166,8 +5193,8 @@ retakeAllBtn.addEventListener('click', async ()=>{
     return;
   }
   const startAt = Date.now() + SESSION_START_BUFFER_MS;
-  broadcastData({ type:'sessionStart', seconds, filter: filterSelect.value, theme: currentThemeId, startAt });
-  beginSyncedSession(seconds, false, startAt);
+  broadcastData({ type:'sessionStart', seconds, filter: shootFilter, theme: currentThemeId, startAt });
+  beginSyncedSession(seconds, false, startAt, shootFilter);
 });
 
 startBtn.addEventListener('click', showCountdownChoice);
