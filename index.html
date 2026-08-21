@@ -4121,16 +4121,20 @@ function wireIceDiagnostics(rtcConn, label){
   }
 }
 
-// Remembers who the data channel was last connected to, and whether we've
-// already tried a one-shot silent recovery for the current drop — so a
-// transient blip gets exactly one automatic retry (never a loop that could
-// fight a manual "reconnect" click), and only escalates to the full
-// "live sync lost" banner if that retry also fails.
+// Keep a dropped live-sync data channel alive through short Wi-Fi/mobile
+// hiccups instead of giving up after one retry. The guest is the only side
+// that actively creates replacement data channels; the host waits for those
+// guest-initiated attempts so both sides never race competing connections.
 let remoteDataPeerId = null;
-let dataReconnectAttempted = false;
+let dataRecoveryAttempt = 0;
+let dataRecoveryTimer = null;
+const DATA_RECOVERY_DELAYS_MS = [2000, 5000, 10000];
+const HOST_DATA_RECOVERY_GRACE_MS = 45000;
 let syncNoteState = null; // 'lost' | 'reconnecting' | null (hidden)
 
 function showSyncLostBanner(){
+  clearTimeout(dataRecoveryTimer);
+  dataRecoveryTimer = null;
   syncNoteState = 'lost';
   syncNote.textContent = t('syncLost');
   syncNote.style.display = 'block';
@@ -4144,50 +4148,63 @@ function showSyncReconnectingBanner(){
 
 function markSyncRestored(){
   clearTimeout(dataConnTimeout);
+  clearTimeout(dataRecoveryTimer);
+  dataRecoveryTimer = null;
+  dataRecoveryAttempt = 0;
   syncNoteState = null;
   syncNote.style.display = 'none';
 }
 
 function attemptDataChannelRecovery(){
-  // Only worth trying when the actual peer connection and video call are
-  // still healthy — i.e. this really is "just the data channel" dropping,
-  // matching what a fixable transient ICE/data-channel hiccup looks like,
-  // not a total connection collapse (which a silent retry can't fix and
-  // the user's own "reconnect" button already handles by rebuilding
-  // everything). One shot only, per drop.
-  if(dataReconnectAttempted || !peer || peer.destroyed || !connected || !remoteDataPeerId){
+  // Only worth retrying when the media call itself is still healthy. If the
+  // whole PeerJS/WebRTC connection has collapsed, the existing manual
+  // reconnect button remains the correct full rebuild path.
+  if(!peer || peer.destroyed || !connected || !remoteDataPeerId){
     showSyncLostBanner();
     return;
   }
-  dataReconnectAttempted = true;
+
   showSyncReconnectingBanner();
+
   if(isHost){
-    // The data connection is always guest-initiated (guest calls
-    // peer.connect(), host only ever receives it via peer.on('connection')).
-    // If host ALSO called peer.connect() here, both sides would race to
-    // create a brand-new data connection at once — confirmed with a real
-    // two-browser WebRTC test: it produced two independent connections,
-    // and whichever one lost that race left its side listening on a
-    // channel the other end never wired up, so messages silently stopped
-    // arriving even though "recovery" looked like it had succeeded. Host
-    // just waits for the guest's reconnect to land on the existing
-    // peer.on('connection') listener, with its own timeout in case the
-    // guest's attempt never comes (e.g. guest's peer object also died).
-    logConnEvent('host waiting for guest to re-establish the data channel…');
-    setTimeout(()=>{ if(!dataConn) showSyncLostBanner(); }, 6000);
+    // Data connections are guest-initiated in this app. The host therefore
+    // waits for the guest's automatic retries rather than opening a competing
+    // channel of its own. One grace timer spans all three guest attempts.
+    if(dataRecoveryTimer) return;
+    logConnEvent('host waiting for guest automatic data-channel recovery…');
+    dataRecoveryTimer = setTimeout(()=>{
+      dataRecoveryTimer = null;
+      if(!dataConn || !dataConn.open) showSyncLostBanner();
+    }, HOST_DATA_RECOVERY_GRACE_MS);
     return;
   }
-  logConnEvent(`attempting one-shot automatic data-channel recovery with ${remoteDataPeerId} in 2s…`);
-  setTimeout(()=>{
-    if(dataConn) return; // already recovered some other way (e.g. a manual reconnect) in the meantime
-    if(!peer || peer.destroyed){ showSyncLostBanner(); return; }
+
+  if(dataRecoveryAttempt >= DATA_RECOVERY_DELAYS_MS.length){
+    logConnEvent('automatic data-channel recovery exhausted all attempts');
+    showSyncLostBanner();
+    return;
+  }
+
+  const attemptNumber = dataRecoveryAttempt + 1;
+  const delay = DATA_RECOVERY_DELAYS_MS[dataRecoveryAttempt];
+  dataRecoveryAttempt++;
+  clearTimeout(dataRecoveryTimer);
+
+  logConnEvent(`automatic data-channel recovery attempt ${attemptNumber}/${DATA_RECOVERY_DELAYS_MS.length} in ${delay}ms…`);
+  dataRecoveryTimer = setTimeout(()=>{
+    dataRecoveryTimer = null;
+    if(dataConn && dataConn.open) return;
+    if(!peer || peer.destroyed || !connected){
+      showSyncLostBanner();
+      return;
+    }
     try{
       wireDataChannel(peer.connect(remoteDataPeerId));
     }catch(e){
-      logConnEvent('automatic data-channel recovery attempt threw', e);
-      showSyncLostBanner();
+      logConnEvent(`automatic data-channel recovery attempt ${attemptNumber} threw`, e);
+      attemptDataChannelRecovery();
     }
-  }, 2000);
+  }, delay);
 }
 
 function markSyncLost(){
@@ -4217,7 +4234,7 @@ function wireDataChannel(conn){
   }, 8000);
   conn.on('open', ()=>{
     conn.__everOpened = true;
-    dataReconnectAttempted = false; // a fresh success earns a fresh retry chance if it drops again later
+    dataRecoveryAttempt = 0; // a fresh success earns a fresh retry sequence if it drops again later
     logConnEvent('data channel open');
     markSyncRestored();
     if(isHost){
@@ -4405,7 +4422,9 @@ async function attemptReconnect(){
     dataConn = null;
     connected = false;
     remoteDataPeerId = null;
-    dataReconnectAttempted = false;
+    clearTimeout(dataRecoveryTimer);
+    dataRecoveryTimer = null;
+    dataRecoveryAttempt = 0;
     hideRemoteLiveCursor();
     await wait(400);
     if(isHost) await startAsHost(currentRoomCode);
@@ -4437,7 +4456,9 @@ function teardownAndReturnToGate(){
   syncNote.style.display = 'none';
   connected = false;
   remoteDataPeerId = null;
-  dataReconnectAttempted = false;
+  clearTimeout(dataRecoveryTimer);
+  dataRecoveryTimer = null;
+  dataRecoveryAttempt = 0;
   hideRemoteLiveCursor();
   shootSessionId++;
   shots = [];
@@ -5193,6 +5214,7 @@ retakeAllBtn.addEventListener('click', async ()=>{
     return;
   }
   const startAt = Date.now() + SESSION_START_BUFFER_MS;
+  const shootFilter = filterSelect.value;
   broadcastData({ type:'sessionStart', seconds, filter: shootFilter, theme: currentThemeId, startAt });
   beginSyncedSession(seconds, false, startAt, shootFilter);
 });
