@@ -1480,7 +1480,7 @@
       <div class="controls" id="mainControls">
         <button class="btn-primary" id="startBtn" disabled data-i18n="startStrip">📸 start strip</button>
         <select id="filterSelect">
-          <option value="grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)" data-i18n="filterBwVintage">black and white vintage</option>
+          <option value="grayscale(1) contrast(0.95) brightness(1.08) sepia(0.2) blur(0.7px)" data-i18n="filterBwVintage">black and white vintage</option>
           <option value="sepia(0.35) saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-5deg)" data-i18n="filterWarmVintage">warm vintage</option>
           <option value="bw-glow" data-i18n="filterBwGlow">black and white vintage with a little glow</option>
         </select>
@@ -3524,18 +3524,13 @@ function animateTextChange(el){
   new MutationObserver(()=> animateTextChange(el)).observe(el, { characterData:true, childList:true, subtree:true });
 });
 
-/* The two black-and-white filters share a base look (deep warm-toned
-   blacks, high contrast, film grain, vignette) achieved with real
-   canvas-level compositing rather than a single CSS filter string — grain
-   and vignette aren't expressible with filter() alone. The "glow" variant
-   layers a blurred/brightened screen-blend pass on top of that same base.
-   BW_VINTAGE_FILTER must match the first <option>'s value in the HTML.
-
-   Live preview reuses the identical vignette/grain textures as static,
-   pre-rendered overlay layers (CSS mix-blend-mode) rather than redrawing
-   them every frame — cheap, GPU-composited, and guaranteed to look exactly
-   like what gets baked into the captured photo. */
-const BW_VINTAGE_FILTER = 'grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)';
+/* The plain B&W and B&W+glow filters deliberately use different base
+   treatments. Plain B&W is softer/brighter to match the supplied reference;
+   B&W+glow keeps its original base and glow strength. Grain/noise is disabled
+   for both B&W variants. BW_VINTAGE_FILTER must match the first <option>'s
+   value in the HTML. */
+const BW_VINTAGE_FILTER = 'grayscale(1) contrast(0.95) brightness(1.08) sepia(0.2) blur(0.7px)';
+const GLOW_BASE_FILTER = 'grayscale(1) contrast(1.3) brightness(0.9) sepia(0.2)';
 const GLOW_OVERLAY_FILTER = 'grayscale(1) sepia(0.2) blur(4px) brightness(1.3)';
 const GLOW_FILTER_VALUE = 'bw-glow';
 const VIGNETTE_RGB = '20,15,10';
@@ -3583,10 +3578,13 @@ function applyGrain(ctx, w, h){
 function applyLiveFilter(){
   const f = filterSelect.value;
   const isBw = (f === BW_VINTAGE_FILTER || f === GLOW_FILTER_VALUE);
-  [localVignette, remoteVignette, localGrain, remoteGrain].forEach(el => el.classList.toggle('show', isBw));
+  [localVignette, remoteVignette].forEach(el => el.classList.toggle('show', isBw));
+  // No grain/noise on either B&W variant.
+  [localGrain, remoteGrain].forEach(el => el.classList.remove('show'));
   if(f === GLOW_FILTER_VALUE){
-    localVideo.style.filter = BW_VINTAGE_FILTER;
-    remoteVideo.style.filter = BW_VINTAGE_FILTER;
+    // Preserve the original B&W+glow base; only its grain has been removed.
+    localVideo.style.filter = GLOW_BASE_FILTER;
+    remoteVideo.style.filter = GLOW_BASE_FILTER;
     localVideoGlow.style.filter = GLOW_OVERLAY_FILTER;
     remoteVideoGlow.style.filter = GLOW_OVERLAY_FILTER;
     localVideoGlow.classList.add('show');
@@ -4813,18 +4811,17 @@ function drawFilteredComposite(ctx, w, h, filterValue){
   const isBw = (filterValue === BW_VINTAGE_FILTER || filterValue === GLOW_FILTER_VALUE);
 
   if(isBw){
-    // Base layer: grayscale + contrast + warm-toned shadows.
-    ctx.filter = BW_VINTAGE_FILTER;
+    // Plain B&W gets the softer reference-matched base; glow keeps its old base.
+    ctx.filter = filterValue === GLOW_FILTER_VALUE ? GLOW_BASE_FILTER : BW_VINTAGE_FILTER;
     drawVideoCover(ctx, localVideo, 0, 0, halfW, h, true);
     drawVideoCover(ctx, remoteVideo, halfW, 0, halfW, h, false);
     ctx.filter = 'none';
 
     applyVignette(ctx, w, h);
-    applyGrain(ctx, w, h);
+    // Grain intentionally omitted for both B&W variants.
 
     if(filterValue === GLOW_FILTER_VALUE){
-      // Glow layer: a blurred, brightened pass screened on top at low
-      // opacity — a soft bloom around bright areas, not a blurred whole image.
+      // Glow layer is unchanged; only the old grain pass was removed.
       ctx.filter = GLOW_OVERLAY_FILTER;
       ctx.globalCompositeOperation = 'screen';
       ctx.globalAlpha = 0.35;
