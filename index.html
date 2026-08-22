@@ -573,6 +573,17 @@
     .gate input{ padding:10px; font-size:0.95rem; }
     .gate .btn-primary{ padding:9px 16px; font-size:0.95rem; }
     .gate-footnote{ font-size:0.66rem; }
+
+    /* The join card is percentage-sized against the booth artwork. On a
+       narrow phone its old 34% height became physically too short for the
+       input + JOIN ROOM button + back link after the mobile control sizing
+       kicked in, so the button/link spilled through the card's bottom edge.
+       Give this one overlay a little more vertical room on phones and keep
+       its own controls compact; desktop/tablet positioning stays untouched. */
+    .gate .join-step{ top:37%; height:41%; padding:4%; gap:3%; }
+    .gate .join-step input{ padding:7px 8px; font-size:0.76rem; }
+    .gate .join-step .btn-primary{ padding:7px 10px; font-size:0.76rem; line-height:1.15; }
+    .gate .join-step .leave-link{ font-size:0.64rem; padding:2px; line-height:1.15; }
   }
 
   .layout{width:100%; display:flex; gap:20px; justify-content:center; flex-wrap:wrap; align-items:flex-start; animation:riseIn 0.5s cubic-bezier(.2,.8,.3,1) both;}
