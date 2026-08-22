@@ -3912,27 +3912,50 @@ if(HAS_FINE_POINTER){
   });
 }
 
-/* STUN alone only gets each side's public IP/port — plenty of networks
-   (corporate Wi-Fi, some mobile carriers, symmetric NATs) can't complete a
-   direct P2P path from that alone and need a TURN relay as a fallback, or
-   the connection fails outright with no way to retry past it (see the ICE
-   'failed' diagnostic below). METERED_TURN_USERNAME/CREDENTIAL are build-
-   time placeholders — .github/workflows/deploy-pages.yml substitutes them
-   from repository secrets before the static files are uploaded to Pages,
-   so the real values never live in git history. They're still visible to
-   anyone inspecting the deployed page's source, same as SUPABASE_ANON_KEY
-   above; that's expected for both — Metered scopes usage per-credential,
-   same as Supabase's own anon key is meant to be public. */
-const METERED_TURN_USERNAME = '__METERED_TURN_USERNAME__';
-const METERED_TURN_CREDENTIAL = '__METERED_TURN_CREDENTIAL__';
-const PEER_ICE_SERVERS = [
-  { urls: 'stun:stun.relay.metered.ca:80' },
-  { urls: 'turn:global.relay.metered.ca:80', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
-  { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
-  { urls: 'turn:global.relay.metered.ca:443', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
-  { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: METERED_TURN_USERNAME, credential: METERED_TURN_CREDENTIAL },
+/* STUN discovers direct WebRTC paths; TURN is the relay fallback for
+   networks where direct P2P cannot get through (symmetric NAT, restrictive
+   Wi-Fi/mobile carriers, firewalls, etc.). Cloudflare's permanent TURN API
+   token stays private inside the Supabase `turn-credentials` Edge Function.
+   The browser asks that function for short-lived `iceServers`, so no long-
+   lived TURN secret is embedded in this public HTML file. If the function is
+   temporarily unavailable, fall back to Cloudflare STUN-only so ordinary
+   direct-P2P connections can still work instead of blocking room setup. */
+const FALLBACK_ICE_SERVERS = [
+  { urls: [
+    'stun:stun.cloudflare.com:3478',
+    'stun:stun.cloudflare.com:53'
+  ] }
 ];
-const PEER_OPTIONS = { config: { iceServers: PEER_ICE_SERVERS } };
+const TURN_CREDENTIAL_CACHE_MS = 60 * 60 * 1000; // Edge Function issues 2-hour credentials; refresh after 1 hour.
+let cachedPeerIceServers = null;
+let cachedPeerIceServersAt = 0;
+
+async function getPeerOptions(){
+  if(cachedPeerIceServers && (Date.now() - cachedPeerIceServersAt) < TURN_CREDENTIAL_CACHE_MS){
+    return { config: { iceServers: cachedPeerIceServers } };
+  }
+
+  try{
+    if(!sbClient) throw new Error('Supabase client unavailable');
+
+    const { data, error } = await sbClient.functions.invoke('turn-credentials', {
+      body: {}
+    });
+
+    if(error) throw error;
+    if(!data || !Array.isArray(data.iceServers) || data.iceServers.length === 0){
+      throw new Error('turn-credentials returned no iceServers');
+    }
+
+    cachedPeerIceServers = data.iceServers;
+    cachedPeerIceServersAt = Date.now();
+    logConnEvent('Cloudflare TURN credentials loaded');
+    return { config: { iceServers: cachedPeerIceServers } };
+  }catch(err){
+    logConnEvent('Cloudflare TURN credentials unavailable — falling back to STUN-only', err);
+    return { config: { iceServers: FALLBACK_ICE_SERVERS } };
+  }
+}
 
 let shots = [];
 let tenShots = [];
@@ -4249,12 +4272,12 @@ function wireDataChannel(conn){
   if(conn.peerConnection){
     // Same false-positive risk as the media call: PeerJS doesn't always fire
     // 'close'/'error' on the DataConnection just because the underlying ICE
-    // path failed to connect (no TURN, NAT traversal dead end) — without
+    // path failed to connect (direct/TURN candidates exhausted) — without
     // this, the data channel could sit "open" in name while never actually
     // carrying data. Treat a genuine ICE failure as a real drop.
     conn.peerConnection.addEventListener('iceconnectionstatechange', ()=>{
       if(conn.peerConnection.iceConnectionState === 'failed' && dataConn === conn){
-        logConnEvent('data channel ICE failed — no working network path found (no TURN server configured, STUN-only)');
+        logConnEvent('data channel ICE failed — no working network path found after available direct/TURN candidates');
         markSyncLost();
       }
     });
@@ -4268,7 +4291,7 @@ function wireCall(call){
   // exists (SDP negotiated a transceiver) — confirmed with a real WebRTC
   // connection that this happens BEFORE ice reaches even 'checking', let
   // alone 'connected'. Marking the UI "connected" on that event alone is a
-  // false positive: with no TURN server, if ICE can't find a working path
+  // false positive: if ICE can't find a working direct or relay path
   // (symmetric NAT, some mobile/corporate networks), the UI would say
   // "connected" forever with a stream object attached that never actually
   // carries a frame — exactly the "own camera fine, partner's is black"
@@ -4289,7 +4312,7 @@ function wireCall(call){
   function markMediaFailed(){
     if(mediaFailed) return;
     mediaFailed = true;
-    logConnEvent('media call ICE failed — no working network path found (no TURN server configured, STUN-only)');
+    logConnEvent('media call ICE failed — no working network path found after available direct/TURN candidates');
     connected = false;
     setStatus(t('connectionHiccup'), false);
     startBtn.disabled = true;
@@ -4340,7 +4363,8 @@ async function startAsHost(code){
   const ok = await getCamera();
   if(!ok) return;
 
-  peer = new Peer('booth-' + code + '-host', PEER_OPTIONS);
+  const peerOptions = await getPeerOptions();
+  peer = new Peer('booth-' + code + '-host', peerOptions);
   logConnEvent('starting as host, room', code);
   peer.on('open', ()=>{
     logConnEvent('peer signaling open, id=', peer.id);
@@ -4377,7 +4401,8 @@ async function startAsGuest(code){
   const ok = await getCamera();
   if(!ok) return;
 
-  peer = new Peer(PEER_OPTIONS);
+  const peerOptions = await getPeerOptions();
+  peer = new Peer(peerOptions);
   logConnEvent('starting as guest, room', code);
   peer.on('open', ()=>{
     logConnEvent('peer signaling open, id=', peer.id);
